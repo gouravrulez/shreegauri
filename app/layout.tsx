@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import CartFix from "./cart-fix";
 
 export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
@@ -27,7 +28,10 @@ export default function RootLayout({
           fetchPriority="high"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <CartFix />
+      </body>
     </html>
   );
 }
