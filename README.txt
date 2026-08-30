@@ -1,18 +1,14 @@
-SHREE GAURI — CHECKOUT + ORDERS UPDATE
+SHREE GAURI — BUY NOW FIX
 
-Upload the CONTENTS of this folder to the ROOT of the shreegauri-new GitHub repository and replace the existing files.
-
-What this update adds:
-- Variant-aware shopping bag
-- Checkout page for customer name, phone, email and Indian shipping address
-- Secure server-side order creation through Supabase Edge Function
-- Live price/stock validation in the database before an order is accepted
-- Inventory reduction when an order is placed
-- Pending order/payment state (payment gateway is intentionally not connected yet)
-- Orders section in admin dashboard with customer, delivery, items, payment status and order status
-- Admin can update order/payment statuses
+Replace ONLY the existing root-level product.js file in your GitHub repository with this product.js.
 
 Important:
-- Shipping fees are NOT configured yet. Checkout says shipping will be confirmed separately.
-- Online payment is NOT configured yet. Do not tell customers that online payment succeeded until a payment gateway is integrated.
-- Existing storefront design is preserved aside from functional checkout controls.
+- Do not upload this inside /app, /public, or /assets.
+- Replace the product.js that sits beside product.html, app.js, checkout.html, styles.css, etc.
+- After GitHub commit completes, wait for Vercel deployment to show Ready.
+- Open shreegauri.in and press Ctrl + Shift + R.
+- Test BUY NOW.
+
+Expected behavior:
+BUY NOW -> adds selected product/carat to cart -> opens /checkout.html
+It will not open WhatsApp.
