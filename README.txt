@@ -1,30 +1,48 @@
-SHREE GAURI — LIVE NEXT.JS CART + BUY NOW FIX
+SHREE GAURI — PAID ORDER EMAIL + WHATSAPP NOTIFICATIONS
 
-Replace/add these files in the GitHub repository:
+FILES
+1) app/api/payments/verify/route.ts
+   Replace the existing file with this one.
 
-1. Replace:
-   app/layout.tsx
+2) app/lib/order-notifications.ts
+   Add this new file.
 
-2. Add new file:
-   app/cart-fix.tsx
+WHAT IT DOES
+- Runs only after Razorpay signature verification succeeds and the order is finalized as paid.
+- Sends an email notification to:
+  gauritechnologiespvt@gmail.com
+- Sends a WhatsApp template notification to:
+  +91 7400617601
+- Notification failures DO NOT make a successful customer payment fail.
+- Current checkout/storefront design is unchanged.
 
-Do NOT upload these files to the root. They belong inside the app folder.
+VERCEL ENVIRONMENT VARIABLES
 
-What this fixes:
-- ADD TO CART now shows a visible confirmation toast.
-- A right-side cart confirmation drawer opens.
-- Drawer shows the recently added product.
-- CONTINUE SHOPPING closes the drawer.
-- PROCEED TO CHECKOUT opens the existing cart and checkout flow.
-- BUY NOW no longer follows the WhatsApp link.
-- BUY NOW adds the item using the website's existing React cart state and opens checkout.
-- Works for product cards and the product-detail popup.
-- Existing WhatsApp chat/enquiry button remains available separately.
+EMAIL (Resend)
+RESEND_API_KEY=your_resend_api_key
+ORDER_EMAIL_FROM=Shree Gauri <orders@your-verified-domain>
+ORDER_NOTIFICATION_EMAIL=gauritechnologiespvt@gmail.com
 
-After upload:
-1. Commit both changes.
-2. Wait for Vercel to show Ready.
-3. Open shreegauri.in.
-4. Press Ctrl + Shift + R.
-5. Test ADD TO CART.
-6. Test BUY NOW.
+WHATSAPP (Meta WhatsApp Cloud API)
+WHATSAPP_ACCESS_TOKEN=your_meta_access_token
+WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id
+WHATSAPP_ADMIN_PHONE=917400617601
+WHATSAPP_ORDER_TEMPLATE=new_order_admin
+WHATSAPP_TEMPLATE_LANGUAGE=en
+
+WHATSAPP TEMPLATE BODY
+Create an approved Meta WhatsApp template named:
+new_order_admin
+
+Suggested template:
+New paid order {{1}}
+Customer: {{2}}
+Phone: {{3}}
+Amount: {{4}}
+Open Shree Gauri Admin for full order details.
+
+IMPORTANT
+- Never put API keys/tokens in GitHub source files.
+- Add all secrets only in Vercel Production Environment Variables.
+- Redeploy after adding/changing environment variables.
+- Keep Razorpay in Test Mode while testing notifications.
