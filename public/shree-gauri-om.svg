@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="80%">
+      <stop offset="0" stop-color="#fff8d8"/>
+      <stop offset=".58" stop-color="#efbd55"/>
+      <stop offset="1" stop-color="#b86b13"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#650e19"/>
+  <circle cx="32" cy="32" r="26.5" fill="url(#bg)" stroke="#fff1b8" stroke-width="1.5"/>
+  <text x="32" y="43" text-anchor="middle" font-family="Georgia, 'Noto Serif Devanagari', serif" font-size="35" font-weight="700" fill="#68101a">ॐ</text>
+</svg>

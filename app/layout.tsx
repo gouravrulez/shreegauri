@@ -5,8 +5,9 @@ export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
   description: "Authentic gemstones, sacred jewellery, Rudraksha, spiritual products and meaningful gifts.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: [{ url: "/shree-gauri-om.svg", type: "image/svg+xml" }],
+    shortcut: "/shree-gauri-om.svg",
+    apple: "/shree-gauri-om.svg",
   },
 };
 
