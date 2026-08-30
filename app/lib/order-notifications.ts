@@ -1,233 +1,117 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type OrderRecord = {
-  id: string;
-  order_number: string;
-  customer_name?: string | null;
-  email?: string | null;
-  phone?: string | null;
+type Order = {
+  id: string; order_number: string; customer_name?: string | null;
+  email?: string | null; phone?: string | null;
   shipping_address?: Record<string, unknown> | null;
-  subtotal_inr?: number | null;
-  shipping_inr?: number | null;
-  discount_inr?: number | null;
-  total_inr?: number | null;
-  payment_status?: string | null;
-  order_status?: string | null;
-  payment_reference?: string | null;
+  subtotal_inr?: number | null; shipping_inr?: number | null;
+  discount_inr?: number | null; total_inr?: number | null;
+  payment_status?: string | null; payment_reference?: string | null;
 };
-
-type OrderItem = {
-  product_name?: string | null;
-  variant_label?: string | null;
-  quantity?: number | null;
-  unit_price_inr?: number | null;
+type Item = {
+  product_name?: string | null; variant_label?: string | null;
+  quantity?: number | null; unit_price_inr?: number | null;
   line_total_inr?: number | null;
 };
 
-const ADMIN_EMAIL =
-  process.env.ORDER_NOTIFICATION_EMAIL || "gauritechnologiespvt@gmail.com";
+const ADMIN_EMAIL = process.env.ORDER_NOTIFICATION_EMAIL || "gauritechnologiespvt@gmail.com";
+const ADMIN_WHATSAPP = (process.env.WHATSAPP_ADMIN_PHONE || "917400617601").replace(/\D/g, "");
 
-const ADMIN_WHATSAPP = (
-  process.env.WHATSAPP_ADMIN_PHONE || "917400617601"
-).replace(/\D/g, "");
+const money = (v: unknown) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
-function money(value: unknown) {
-  const n = Number(value || 0);
-  return `₹${n.toLocaleString("en-IN")}`;
+function addressText(a?: Record<string, unknown> | null) {
+  if (!a) return "Not provided";
+  const keys = ["address","address_line1","address_line2","city","state","pincode","pin","postal_code"];
+  const parts = keys.map(k => a[k]).filter(v => v != null && String(v).trim()).map(v => String(v).trim());
+  return parts.length ? parts.join(", ") : Object.values(a).filter(v => v != null && String(v).trim()).join(", ") || "Not provided";
 }
 
-function addressText(address: Record<string, unknown> | null | undefined) {
-  if (!address) return "Not provided";
-
-  const preferred = [
-    "address",
-    "address_line1",
-    "address_line2",
-    "city",
-    "state",
-    "pincode",
-    "pin",
-    "postal_code",
-  ];
-
-  const parts = preferred
-    .map((key) => address[key])
-    .filter((v) => v !== undefined && v !== null && String(v).trim())
-    .map((v) => String(v).trim());
-
-  if (parts.length) return parts.join(", ");
-
-  return (
-    Object.values(address)
-      .filter((v) => v !== undefined && v !== null && String(v).trim())
-      .map((v) => String(v).trim())
-      .join(", ") || "Not provided"
-  );
+function itemLines(items: Item[]) {
+  return items.length ? items.map(i => {
+    const qty = Number(i.quantity || 1);
+    const variant = i.variant_label ? ` (${i.variant_label})` : "";
+    const total = i.line_total_inr ?? Number(i.unit_price_inr || 0) * qty;
+    return `${i.product_name || "Product"}${variant} × ${qty} — ${money(total)}`;
+  }).join("\n") : "Order items unavailable";
 }
 
-function itemLines(items: OrderItem[]) {
-  if (!items.length) return "Order items unavailable";
-
-  return items
-    .map((item) => {
-      const variant = item.variant_label ? ` (${item.variant_label})` : "";
-      const qty = Number(item.quantity || 1);
-      const total =
-        item.line_total_inr ?? Number(item.unit_price_inr || 0) * qty;
-
-      return `${item.product_name || "Product"}${variant} × ${qty} — ${money(
-        total
-      )}`;
-    })
-    .join("\n");
-}
-
-async function sendEmail(order: OrderRecord, items: OrderItem[]) {
-  const apiKey = process.env.RESEND_API_KEY;
+async function sendEmail(to: string, subject: string, text: string) {
+  const key = process.env.RESEND_API_KEY;
   const from = process.env.ORDER_EMAIL_FROM;
-
-  if (!apiKey || !from) {
-    return { skipped: true, reason: "Email provider not configured" };
-  }
-
-  const subject = `New paid order ${order.order_number} — ${money(
-    order.total_inr
-  )}`;
-
-  const text = [
-    "NEW PAID ORDER — SHREE GAURI",
-    "",
-    `Order: ${order.order_number}`,
-    `Amount: ${money(order.total_inr)}`,
-    `Payment: ${order.payment_status || "paid"}`,
-    `Payment ID: ${order.payment_reference || "-"}`,
-    "",
-    `Customer: ${order.customer_name || "-"}`,
-    `Phone: ${order.phone || "-"}`,
-    `Email: ${order.email || "-"}`,
-    `Address: ${addressText(order.shipping_address)}`,
-    "",
-    "Items:",
-    itemLines(items),
-    "",
-    `Subtotal: ${money(order.subtotal_inr)}`,
-    `Discount: ${money(order.discount_inr)}`,
-    `Shipping: ${money(order.shipping_inr)}`,
-    `Total: ${money(order.total_inr)}`,
-  ].join("\n");
-
-  const response = await fetch("https://api.resend.com/emails", {
+  if (!key || !from) return { skipped: true };
+  const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [ADMIN_EMAIL],
-      subject,
-      text,
-    }),
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to: [to], subject, text })
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `Email notification failed: ${response.status} ${await response.text()}`
-    );
-  }
-
+  if (!r.ok) throw new Error(`Email failed: ${r.status} ${await r.text()}`);
   return { sent: true };
 }
 
-async function sendWhatsApp(order: OrderRecord) {
+async function adminEmail(o: Order, items: Item[]) {
+  return sendEmail(ADMIN_EMAIL, `New paid order ${o.order_number} — ${money(o.total_inr)}`, [
+    "NEW PAID ORDER — SHREE GAURI","",
+    `Order: ${o.order_number}`, `Amount: ${money(o.total_inr)}`,
+    `Payment: ${o.payment_status || "paid"}`, `Payment ID: ${o.payment_reference || "-"}`,"",
+    `Customer: ${o.customer_name || "-"}`, `Phone: ${o.phone || "-"}`,
+    `Email: ${o.email || "-"}`, `Address: ${addressText(o.shipping_address)}`,"",
+    "Items:", itemLines(items),"", `Total: ${money(o.total_inr)}`
+  ].join("\n"));
+}
+
+async function customerEmail(o: Order, items: Item[]) {
+  if (!o.email) return { skipped: true };
+  return sendEmail(o.email, `Order Confirmed — ${o.order_number} | Shree Gauri`, [
+    `Dear ${o.customer_name || "Customer"},`,"",
+    "Thank you for shopping with Shree Gauri.",
+    "Your payment has been received successfully and your order is confirmed.","",
+    `Order Number: ${o.order_number}`, "Payment Status: Paid",
+    `Order Total: ${money(o.total_inr)}`,"",
+    "ORDER DETAILS", itemLines(items),"",
+    `Delivery Address: ${addressText(o.shipping_address)}`,"",
+    "We will keep you informed as your order is processed.",
+    "For assistance, please contact Shree Gauri customer support.","",
+    "Warm regards,", "Shree Gauri"
+  ].join("\n"));
+}
+
+async function adminWhatsApp(o: Order) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const template = process.env.WHATSAPP_ORDER_TEMPLATE || "new_order_admin";
-  const language = process.env.WHATSAPP_TEMPLATE_LANGUAGE || "en";
-
-  if (!token || !phoneNumberId) {
-    return { skipped: true, reason: "WhatsApp provider not configured" };
-  }
-
-  const response = await fetch(
-    `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: ADMIN_WHATSAPP,
-        type: "template",
-        template: {
-          name: template,
-          language: { code: language },
-          components: [
-            {
-              type: "body",
-              parameters: [
-                { type: "text", text: String(order.order_number) },
-                {
-                  type: "text",
-                  text: String(order.customer_name || "Customer"),
-                },
-                { type: "text", text: String(order.phone || "-") },
-                { type: "text", text: money(order.total_inr) },
-              ],
-            },
-          ],
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `WhatsApp notification failed: ${response.status} ${await response.text()}`
-    );
-  }
-
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneId) return { skipped: true };
+  const r = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp", to: ADMIN_WHATSAPP, type: "template",
+      template: {
+        name: process.env.WHATSAPP_ORDER_TEMPLATE || "new_order_admin",
+        language: { code: process.env.WHATSAPP_TEMPLATE_LANGUAGE || "en" },
+        components: [{ type: "body", parameters: [
+          { type: "text", text: String(o.order_number) },
+          { type: "text", text: String(o.customer_name || "Customer") },
+          { type: "text", text: String(o.phone || "-") },
+          { type: "text", text: money(o.total_inr) }
+        ]}]
+      }
+    })
+  });
+  if (!r.ok) throw new Error(`WhatsApp failed: ${r.status} ${await r.text()}`);
   return { sent: true };
 }
 
-export async function notifyPaidOrder(
-  admin: SupabaseClient,
-  orderId: string
-) {
-  const { data: order, error: orderError } = await admin
-    .from("orders")
-    .select("*")
-    .eq("id", orderId)
-    .single();
-
-  if (orderError || !order) {
-    throw new Error(
-      orderError?.message || "Paid order not found for notification"
-    );
-  }
-
-  const { data: items, error: itemsError } = await admin
-    .from("order_items")
-    .select("*")
-    .eq("order_id", orderId);
-
-  if (itemsError) throw new Error(itemsError.message);
+export async function notifyPaidOrder(admin: SupabaseClient, orderId: string) {
+  const { data: order, error } = await admin.from("orders").select("*").eq("id", orderId).single();
+  if (error || !order) throw new Error(error?.message || "Paid order not found");
+  const { data: items, error: itemError } = await admin.from("order_items").select("*").eq("order_id", orderId);
+  if (itemError) throw new Error(itemError.message);
 
   const results = await Promise.allSettled([
-    sendEmail(order as OrderRecord, (items || []) as OrderItem[]),
-    sendWhatsApp(order as OrderRecord),
+    adminEmail(order as Order, (items || []) as Item[]),
+    customerEmail(order as Order, (items || []) as Item[]),
+    adminWhatsApp(order as Order)
   ]);
-
-  results.forEach((result, index) => {
-    if (result.status === "rejected") {
-      console.warn(
-        index === 0
-          ? "Order email notification error:"
-          : "Order WhatsApp notification error:",
-        result.reason
-      );
-    }
+  results.forEach((r, i) => {
+    if (r.status === "rejected") console.warn(["Admin email","Customer email","WhatsApp"][i] + " error:", r.reason);
   });
 }
