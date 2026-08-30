@@ -17,6 +17,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="preload"
+          href="/maa-lakshmi-hero-fast.webp"
+          as="image"
+          type="image/webp"
+          fetchPriority="high"
+        />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
