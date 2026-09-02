@@ -1,0 +1,3 @@
+const wrap={maxWidth:900,margin:"0 auto",padding:"56px 22px",fontFamily:"Arial, sans-serif",lineHeight:1.7} as const;
+export const metadata={title:"Contact"};
+export default function Page(){return <main style={wrap}><a href="/">← Back to Shree Gauri</a><h1>Contact Shree Gauri</h1><p>Customer support is available 24/7, including Sundays.</p><p>Email: <a href="mailto:gauritechnologiespvt@gmail.com">gauritechnologiespvt@gmail.com</a><br/>Phone / WhatsApp: <a href="tel:+917400617601">+91 7400617601</a></p><p>For an order query, include your Shree Gauri order number so we can locate it quickly.</p></main>}
