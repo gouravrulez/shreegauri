@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/apply-multi-category.mjs",
+    "prebuild": "node scripts/apply-multi-category.mjs && node scripts/apply-premium-product-manager.mjs",
     "build": "next build",
     "start": "next start"
   },
