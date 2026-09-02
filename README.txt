@@ -1,53 +1,32 @@
-SHREE GAURI — LAUNCH HARDENING PACKAGE
+SHREE GAURI — PHONEPE PREPARATION PACKAGE
+=========================================
 
-IMPORTANT: The Supabase database has ALREADY been upgraded by ChatGPT.
-Do not run SQL manually.
+This package prepares PhonePe Standard Checkout without activating it yet.
+Razorpay remains the default payment provider until PAYMENT_PROVIDER=phonepe is added in Vercel.
 
-UPLOAD / REPLACE THESE:
-1. package.json -> replace root package.json
-2. scripts/apply-launch-hardening.mjs -> upload into existing scripts folder
-3. app/api/payments/create/route.ts -> replace
-4. app/api/payments/verify/route.ts -> replace
-5. app/api/payments/webhook/route.ts -> NEW
-6. app/robots.ts -> NEW
-7. app/sitemap.ts -> NEW
-8. app/contact/page.tsx -> NEW
-9. app/privacy/page.tsx -> NEW
-10. app/terms/page.tsx -> NEW
-11. app/shipping-returns/page.tsx -> NEW
+FILES TO UPLOAD TO THE ROOT OF THE GITHUB REPOSITORY:
+- package.json
+- scripts/apply-phonepe-prep.mjs
+- app/lib/phonepe.ts
+- app/api/payments/create/route.ts
+- app/api/payments/status/route.ts
+- app/api/payments/phonepe-webhook/route.ts
+- app/payment-return/page.tsx
 
-KEEP THESE EXISTING FILES:
-- scripts/apply-multi-category.mjs
-- scripts/apply-premium-product-manager.mjs
-- app/lib/order-notifications.ts
-Do not delete them.
+DO NOT ADD PHONEPE SECRETS YET unless the PhonePe account is approved.
 
-WHAT THIS DOES:
-- 15-minute inventory reservations without reducing physical stock before payment.
-- Prevents another checkout from reserving the same one-of-one stock.
-- Physical stock is deducted only after verified captured payment.
-- Failed Razorpay order creation releases reservation.
-- Duplicate payment finalization is idempotent.
-- Checkout verification confirms the Razorpay order belongs to the store order.
-- Verification confirms payment status with Razorpay before marking paid.
-- Adds optional Razorpay webhook route for captured/failed events.
-- Adds courier, AWB/tracking number, tracking URL fields in Admin.
-- Adds Packed and Out for Delivery statuses.
-- Adds truthful SEO metadata, robots.txt and sitemap.
-- Adds Contact, Privacy, Terms, Shipping & Returns pages.
-- Removes unsupported "Authentic" claim from global SEO description.
-- Does not redesign the storefront.
+After PhonePe approval, add these Vercel Production environment variables:
+- PAYMENT_PROVIDER = phonepe
+- PHONEPE_CLIENT_ID = value from PhonePe
+- PHONEPE_CLIENT_SECRET = matching secret from PhonePe
+- PHONEPE_CLIENT_VERSION = value supplied by PhonePe (usually 1)
+- PHONEPE_ENV = PRODUCTION
 
-ONE MANUAL STEP AFTER DEPLOYMENT FOR WEBHOOK:
-Create a Vercel Production environment variable named RAZORPAY_WEBHOOK_SECRET with a NEW random secret of your choice.
-Then in Razorpay Dashboard create webhook:
-URL: https://shreegauri.in/api/payments/webhook
-Events: payment.captured and payment.failed
-Use the SAME webhook secret.
-Never share that secret in chat.
+For webhook/callback verification, configure a username/password in PhonePe and add:
+- PHONEPE_CALLBACK_USERNAME
+- PHONEPE_CALLBACK_PASSWORD
 
-LIVE PAYMENT:
-Do not replace Test Razorpay keys with Live keys until the deployment is Ready and a fresh Test Mode checkout succeeds.
+PhonePe callback URL:
+https://shreegauri.in/api/payments/phonepe-webhook
 
-SECURITY:
-Supabase leaked-password protection is an account dashboard setting and is not changed by these files.
+Never paste client secrets or callback passwords into chat.

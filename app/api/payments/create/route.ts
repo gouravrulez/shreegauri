@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createPhonePePayment } from "../../../lib/phonepe";
+
 const supabaseUrl = "https://hhtqnpxarrbagyvswqrj.supabase.co";
 
 export async function POST(request: Request) {
@@ -8,15 +10,55 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json();
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (!serviceKey || !keyId || !keySecret)
+    if (!serviceKey)
       return NextResponse.json({ error: "Payment service is not configured." }, { status: 503 });
 
-    admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    admin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
     const created = await admin.rpc("create_store_order", { payload });
     if (created.error) throw new Error(created.error.message);
     storeOrder = created.data;
+
+    const provider = (process.env.PAYMENT_PROVIDER || "razorpay").toLowerCase();
+
+    if (provider === "phonepe") {
+      const merchantOrderId = String(storeOrder.order_id);
+      const origin = new URL(request.url).origin;
+      const redirectUrl = `${origin}/payment-return?store_order_id=${encodeURIComponent(storeOrder.order_id)}`;
+      const phonePeOrder = await createPhonePePayment({
+        merchantOrderId,
+        amountPaise: Math.round(Number(storeOrder.total_inr) * 100),
+        redirectUrl,
+      });
+
+      if (!phonePeOrder?.redirectUrl) {
+        throw new Error("PhonePe did not return a checkout URL.");
+      }
+
+      const saved = await admin
+        .from("orders")
+        .update({
+          payment_provider: "phonepe",
+          payment_reference: merchantOrderId,
+        })
+        .eq("id", storeOrder.order_id);
+      if (saved.error) throw new Error(saved.error.message);
+
+      return NextResponse.json({
+        provider: "phonepe",
+        redirect_url: phonePeOrder.redirectUrl,
+        phonepe_order_id: phonePeOrder.orderId || null,
+        store_order_id: storeOrder.order_id,
+        order_number: storeOrder.order_number,
+        reservation_expires_at: storeOrder.reservation_expires_at,
+      });
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret)
+      return NextResponse.json({ error: "Razorpay is not configured." }, { status: 503 });
 
     const response = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
@@ -32,14 +74,19 @@ export async function POST(request: Request) {
       }),
     });
     const razorpayOrder = await response.json();
-    if (!response.ok) throw new Error(razorpayOrder?.error?.description || "Unable to start Razorpay payment.");
+    if (!response.ok)
+      throw new Error(razorpayOrder?.error?.description || "Unable to start Razorpay payment.");
 
-    await admin.from("orders").update({
-      payment_provider: "razorpay",
-      payment_reference: razorpayOrder.id,
-    }).eq("id", storeOrder.order_id);
+    await admin
+      .from("orders")
+      .update({
+        payment_provider: "razorpay",
+        payment_reference: razorpayOrder.id,
+      })
+      .eq("id", storeOrder.order_id);
 
     return NextResponse.json({
+      provider: "razorpay",
       key: keyId,
       razorpay_order_id: razorpayOrder.id,
       amount: razorpayOrder.amount,
@@ -50,8 +97,16 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (admin && storeOrder?.order_id) {
-      try { await admin.rpc("release_order_reservation", { p_order_id: storeOrder.order_id, p_status: "failed" }); } catch {}
+      try {
+        await admin.rpc("release_order_reservation", {
+          p_order_id: storeOrder.order_id,
+          p_status: "failed",
+        });
+      } catch {}
     }
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create order." }, { status: 400 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to create order." },
+      { status: 400 },
+    );
   }
 }
