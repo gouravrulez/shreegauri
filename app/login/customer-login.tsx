@@ -322,6 +322,9 @@ export default function CustomerLogin() {
           <span>
             Hello, <b>{profile.full_name || user.email?.split("@")[0]}</b>
           </span>
+          <a href="/" className="customer-return-store">
+            <Home /> Return to Store
+          </a>
           <button onClick={() => supabase.auth.signOut()}>
             <LogOut /> Log Out
           </button>

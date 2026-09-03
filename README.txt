@@ -34,3 +34,7 @@ UPLOAD ALL CONTENTS OF THIS ZIP INTO THE GITHUB REPOSITORY ROOT:
 - scripts/apply-customer-admin-upgrade.mjs
 
 Commit changes, then wait for Vercel deployment to show Ready.
+
+ADDED IN THIS VERSION:
+- Visible Return to Store button in customer dashboard header on desktop and mobile.
+- One tap returns customer to the Shree Gauri main homepage without logging out.
