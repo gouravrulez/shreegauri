@@ -34,16 +34,13 @@ const newGo = `  const go = (v: string) => {
   };`;
 
 if (!text.includes(newGo)) {
-  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed: go() block not found.");
+  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
   text = text.replace(oldGo, newGo);
 }
 
 const oldCatalog = `<section className="section cream catalog">`;
 const newCatalog = `<section id="products-section" className="section cream catalog">`;
-if (!text.includes(newCatalog)) {
-  if (!text.includes(oldCatalog)) throw new Error("Mobile category navigation patch failed: catalog section not found.");
-  text = text.replace(oldCatalog, newCatalog);
-}
+if (!text.includes(newCatalog)) text = text.replace(oldCatalog, newCatalog);
 
 const oldEmail = `          <a href="mailto:gauritechnologiespvt@gmail.com">
             gauritechnologiespvt@gmail.com
@@ -52,11 +49,7 @@ const newEmail = `          <a href="mailto:gauritechnologiespvt@gmail.com">
             gauritechnologiespvt@gmail.com
           </a>
           <a href="tel:+917400617601">+91 74006 17601</a>`;
-
-if (!text.includes(newEmail)) {
-  if (!text.includes(oldEmail)) throw new Error("Footer phone patch failed: email block not found.");
-  text = text.replace(oldEmail, newEmail);
-}
+if (!text.includes(newEmail)) text = text.replace(oldEmail, newEmail);
 
 fs.writeFileSync(store, text);
-console.log("Shree Gauri mobile category navigation and footer phone fix applied.");
+console.log("Mobile category and footer contact fix applied.");

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/apply-multi-category.mjs && node scripts/apply-premium-product-manager.mjs && node scripts/apply-launch-hardening.mjs && node scripts/apply-phonepe-prep.mjs && node scripts/apply-mobile-footer-fix.mjs",
+    "prebuild": "node scripts/apply-multi-category.mjs && node scripts/apply-premium-product-manager.mjs && node scripts/apply-launch-hardening.mjs && node scripts/apply-phonepe-prep.mjs && node scripts/apply-mobile-footer-fix.mjs && node scripts/apply-customer-admin-upgrade.mjs",
     "build": "next build",
     "start": "next start"
   },
