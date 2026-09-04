@@ -1,13 +1,13 @@
-SHREE GAURI OTP FINAL V2
+SHREE GAURI LOGIN REDIRECT + CUSTOMER PROFILE PHOTO
 
-Root cause fixed:
-The previous OTP challenge table was in Supabase's private schema.
-The website API accessed Supabase through PostgREST, which does not expose that schema.
-Therefore the OTP send route failed before the email was sent.
+Database/storage setup has already been applied to the live Supabase project.
 
-The live database now has public.email_otp_challenges with:
-- RLS enabled
-- no anon/authenticated access
-- service_role-only CRUD
+Changes:
+1. Normal successful login -> customer lands on main Shree Gauri storefront.
+2. Login initiated from checkout -> customer returns directly to checkout.
+3. Customer dashboard avatar is editable.
+4. Customer can upload JPG/PNG/WEBP up to 3 MB.
+5. Photo is stored in a dedicated customer-avatars bucket and saved to the customer profile.
+6. PhonePe, checkout/payment logic, products and storefront design are unchanged.
 
-Upload this ZIP contents to the repository root.
+Upload this ZIP contents to the existing GitHub repository root, preserving folders.
