@@ -16,7 +16,28 @@ export async function POST(request: Request) {
     admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const created = await admin.rpc("create_store_order", { payload });
+
+    const authorization = request.headers.get("authorization") || "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+    if (!token)
+      return NextResponse.json({ error: "Please log in to your Shree Gauri account before checkout." }, { status: 401 });
+
+    const { data: authData, error: authError } = await admin.auth.getUser(token);
+    const authUser = authData?.user;
+    if (authError || !authUser)
+      return NextResponse.json({ error: "Your login session has expired. Please log in again." }, { status: 401 });
+
+    const authenticatedPayload = {
+      ...payload,
+      authenticated_user_id: authUser.id,
+      customer: {
+        ...(payload?.customer || {}),
+        email: authUser.email || payload?.customer?.email || "",
+        phone: authUser.phone || payload?.customer?.phone || "",
+      },
+    };
+
+    const created = await admin.rpc("create_store_order", { payload: authenticatedPayload });
     if (created.error) throw new Error(created.error.message);
     storeOrder = created.data;
 
@@ -32,17 +53,12 @@ export async function POST(request: Request) {
         redirectUrl,
       });
 
-      if (!phonePeOrder?.redirectUrl) {
-        throw new Error("PhonePe did not return a checkout URL.");
-      }
+      if (!phonePeOrder?.redirectUrl) throw new Error("PhonePe did not return a checkout URL.");
 
-      const saved = await admin
-        .from("orders")
-        .update({
-          payment_provider: "phonepe",
-          payment_reference: merchantOrderId,
-        })
-        .eq("id", storeOrder.order_id);
+      const saved = await admin.from("orders").update({
+        payment_provider: "phonepe",
+        payment_reference: merchantOrderId,
+      }).eq("id", storeOrder.order_id);
       if (saved.error) throw new Error(saved.error.message);
 
       return NextResponse.json({
@@ -55,46 +71,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (!keyId || !keySecret)
-      return NextResponse.json({ error: "Razorpay is not configured." }, { status: 503 });
-
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: Math.round(Number(storeOrder.total_inr) * 100),
-        currency: "INR",
-        receipt: storeOrder.order_number,
-        notes: { store_order_id: storeOrder.order_id },
-      }),
-    });
-    const razorpayOrder = await response.json();
-    if (!response.ok)
-      throw new Error(razorpayOrder?.error?.description || "Unable to start Razorpay payment.");
-
-    await admin
-      .from("orders")
-      .update({
-        payment_provider: "razorpay",
-        payment_reference: razorpayOrder.id,
-      })
-      .eq("id", storeOrder.order_id);
-
-    return NextResponse.json({
-      provider: "razorpay",
-      key: keyId,
-      razorpay_order_id: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: "INR",
-      store_order_id: storeOrder.order_id,
-      order_number: storeOrder.order_number,
-      reservation_expires_at: storeOrder.reservation_expires_at,
-    });
+    return NextResponse.json({ error: "Only PhonePe checkout is currently enabled." }, { status: 503 });
   } catch (error) {
     if (admin && storeOrder?.order_id) {
       try {
