@@ -24,7 +24,10 @@ async function sendOtpEmail(to: string, code: string) {
 
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       from,
       to: [to],
@@ -33,7 +36,10 @@ async function sendOtpEmail(to: string, code: string) {
     }),
   });
 
-  if (!r.ok) throw new Error(`Unable to send verification email (${r.status}).`);
+  if (!r.ok) {
+    const detail = await r.text().catch(() => "");
+    throw new Error(`Unable to send verification email (${r.status})${detail ? `: ${detail}` : ""}`);
+  }
 }
 
 export async function POST(request: Request) {
@@ -53,7 +59,6 @@ export async function POST(request: Request) {
 
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      db: { schema: "private" },
     });
 
     const recent = await admin
@@ -63,6 +68,8 @@ export async function POST(request: Request) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (recent.error) throw recent.error;
 
     if (recent.data?.created_at) {
       const age = Date.now() - new Date(recent.data.created_at).getTime();
@@ -87,6 +94,7 @@ export async function POST(request: Request) {
       full_name: fullName || null,
       expires_at: expiresAt,
     });
+
     if (created.error) throw created.error;
 
     try {
@@ -98,8 +106,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, challenge_id: challengeId });
   } catch (error) {
+    console.error("EMAIL_OTP_SEND_ERROR", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to send verification code." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to send verification code.",
+      },
       { status: 400 },
     );
   }
