@@ -1,13 +1,6 @@
-SHREE GAURI LOGIN REDIRECT + CUSTOMER PROFILE PHOTO
+Upload the scripts folder to the ROOT of your existing shreegauri GitHub repo.
+Then edit package.json and add this to the END of the existing prebuild command:
+ && node scripts/apply-phonepe-finalization-fix.mjs
 
-Database/storage setup has already been applied to the live Supabase project.
-
-Changes:
-1. Normal successful login -> customer lands on main Shree Gauri storefront.
-2. Login initiated from checkout -> customer returns directly to checkout.
-3. Customer dashboard avatar is editable.
-4. Customer can upload JPG/PNG/WEBP up to 3 MB.
-5. Photo is stored in a dedicated customer-avatars bucket and saved to the customer profile.
-6. PhonePe, checkout/payment logic, products and storefront design are unchanged.
-
-Upload this ZIP contents to the existing GitHub repository root, preserving folders.
+Wait for Vercel deployment to show Ready. Do not make another payment before that.
+The live Supabase payment finalizer has already been corrected separately.

@@ -1,0 +1,12 @@
+import fs from "fs";
+const status="app/api/payments/status/route.ts", hook="app/api/payments/phonepe-webhook/route.ts";
+let s=fs.readFileSync(status,"utf8");
+s=s.replace('const phonePeStatus = await getPhonePeOrderStatus(String(order.payment_reference));','const phonePeStatus = await getPhonePeOrderStatus(String(order.id));');
+s=s.replace('p_payment_reference: String(order.payment_reference),','p_payment_reference: String(phonePeStatus?.paymentDetails?.find((x) => String(x?.state || "").toUpperCase() === "COMPLETED")?.transactionId || phonePeStatus?.orderId || order.id),');
+fs.writeFileSync(status,s);
+let h=fs.readFileSync(hook,"utf8");
+h=h.replace('const merchantOrderId = String(payload?.merchantOrderId || "");','const merchantOrderId = String(payload?.merchantOrderId || payload?.originalMerchantOrderId || "");');
+h=h.replace('.eq("payment_reference", merchantOrderId)','.eq("id", merchantOrderId)');
+h=h.replace('p_payment_reference: merchantOrderId,','p_payment_reference: String(payload?.paymentDetails?.find((x) => String(x?.state || "").toUpperCase() === "COMPLETED")?.transactionId || payload?.orderId || merchantOrderId),');
+fs.writeFileSync(hook,h);
+console.log("PhonePe finalization fix applied");
