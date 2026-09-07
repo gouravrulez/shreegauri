@@ -1,11 +1,15 @@
-SHREE GAURI - CONSOLIDATED PHONEPE BUILD FIX
+SHREE GAURI IMAGE SPEED FIX
 
-Upload these items to the ROOT of the existing GitHub repository:
-- package.json  (replace the existing one)
-- scripts/apply-phonepe-finalization-fix.mjs
-- scripts/apply-phonepe-typescript-fix.mjs
+Upload the CONTENTS of this ZIP to the ROOT of gouravrulez/shreegauri.
 
-Commit the upload.
-Wait for Vercel to finish and show READY.
+Replace package.json when GitHub asks.
+Upload scripts/apply-image-speed-fix.mjs into the scripts folder.
+Commit changes and wait for Vercel READY.
 
-Do not make another payment until the deployment is READY.
+What this changes:
+- Product grid requests ~520px optimized Supabase thumbnails instead of full originals.
+- Category cards request ~240px thumbnails.
+- Cart requests ~160px thumbnails.
+- Lazy loading + async image decoding.
+- Original product images remain unchanged in storage and available for detail views.
+- No PhonePe/payment/database/admin/design changes.
