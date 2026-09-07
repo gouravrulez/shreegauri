@@ -1,15 +1,13 @@
-SHREE GAURI IMAGE SPEED FIX
+SHREE GAURI ZERO-COST AUTH CLEANUP
 
 Upload the CONTENTS of this ZIP to the ROOT of gouravrulez/shreegauri.
+Replace package.json and upload scripts/apply-zero-cost-auth-cleanup.mjs.
+Commit and wait for Vercel READY.
 
-Replace package.json when GitHub asks.
-Upload scripts/apply-image-speed-fix.mjs into the scripts folder.
-Commit changes and wait for Vercel READY.
-
-What this changes:
-- Product grid requests ~520px optimized Supabase thumbnails instead of full originals.
-- Category cards request ~240px thumbnails.
-- Cart requests ~160px thumbnails.
-- Lazy loading + async image decoding.
-- Original product images remain unchanged in storage and available for detail views.
-- No PhonePe/payment/database/admin/design changes.
+Result:
+- Email OTP stays active and working.
+- Mobile OTP button is hidden because real SMS delivery needs an SMS provider.
+- Customer mobile number remains available in Profile / Address / Checkout.
+- Existing automatic order-confirmation EMAIL remains unchanged.
+- PhonePe/payment logic is not changed by this package.
+- No paid SMS/WhatsApp service is added.
