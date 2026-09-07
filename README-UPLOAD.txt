@@ -1,9 +1,11 @@
-SHREE GAURI PHONEPE FIX
+SHREE GAURI - CONSOLIDATED PHONEPE BUILD FIX
 
-Upload BOTH items from this ZIP to the ROOT of the existing GitHub repository:
-1. package.json (replace the existing package.json)
-2. scripts/apply-phonepe-finalization-fix.mjs (inside scripts folder)
+Upload these items to the ROOT of the existing GitHub repository:
+- package.json  (replace the existing one)
+- scripts/apply-phonepe-finalization-fix.mjs
+- scripts/apply-phonepe-typescript-fix.mjs
 
-Commit changes, then wait for Vercel to show Ready.
+Commit the upload.
+Wait for Vercel to finish and show READY.
 
-Do not make another payment until verification.
+Do not make another payment until the deployment is READY.
