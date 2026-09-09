@@ -221,3 +221,50 @@ body {
 
 /* International storefront upgrade */
 .global-tools{display:flex!important;align-items:center;gap:10px!important}.global-tools label{display:flex;align-items:center;gap:5px;font-size:10px}.global-tools select{border:1px solid #ffffff55;background:#fff;color:#3a0409;border-radius:4px;padding:3px 5px;font-size:10px}.international-note{background:#fff5df;border-top:1px solid #ecd7a9;border-bottom:1px solid #ecd7a9;padding:16px 5vw;display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;color:#54250d}.international-note b{font-family:Georgia,serif}.international-note small{color:#765c4b;max-width:650px}.checkout-grid select{width:100%;padding:12px;border:1px solid #d8c9b9;background:white}.fx-note,.international-checkout-note{font-size:12px;line-height:1.5;color:#755f58;text-align:center}.international-checkout-note{background:#fff0dc;border:1px solid #ecd1aa;padding:12px;border-radius:5px}.international-checkout-note a{font-weight:800;color:#7b1420}@media(max-width:900px){.global-tools{display:flex!important;width:100%;justify-content:center}.global-tools>label{display:flex!important}.global-tools>a,.global-tools>svg{display:none!important}.international-note{flex-direction:column;gap:5px;padding:14px 18px}.international-note span{font-size:12px}.international-note small{font-size:10px}}
+
+/* Always-visible international selector */
+.international-selector-bar{
+  display:flex!important;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  padding:8px 5vw;
+  background:#fffaf2;
+  border-bottom:1px solid #ead8bc;
+  position:relative;
+  z-index:30;
+}
+.international-selector-bar label{
+  display:flex!important;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:700;
+  color:#54250d;
+}
+.international-selector-bar select{
+  display:block!important;
+  min-width:92px;
+  border:1px solid #d9c5a6;
+  background:#fff;
+  color:#3a0409;
+  border-radius:6px;
+  padding:7px 9px;
+  font-size:12px;
+}
+@media(max-width:900px){
+  .international-selector-bar{
+    justify-content:center;
+    gap:8px;
+    padding:8px 10px;
+    flex-wrap:wrap;
+  }
+  .international-selector-bar label{
+    font-size:11px;
+  }
+  .international-selector-bar select{
+    min-width:84px;
+    padding:6px 8px;
+    font-size:11px;
+  }
+}

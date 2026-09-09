@@ -610,6 +610,40 @@ export default function Storefront() {
           </button>
         ))}
       </nav>
+      <div className="international-selector-bar" aria-label="Country and currency selector">
+        <label>
+          <span>Country</span>
+          <select
+            value={checkout.country}
+            onChange={(e) =>
+              setCheckout({ ...checkout, country: e.target.value })
+            }
+            aria-label="Select country"
+          >
+            <option>India</option>
+            <option>United States</option>
+            <option>United Kingdom</option>
+            <option>United Arab Emirates</option>
+            <option>Canada</option>
+            <option>Australia</option>
+            <option>Singapore</option>
+            <option>European Union</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>
+          <span>Currency</span>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+            aria-label="Select currency"
+          >
+            {(["INR","USD","GBP","EUR","AED","CAD","AUD","SGD"] as CurrencyCode[]).map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       {menu && (
         <aside className="drawer">
           <button onClick={() => setMenu(false)}>

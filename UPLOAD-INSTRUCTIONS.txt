@@ -1,0 +1,6 @@
+Upload ONLY these two files to the same paths in your Shree Gauri GitHub branch:
+1) app/storefront.tsx
+2) app/globals.css
+
+Do not upload the whole website package.
+These files add an always-visible Country + Currency selector for desktop and mobile.
