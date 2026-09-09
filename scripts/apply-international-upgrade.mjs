@@ -6,6 +6,8 @@ const files = [
   "app/storefront.tsx",
   "app/globals.css",
   "app/layout.tsx",
+  "app/cart-fix.tsx",
+  "app/lib/supabase.ts",
   "app/shipping-returns/page.tsx",
   "app/privacy/page.tsx",
   "app/terms/page.tsx",
