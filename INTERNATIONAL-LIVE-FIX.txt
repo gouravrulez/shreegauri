@@ -1,0 +1,3 @@
+International storefront is applied directly to app/.
+Visible currency selector: INR, USD, GBP, EUR, AED, CAD, AUD, SGD.
+India remains the payment-enabled market; international payment is not falsely enabled.

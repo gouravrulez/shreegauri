@@ -35,6 +35,7 @@ type C = {
 type P = {
   id: string;
   category_id: string | null;
+  category_ids: string[];
   name: string;
   slug: string;
   short_description: string;
@@ -65,6 +66,20 @@ type Checkout = {
   city: string;
   state: string;
   pincode: string;
+  country: string;
+};
+type CurrencyCode = "INR" | "USD" | "GBP" | "EUR" | "AED" | "CAD" | "AUD" | "SGD";
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipient_name: string | null;
+  phone: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
 };
 type S = {
   announcement: string;
@@ -82,15 +97,15 @@ type S = {
 };
 const fallback: S = {
   announcement:
-    "OPEN 24/7 (Including Sundays)  |  Free Shipping Pan India  |  Limited One-of-One Products",
+    "OPEN 24/7 (Including Sundays)  |  Secure Shopping  |  Limited One-of-One Products",
   hero_title: "Divine Energy. Timeless Beauty.",
   hero_text:
-    "Authentic gemstones, sacred jewellery, Rudraksha and spiritual products for prosperity, protection and peace.",
+    "Gemstones, sacred jewellery, Rudraksha and spiritual products thoughtfully selected for meaningful living.",
   hero_image_url: "/maa-lakshmi-hero-fast.webp",
   brand_logo_url: "",
   founder_image_url: "",
   founder_message:
-    "At Shree Gauri, the things we wear and keep close can carry more than beauty. They can carry meaning, memories, tradition and a sense of connection. Every collection is selected with authenticity, thoughtful craftsmanship and transparent service at its heart.",
+    "At Shree Gauri, the things we wear and keep close can carry more than beauty. They can carry meaning, memories, tradition and a sense of connection. Every collection is selected with thoughtful care and transparent service at its heart.",
   founder_name: "Gourav Sharma",
   whatsapp: "917400617601",
   email: "gauritechnologiespvt@gmail.com",
@@ -109,7 +124,10 @@ export default function Storefront() {
     [item, setItem] = useState<P | null>(null),
     [selectedImage, setSelectedImage] = useState(""),
     [qty, setQty] = useState(1),
-    [cart, setCart] = useState<P[]>([]),
+    [cart, setCart] = useState<P[]>(() => {
+      if (typeof window === "undefined") return [];
+      try { return JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { return []; }
+    }),
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
     [categoryFilter, setCategoryFilter] = useState("all"),
@@ -123,6 +141,12 @@ export default function Storefront() {
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
+    [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
+    [selectedAddressId, setSelectedAddressId] = useState(""),
+    [currency, setCurrency] = useState<CurrencyCode>(() => {
+      if (typeof window === "undefined") return "INR";
+      return (localStorage.getItem("sg_currency") as CurrencyCode) || "INR";
+    }),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -132,7 +156,12 @@ export default function Storefront() {
       city: "",
       state: "",
       pincode: "",
+      country: "India",
     });
+  useEffect(() => {
+    localStorage.setItem("sg_currency", currency);
+  }, [currency]);
+
   useEffect(() => {
     Promise.all([
       supabase
@@ -143,7 +172,7 @@ export default function Storefront() {
       supabase
         .from("products")
         .select(
-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
+          "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
         )
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -160,6 +189,12 @@ export default function Storefront() {
           b.data.map((p: any) => ({
             ...p,
             image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+            category_ids:
+              Array.isArray(p.category_ids) && p.category_ids.length
+                ? p.category_ids
+                : p.category_id
+                  ? [p.category_id]
+                  : [],
           })) as P[],
         );
       if (d.data)
@@ -167,21 +202,136 @@ export default function Storefront() {
       if (r.data) setReviews(r.data as R[]);
     });
   }, []);
-  const money = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("sg_cart", JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("checkout") === "1") {
+      openSecureCheckout();
+    }
+  }, []);
+
+  async function openSecureCheckout() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      localStorage.setItem("sg_cart", JSON.stringify(cart));
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
+
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("auth_user_id", session.user.id)
+      .maybeSingle();
+
+    const profileName = customer?.full_name || session.user.user_metadata?.full_name || "";
+    const profileEmail = customer?.email || session.user.email || "";
+    const profilePhone = customer?.phone || session.user.phone || "";
+
+    let addresses: SavedAddress[] = [];
+    if (customer?.id) {
+      const { data } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true });
+      addresses = (data || []) as SavedAddress[];
+    }
+
+    setCheckoutAddresses(addresses);
+    const chosen = addresses.find((a) => a.is_default) || addresses[0];
+    setSelectedAddressId(chosen?.id || "");
+    setCheckout({
+      name: chosen?.recipient_name || profileName,
+      email: profileEmail,
+      phone: chosen?.phone || profilePhone,
+      line1: chosen?.line1 || "",
+      line2: chosen?.line2 || "",
+      city: chosen?.city || "",
+      state: chosen?.state || "",
+      pincode: chosen?.pincode || "",
+      country: "India",
+    });
+    setCheckoutMsg(addresses.length ? "" : "Add a delivery address here or save one in My Account.");
+    setCheckoutOpen(true);
+  }
+
+  function chooseCheckoutAddress(id: string) {
+    setSelectedAddressId(id);
+    const a = checkoutAddresses.find((x) => x.id === id);
+    if (!a) return;
+    setCheckout((c) => ({
+      ...c,
+      name: a.recipient_name || c.name,
+      phone: a.phone || c.phone,
+      line1: a.line1,
+      line2: a.line2 || "",
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+      country: "India",
+    }));
+  }
+
+
+  const fastImage = (url: string, width = 520, quality = 72) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (
+        u.hostname.endsWith(".supabase.co") &&
+        u.pathname.includes("/storage/v1/object/public/")
+      ) {
+        u.pathname = u.pathname.replace(
+          "/storage/v1/object/public/",
+          "/storage/v1/render/image/public/",
+        );
+        u.searchParams.set("width", String(width));
+        u.searchParams.set("quality", String(quality));
+        u.searchParams.set("resize", "contain");
+        return u.toString();
+      }
+    } catch {}
+    return url;
+  };
+
+  const fxPerInr: Record<CurrencyCode, number> = {
+    INR: 1, USD: 0.0111, GBP: 0.0082, EUR: 0.0095, AED: 0.0408,
+    CAD: 0.0152, AUD: 0.0168, SGD: 0.0143,
+  };
+  const currencyLocale: Record<CurrencyCode, string> = {
+    INR: "en-IN", USD: "en-US", GBP: "en-GB", EUR: "en-IE", AED: "en-AE",
+    CAD: "en-CA", AUD: "en-AU", SGD: "en-SG",
+  };
+  const money = (n: number) => {
+    const converted = n * fxPerInr[currency];
+    return new Intl.NumberFormat(currencyLocale[currency], {
       style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(n);
+      currency,
+      maximumFractionDigits: currency === "INR" ? 0 : 2,
+    }).format(converted);
+  };
   const go = (v: string) => {
     setView(v);
     setMenu(false);
     setItem(null);
-    setTimeout(
-      () =>
-        window.scrollTo({ top: v === "home" ? 0 : 560, behavior: "smooth" }),
-      20,
-    );
+    setTimeout(() => {
+      const isCatalogView =
+        v === "shop" ||
+        v === "new" ||
+        v === "best" ||
+        cats.some((c) => c.slug === v);
+      const catalog = document.getElementById("products-section");
+      if (isCatalogView && catalog) {
+        catalog.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        window.scrollTo({ top: v === "home" ? 0 : 560, behavior: "smooth" });
+      }
+    }, 80);
   };
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
@@ -228,8 +378,14 @@ export default function Storefront() {
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
     if (!cart.length) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      localStorage.setItem("sg_cart", JSON.stringify(cart));
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
     setCheckoutBusy(true);
-    setCheckoutMsg("Opening secure Razorpay payment...");
+    setCheckoutMsg("Opening secure payment...");
     const grouped = Object.values(
       cart.reduce(
         (a, p) => {
@@ -252,17 +408,31 @@ export default function Storefront() {
         city: checkout.city,
         state: checkout.state,
         pincode: checkout.pincode,
+        country: checkout.country,
       },
       items: grouped,
     };
+    if (checkout.country !== "India") {
+      setCheckoutBusy(false);
+      setCheckoutMsg("International online payment is not enabled yet. Please contact Shree Gauri for shipping and payment options for your destination.");
+      return;
+    }
     try {
       const response = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(payload),
       });
       const order = await response.json();
       if (!response.ok) throw new Error(order.error);
+      if (order.provider === "phonepe" && order.redirect_url) {
+        setCheckoutMsg("Redirecting to secure PhonePe checkout...");
+        window.location.assign(order.redirect_url);
+        return;
+      }
       if (!(window as any).Razorpay) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
@@ -335,9 +505,12 @@ export default function Storefront() {
           view === "shop" ||
           view === "new" ||
           view === "best" ||
-          activeCategory === p.category_id) &&
+          activeCategory === p.category_id ||
+          (!!activeCategory && p.category_ids.includes(activeCategory))) &&
         (view !== "best" || p.is_featured) &&
-        (categoryFilter === "all" || p.category_id === categoryFilter) &&
+        (categoryFilter === "all" ||
+          p.category_id === categoryFilter ||
+          p.category_ids.includes(categoryFilter)) &&
         (!stockOnly || p.stock_quantity > 0) &&
         (!maxPrice || Number(p.price_inr) <= Number(maxPrice)),
     );
@@ -364,8 +537,14 @@ export default function Storefront() {
   return (
     <main>
       <div className="topbar">
-        <span>{s.announcement}</span>
-        <span>
+        <span>{s.announcement?.replace("Free Shipping Pan India", "Secure Shopping")}</span>
+        <span className="global-tools">
+          <label>Country <select value={checkout.country} onChange={(e) => setCheckout({ ...checkout, country: e.target.value })}>
+            <option>India</option><option>United States</option><option>United Kingdom</option><option>United Arab Emirates</option><option>Canada</option><option>Australia</option><option>Singapore</option><option>European Union</option><option>Other</option>
+          </select></label>
+          <label>Currency <select value={currency} onChange={(e) => setCurrency(e.target.value as CurrencyCode)}>
+            {(["INR","USD","GBP","EUR","AED","CAD","AUD","SGD"] as CurrencyCode[]).map((c)=><option key={c} value={c}>{c}</option>)}
+          </select></label>
           Follow Us:{" "}
           <a href={s.instagram} aria-label="Instagram">
             <FaInstagram />
@@ -476,13 +655,13 @@ export default function Storefront() {
           <section className="trust">
             <div>
               <ShieldCheck />
-              <b>100% Authentic</b>
-              <small>Carefully selected</small>
+              <b>Carefully Selected</b>
+              <small>Chosen with care</small>
             </div>
             <div>
               <Gem />
-              <b>Premium Quality</b>
-              <small>Genuine craftsmanship</small>
+              <b>Thoughtful Collections</b>
+              <small>Meaningful selections</small>
             </div>
             <div>
               <PackageCheck />
@@ -494,6 +673,11 @@ export default function Storefront() {
               <b>Open 24/7</b>
               <small>Including Sundays</small>
             </div>
+          </section>
+          <section className="international-note">
+            <b>Shree Gauri Worldwide</b>
+            <span>Browse in INR, USD, GBP, EUR, AED, CAD, AUD or SGD.</span>
+            <small>Non-INR prices are approximate display conversions. Shipping availability, delivery times, customs duties and taxes vary by destination.</small>
           </section>
           <section className="devotion-note">
             <span>✦</span>
@@ -521,7 +705,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 240, 68)} alt={c.name} loading="lazy" decoding="async" width={240} height={240} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -544,7 +728,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 240, 68)} alt={c.name} loading="lazy" decoding="async" width={240} height={240} />
                       ) : (
                         <span>✦</span>
                       )}
@@ -567,7 +751,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 240, 68)} alt={c.name} loading="lazy" decoding="async" width={240} height={240} />
                       ) : (
                         <span>
                           {(
@@ -598,7 +782,7 @@ export default function Storefront() {
         view === "new" ||
         view === "best" ||
         cats.some((c) => c.slug === view)) && (
-        <section className="section cream catalog">
+        <section id="products-section" className="section cream catalog">
           <small className="kicker">CURATED FOR YOU</small>
           <h2>
             {view === "home"
@@ -727,10 +911,15 @@ export default function Storefront() {
                     >
                       <img
                         src={
-                          p.primary_image_url ||
-                          "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=85"
+                          p.primary_image_url
+                            ? fastImage(p.primary_image_url, 520, 72)
+                            : "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=520&q=72"
                         }
                         alt={p.name}
+                        loading="lazy"
+                        decoding="async"
+                        width={520}
+                        height={520}
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
@@ -772,8 +961,8 @@ export default function Storefront() {
           <small className="kicker">OUR STORY</small>
           <h1>Rooted in devotion. Chosen with care.</h1>
           <p>
-            Shree Gauri brings together authentic gemstones, jewellery and
-            spiritual essentials in one trusted destination. Meaningful products
+            Shree Gauri brings together gemstones, jewellery and
+            spiritual essentials in one thoughtfully curated destination. Meaningful products
             deserve honest guidance, careful selection and warm service.
           </p>
         </section>
@@ -810,7 +999,7 @@ export default function Storefront() {
           <h1>Your Cart</h1>
           {cart.map((p, i) => (
             <div className="cart" key={i}>
-              <img src={p.primary_image_url} />
+              <img src={fastImage(p.primary_image_url, 160, 65)} alt={p.name} loading="lazy" decoding="async" width={160} height={160} />
               <b>{p.name}</b>
               <span>{money(Number(p.price_inr))}</span>
               <button
@@ -828,7 +1017,7 @@ export default function Storefront() {
               </h3>
               <button
                 className="gold link"
-                onClick={() => setCheckoutOpen(true)}
+                onClick={openSecureCheckout}
               >
                 PLACE ORDER
               </button>
@@ -842,6 +1031,8 @@ export default function Storefront() {
         <img
           src={s.founder_image_url || "/gourav-sharma-founder.jpeg"}
           alt="Gourav Sharma, Founder of Shree Gauri"
+          loading="lazy"
+          decoding="async"
         />
         <div>
           <small className="kicker">A PERSONAL NOTE</small>
@@ -858,6 +1049,7 @@ export default function Storefront() {
           <a href="mailto:gauritechnologiespvt@gmail.com">
             gauritechnologiespvt@gmail.com
           </a>
+          <a href="tel:+917400617601">+91 74006 17601</a>
         </div>
         <div>
           <b>Explore</b>
@@ -875,6 +1067,9 @@ export default function Storefront() {
           <button onClick={() => go("about")}>About Us</button>
           <button onClick={() => go("contact")}>Contact Us</button>
           <a href="/login">Customer Login</a>
+          <a href="/shipping-returns">Shipping & Returns</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
         </div>
         <div className="footer-connect">
           <b>Connect</b>
@@ -927,8 +1122,22 @@ export default function Storefront() {
             <small className="kicker">SECURE CHECKOUT</small>
             <h2>Delivery Details</h2>
             <p>
-              Enter your delivery address, then complete payment securely
-              through Razorpay.
+              Select a saved delivery address or enter another address. India orders can continue to secure PhonePe payment; international availability is confirmed by destination.
+            </p>
+            {checkoutAddresses.length > 0 && (
+              <label className="checkout-address-select">
+                Saved Address
+                <select value={selectedAddressId} onChange={(e) => chooseCheckoutAddress(e.target.value)}>
+                  {checkoutAddresses.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}{a.is_default ? " (Default)" : ""} — {a.line1}, {a.city}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <p className="checkout-account-note">
+              Logged-in checkout • <a href="/login?section=addresses">Manage saved addresses</a>
             </p>
             <div className="checkout-grid">
               <label>
@@ -981,6 +1190,12 @@ export default function Storefront() {
                   }
                 />
               </label>
+              <label className="wide">
+                Country / Region
+                <select required value={checkout.country} onChange={(e) => setCheckout({ ...checkout, country: e.target.value })}>
+                  <option>India</option><option>United States</option><option>United Kingdom</option><option>United Arab Emirates</option><option>Canada</option><option>Australia</option><option>Singapore</option><option>European Union</option><option>Other</option>
+                </select>
+              </label>
               <label>
                 City
                 <input
@@ -992,7 +1207,7 @@ export default function Storefront() {
                 />
               </label>
               <label>
-                State
+                State / Province / Region
                 <input
                   required
                   value={checkout.state}
@@ -1002,11 +1217,11 @@ export default function Storefront() {
                 />
               </label>
               <label>
-                PIN Code
+                Postal / ZIP Code
                 <input
                   required
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
+                  inputMode={checkout.country === "India" ? "numeric" : "text"}
+                  pattern={checkout.country === "India" ? "[0-9]{6}" : undefined}
                   value={checkout.pincode}
                   onChange={(e) =>
                     setCheckout({ ...checkout, pincode: e.target.value })
@@ -1020,10 +1235,12 @@ export default function Storefront() {
                 {money(cart.reduce((sum, p) => sum + Number(p.price_inr), 0))}
               </strong>
             </div>
-            <button className="place-order" disabled={checkoutBusy}>
+            {currency !== "INR" && <p className="fx-note">Approximate display conversion only. India checkout is charged in INR.</p>}
+            {checkout.country !== "India" && <p className="international-checkout-note">International online payment is not enabled yet. Contact us at <a href={`mailto:${s.email}`}>{s.email}</a> for destination-specific shipping and payment options.</p>}
+            <button className="place-order" disabled={checkoutBusy || checkout.country !== "India"}>
               {checkoutBusy
                 ? "STARTING PAYMENT..."
-                : "PROCEED TO SECURE PAYMENT"}
+                : checkout.country === "India" ? "PROCEED TO SECURE PAYMENT" : "INTERNATIONAL PAYMENT NOT ENABLED"}
             </button>
             {checkoutMsg && <p className="checkout-message">{checkoutMsg}</p>}
           </form>
@@ -1063,7 +1280,7 @@ export default function Storefront() {
               />
             </div>
             <div className="product-copy">
-              <small className="kicker">AUTHENTIC • CAREFULLY SELECTED</small>
+              <small className="kicker">CAREFULLY SELECTED • THOUGHTFULLY PRESENTED</small>
               <h2>{item.name}</h2>
               <div className="rating-line">
                 <span>
@@ -1089,7 +1306,7 @@ export default function Storefront() {
               <div className="purchase-promises">
                 <span>
                   <ShieldCheck />
-                  Authentic products
+                  Carefully selected products
                 </span>
                 <span>
                   <PackageCheck />
