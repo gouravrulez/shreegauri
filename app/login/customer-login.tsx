@@ -14,6 +14,7 @@ type Profile = {
   email: string;
   phone: string;
   date_of_birth: string;
+  profile_image_url: string;
 };
 
 type Address = {
@@ -52,7 +53,7 @@ type Order = {
 };
 
 const blankProfile: Profile = {
-  full_name: "", email: "", phone: "", date_of_birth: ""
+  full_name: "", email: "", phone: "", date_of_birth: "", profile_image_url: ""
 };
 
 const blankAddress = {
@@ -71,6 +72,7 @@ export default function CustomerLogin() {
   const [identifier, setIdentifier] = useState("");
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
+  const [challengeId, setChallengeId] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
   const [user, setUser] = useState<any>(null);
@@ -109,11 +111,14 @@ export default function CustomerLogin() {
     const data = { full_name: fullName };
     if (channel === "email") {
       const email = identifier.trim().toLowerCase();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true, data },
+      const response = await fetch("/api/auth/email-otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, full_name: fullName }),
       });
-      if (error) return setMessage(error.message);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(result?.error || "Unable to send verification code.");
+      setChallengeId(String(result.challenge_id || ""));
     } else {
       let phone = identifier.replace(/\s+/g, "");
       if (!phone.startsWith("+")) phone = `+91${phone.replace(/^0+/, "")}`;
@@ -131,21 +136,45 @@ export default function CustomerLogin() {
   async function verifyOtp(e: FormEvent) {
     e.preventDefault();
     setMessage("Verifying...");
-    const result =
-      channel === "email"
-        ? await supabase.auth.verifyOtp({
-            email: identifier.trim().toLowerCase(),
-            token: otp.trim(),
-            type: "email",
-          })
-        : await supabase.auth.verifyOtp({
-            phone: identifier.trim(),
-            token: otp.trim(),
-            type: "sms",
-          });
 
-    if (result.error) return setMessage(result.error.message);
+    if (channel === "email") {
+      const response = await fetch("/api/auth/email-otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: identifier.trim().toLowerCase(),
+          code: otp.trim(),
+          challenge_id: challengeId,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(result?.error || "Unable to verify code.");
+
+      const access_token = result?.session?.access_token;
+      const refresh_token = result?.session?.refresh_token;
+
+      if (!access_token || !refresh_token) {
+        return setMessage("Unable to establish your login session.");
+      }
+
+      const setResult = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (setResult.error) return setMessage(setResult.error.message);
+    } else {
+      const result = await supabase.auth.verifyOtp({
+        phone: identifier.trim(),
+        token: otp.trim(),
+        type: "sms",
+      });
+
+      if (result.error) return setMessage(result.error.message);
+    }
+
     setMessage("Welcome to Shree Gauri.");
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("returnTo") === "checkout") {
       window.location.href = "/?checkout=1";
@@ -182,6 +211,7 @@ export default function CustomerLogin() {
         email: customer.email || user.email || "",
         phone: customer.phone || user.phone || "",
         date_of_birth: customer.date_of_birth || "",
+        profile_image_url: customer.profile_image_url || "",
       });
 
       const [a, o] = await Promise.all([
@@ -219,6 +249,66 @@ export default function CustomerLogin() {
     setSaving(false);
     setMessage(error?.message || "Profile updated.");
     if (!error) loadAccount();
+  }
+
+  async function uploadProfilePhoto(file?: File) {
+    if (!file || !user || !profile.id) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setMessage("Please choose a JPG, PNG or WEBP image.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setMessage("Profile photo must be 3 MB or smaller.");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("Uploading profile photo...");
+
+    const ext =
+      file.type === "image/png" ? "png" :
+      file.type === "image/webp" ? "webp" : "jpg";
+
+    const path = `${user.id}/avatar.${ext}`;
+
+    const uploaded = await supabase.storage
+      .from("customer-avatars")
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type,
+        cacheControl: "3600",
+      });
+
+    if (uploaded.error) {
+      setSaving(false);
+      setMessage(uploaded.error.message);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("customer-avatars")
+      .getPublicUrl(path);
+
+    const imageUrl = `${publicData.publicUrl}?v=${Date.now()}`;
+
+    const updated = await supabase
+      .from("customers")
+      .update({
+        profile_image_url: imageUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id);
+
+    setSaving(false);
+
+    if (updated.error) {
+      setMessage(updated.error.message);
+      return;
+    }
+
+    setProfile((p) => ({ ...p, profile_image_url: imageUrl }));
+    setMessage("Profile photo updated.");
   }
 
   async function addAddress(e: FormEvent) {
@@ -295,14 +385,12 @@ export default function CustomerLogin() {
               <small>YOUR SHREE GAURI ACCOUNT</small>
               <h1>Login or Sign Up</h1>
 
-              <div className="otp-channel">
-                <button type="button" className={channel === "email" ? "active" : ""} onClick={() => { setChannel("email"); setIdentifier(""); setMessage(""); }}>
+              <div className="otp-channel email-only">
+                <button type="button" className="active">
                   EMAIL OTP
                 </button>
-                <button type="button" className={channel === "phone" ? "active" : ""} onClick={() => { setChannel("phone"); setIdentifier(""); setMessage(""); }}>
-                  MOBILE OTP
-                </button>
               </div>
+              <p className="auth-free-note">Secure password-free login. Your 6-digit code will be sent to your email.</p>
 
               <label>
                 Full Name <small>(first-time customers)</small>
@@ -310,12 +398,12 @@ export default function CustomerLogin() {
               </label>
 
               <label>
-                {channel === "email" ? "Email Address" : "Mobile Number"}
+                Email Address
                 <input
-                  type={channel === "email" ? "email" : "tel"}
+                  type="email"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={channel === "email" ? "you@example.com" : "9876543210"}
+                  placeholder="you@example.com"
                   required
                 />
               </label>
@@ -328,15 +416,15 @@ export default function CustomerLogin() {
               <a href="/">← Return to store</a>
               <small>SHREE GAURI VERIFICATION</small>
               <h1>Enter OTP</h1>
-              <p>We sent a verification code to {identifier}.</p>
+              <p>We sent a 6-digit verification code to {identifier}.</p>
               <label>
                 6-digit OTP
                 <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required />
               </label>
               {message && <p className="auth-message">{message}</p>}
               <button>VERIFY & CONTINUE</button>
-              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setMessage(""); }}>
-                Change email/mobile
+              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setChallengeId(""); setMessage(""); }}>
+                Change email
               </button>
             </form>
           )}
@@ -358,7 +446,24 @@ export default function CustomerLogin() {
 
       <div className="customer-dash-layout">
         <aside className="customer-dash-nav">
-          <div className="customer-avatar"><UserRound /></div>
+          <label className="customer-avatar customer-avatar-edit" title="Change profile photo">
+            {profile.profile_image_url ? (
+              <img src={profile.profile_image_url} alt="Customer profile" />
+            ) : (
+              <UserRound />
+            )}
+            <span>CHANGE PHOTO</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadProfilePhoto(file);
+                e.currentTarget.value = "";
+              }}
+              disabled={saving}
+            />
+          </label>
           <b>{profile.full_name || "Shree Gauri Customer"}</b>
           <small>{profile.email || profile.phone}</small>
           <button className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Home /> Account Overview</button>

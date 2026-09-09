@@ -37,13 +37,13 @@ export async function GET(request: Request) {
       throw new Error("This order is not awaiting a PhonePe payment.");
     }
 
-    const phonePeStatus = await getPhonePeOrderStatus(String(order.payment_reference));
+    const phonePeStatus = await getPhonePeOrderStatus(String(order.id));
     const state = String(phonePeStatus?.state || "").toUpperCase();
 
     if (state === "COMPLETED") {
       const { data, error } = await admin.rpc("finalize_paid_order", {
         p_order_id: order.id,
-        p_payment_reference: String(order.payment_reference),
+        p_payment_reference: String(phonePeStatus?.paymentDetails?.find((x: any) => String(x?.state || "").toUpperCase() === "COMPLETED")?.transactionId || phonePeStatus?.orderId || order.id),
       });
       if (error) throw new Error(error.message);
       if (!data?.already_paid) {

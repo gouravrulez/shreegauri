@@ -11,6 +11,7 @@ import {
   Settings,
   Star,
   ClipboardList,
+  Users,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -33,6 +34,23 @@ type Prod = {
   compare_at_price_inr: number | null;
   stock_quantity: number;
   category_id: string | null;
+  category_ids: string[];
+  sku: string | null;
+  product_type: string | null;
+  material: string | null;
+  gemstone_name: string | null;
+  natural_lab_status: string | null;
+  origin: string | null;
+  treatment: string | null;
+  certification: string | null;
+  shape: string | null;
+  color: string | null;
+  weight_grams: number | null;
+  carat_weight: number | null;
+  chakras: string[];
+  zodiac_signs: string[];
+  seo_title: string | null;
+  seo_description: string | null;
   primary_image_url: string;
   image_urls: string[];
   badge: string | null;
@@ -56,6 +74,21 @@ type OrderItem = {
   unit_price_inr: number;
   line_total_inr: number;
 };
+type Customer = {
+  id: string;
+  auth_user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  created_at: string;
+  updated_at: string;
+};
 type Order = {
   id: string;
   order_number: string;
@@ -66,6 +99,10 @@ type Order = {
   total_inr: number;
   payment_status: string;
   order_status: string;
+  courier_name: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  refund_status: string;
   created_at: string;
   order_items: OrderItem[];
 };
@@ -88,12 +125,32 @@ const blankProd = {
   compare_at_price_inr: null,
   stock_quantity: 0,
   category_id: "",
+  category_ids: [] as string[],
+  sku: "",
+  product_type: "",
+  material: "",
+  gemstone_name: "",
+  natural_lab_status: "",
+  origin: "",
+  treatment: "",
+  certification: "",
+  shape: "",
+  color: "",
+  weight_grams: "",
+  carat_weight: "",
+  chakras: [] as string[],
+  zodiac_signs: [] as string[],
+  seo_title: "",
+  seo_description: "",
   primary_image_url: "",
   image_urls: [] as string[],
   badge: "",
   is_active: true,
   is_featured: false,
 };
+const chakraOptions = ["Root", "Sacral", "Solar Plexus", "Heart", "Throat", "Third Eye", "Crown"];
+const zodiacOptions = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
     [email, setEmail] = useState("gauritechnologiespvt@gmail.com"),
@@ -104,6 +161,7 @@ export default function AdminDashboard() {
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
     [orders, setOrders] = useState<Order[]>([]),
+    [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
     [prod, setProd] = useState<any>(blankProd),
@@ -119,7 +177,7 @@ export default function AdminDashboard() {
     if (session) load();
   }, [session]);
   async function load() {
-    const [a, b, c, d, o] = await Promise.all([
+    const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
         .from("products")
@@ -134,6 +192,10 @@ export default function AdminDashboard() {
         .from("orders")
         .select("*,order_items(*)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("customers")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
     if (a.data) setCats(a.data);
     if (b.data)
@@ -141,11 +203,18 @@ export default function AdminDashboard() {
         b.data.map((p: any) => ({
           ...p,
           image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          category_ids:
+            Array.isArray(p.category_ids) && p.category_ids.length
+              ? p.category_ids
+              : p.category_id
+                ? [p.category_id]
+                : [],
         })),
       );
     if (c.data) setSettings(c.data);
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
+    if (u.data) setCustomers(u.data as Customer[]);
   }
   async function login(e: FormEvent) {
     e.preventDefault();
@@ -250,7 +319,18 @@ export default function AdminDashboard() {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
-      category_id: prod.category_id || null,
+      category_ids: Array.isArray(prod.category_ids) ? prod.category_ids : [],
+      category_id:
+        (Array.isArray(prod.category_ids) && prod.category_ids[0]) ||
+        prod.category_id ||
+        null,
+      sku: prod.sku?.trim() || null,
+      weight_grams: prod.weight_grams ? Number(prod.weight_grams) : null,
+      carat_weight: prod.carat_weight ? Number(prod.carat_weight) : null,
+      chakras: Array.isArray(prod.chakras) ? prod.chakras : [],
+      zodiac_signs: Array.isArray(prod.zodiac_signs) ? prod.zodiac_signs : [],
+      seo_title: prod.seo_title?.trim() || null,
+      seo_description: prod.seo_description?.trim() || null,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
@@ -279,6 +359,11 @@ export default function AdminDashboard() {
       .update({ ...settings, updated_at: new Date().toISOString() })
       .eq("id", 1);
     setNotice(error?.message || "Website content updated.");
+  }
+  async function updateFulfilment(id: string, changes: Record<string, any>) {
+    const { error } = await supabase.from("orders").update({ ...changes, updated_at: new Date().toISOString() }).eq("id", id);
+    setNotice(error?.message || "Order fulfilment updated.");
+    load();
   }
   async function updateOrder(id: string, order_status: string) {
     const { error } = await supabase
@@ -338,6 +423,16 @@ export default function AdminDashboard() {
           )}
         </button>
         <button
+          className={tab === "customers" ? "on" : ""}
+          onClick={() => setTab("customers")}
+        >
+          <Users />
+          Customers
+          {customers.filter((c) => c.auth_user_id).length > 0 && (
+            <b className="order-count">{customers.filter((c) => c.auth_user_id).length}</b>
+          )}
+        </button>
+        <button
           className={tab === "categories" ? "on" : ""}
           onClick={() => setTab("categories")}
         >
@@ -378,7 +473,9 @@ export default function AdminDashboard() {
             <h1>
               {tab === "orders"
                 ? "Customer Orders"
-                : tab === "categories"
+                : tab === "customers"
+                  ? "Customer Accounts"
+                  : tab === "categories"
                   ? "Categories & Subcategories"
                   : tab === "products"
                     ? "Products & Inventory"
@@ -389,6 +486,72 @@ export default function AdminDashboard() {
           </div>
           {notice && <p>{notice}</p>}
         </header>
+        {tab === "customers" && (
+          <div className="customers-admin">
+            <div className="customer-admin-summary">
+              <div><small>TOTAL CUSTOMER RECORDS</small><strong>{customers.length}</strong></div>
+              <div><small>REGISTERED ACCOUNTS</small><strong>{customers.filter((c) => c.auth_user_id).length}</strong></div>
+              <div><small>CUSTOMERS WITH ORDERS</small><strong>{new Set(orders.map((o) => o.email?.toLowerCase()).filter(Boolean)).size}</strong></div>
+            </div>
+            <div className="customer-admin-list">
+              {customers.length ? customers.map((c) => {
+                const customerOrders = orders.filter((o) =>
+                  (c.id && (o as any).customer_id === c.id) ||
+                  (!!c.email && !!o.email && o.email.toLowerCase() === c.email.toLowerCase())
+                );
+                const spent = customerOrders
+                  .filter((o) => o.payment_status === "paid")
+                  .reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+                return (
+                  <article key={c.id} className="customer-admin-card">
+                    <div className="customer-admin-head">
+                      <div>
+                        <span className={c.auth_user_id ? "account-live" : "account-guest"}>
+                          {c.auth_user_id ? "REGISTERED ACCOUNT" : "CHECKOUT CUSTOMER"}
+                        </span>
+                        <h2>{c.full_name || "Customer"}</h2>
+                        <small>Customer since {new Date(c.created_at).toLocaleDateString("en-IN")}</small>
+                      </div>
+                      <div className="customer-admin-metrics">
+                        <span><b>{customerOrders.length}</b> Orders</span>
+                        <span><b>₹{spent.toLocaleString("en-IN")}</b> Paid Value</span>
+                      </div>
+                    </div>
+                    <div className="customer-admin-grid">
+                      <div>
+                        <small>CONTACT</small>
+                        {c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span>—</span>}
+                        {c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : <span>—</span>}
+                      </div>
+                      <div>
+                        <small>PERSONAL</small>
+                        <span>DOB: {c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString("en-IN") : "Not provided"}</span>
+                        <span>Account: {c.auth_user_id ? "Active customer login" : "No login linked"}</span>
+                      </div>
+                      <div>
+                        <small>SAVED ADDRESS</small>
+                        <span>
+                          {[c.address_line1,c.address_line2,c.city,c.state,c.pincode].filter(Boolean).join(", ") || "Not provided"}
+                        </span>
+                      </div>
+                    </div>
+                    {customerOrders.length > 0 && (
+                      <div className="customer-admin-orders">
+                        <small>RECENT ORDERS</small>
+                        {customerOrders.slice(0,3).map((o) => (
+                          <span key={o.id}>
+                            <b>{o.order_number}</b>
+                            {o.order_status} • ₹{Number(o.total_inr).toLocaleString("en-IN")}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
+            </div>
+          </div>
+        )}
         {tab === "orders" && (
           <div className="orders-admin">
             {orders.length ? (
@@ -437,6 +600,11 @@ export default function AdminDashboard() {
                       ₹{Number(o.total_inr).toLocaleString("en-IN")}
                     </strong>
                   </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"8px",margin:"12px 0"}}>
+                    <input placeholder="Courier name" defaultValue={o.courier_name || ""} onBlur={(e)=>updateFulfilment(o.id,{courier_name:e.target.value || null})} />
+                    <input placeholder="Tracking / AWB number" defaultValue={o.tracking_number || ""} onBlur={(e)=>updateFulfilment(o.id,{tracking_number:e.target.value || null})} />
+                    <input placeholder="Tracking URL" defaultValue={o.tracking_url || ""} onBlur={(e)=>updateFulfilment(o.id,{tracking_url:e.target.value || null})} />
+                  </div>
                   <div className="order-actions">
                     <a
                       href={`https://wa.me/${o.phone.replace(/\D/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(`Hello ${o.customer_name}, your Shree Gauri order ${o.order_number} is ${o.order_status}.`)}`}
@@ -451,7 +619,9 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
+                      <option value="packed">Packed</option>
                       <option value="shipped">Shipped</option>
+                      <option value="out_for_delivery">Out for Delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
@@ -697,22 +867,222 @@ export default function AdminDashboard() {
                   </select>
                 </label>
               </div>
-              <label>
-                Category
-                <select
-                  value={prod.category_id || ""}
-                  onChange={(e) =>
-                    setProd({ ...prod, category_id: e.target.value })
-                  }
+              <div
+                style={{
+                  border: "1px solid #d8cbc0",
+                  padding: "14px",
+                  background: "#fff",
+                }}
+              >
+                <b style={{ display: "block", marginBottom: "10px" }}>
+                  Categories — select one or more
+                </b>
+                <small style={{ display: "block", marginBottom: "12px", color: "#806f68" }}>
+                  The same product can appear in several categories, purposes or planets.
+                </small>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: "9px 12px",
+                  }}
                 >
-                  <option value="">Select</option>
-                  {cats.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                  {cats.map((c) => {
+                    const selected = (prod.category_ids || []).includes(c.id);
+                    const group =
+                      c.collection_type === "purpose"
+                        ? "Purpose"
+                        : c.collection_type === "planet"
+                          ? "Planet"
+                          : c.parent_id
+                            ? "Subcategory"
+                            : "Category";
+                    return (
+                      <label
+                        key={c.id}
+                        className="check"
+                        style={{
+                          border: "1px solid #eadfd5",
+                          padding: "9px",
+                          borderRadius: "4px",
+                          background: selected ? "#fff6df" : "#fff",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            const current = Array.isArray(prod.category_ids)
+                              ? prod.category_ids
+                              : [];
+                            const category_ids = e.target.checked
+                              ? Array.from(new Set([...current, c.id]))
+                              : current.filter((id: string) => id !== c.id);
+                            setProd({
+                              ...prod,
+                              category_ids,
+                              category_id: category_ids[0] || "",
+                            });
+                          }}
+                        />{" "}
+                        <span>
+                          {c.name}
+                          <small
+                            style={{
+                              display: "block",
+                              fontWeight: 400,
+                              color: "#8a766e",
+                              marginTop: "2px",
+                            }}
+                          >
+                            {group}
+                          </small>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "12px" }}>Product Details & Inventory</h3>
+                <div className="two">
+                  <label>
+                    SKU
+                    <input value={prod.sku || ""} placeholder="Auto-generated if left blank"
+                      onChange={(e) => setProd({ ...prod, sku: e.target.value })} />
+                  </label>
+                  <label>
+                    Product Type
+                    <input value={prod.product_type || ""} placeholder="Gemstone, Ring, Bracelet..."
+                      onChange={(e) => setProd({ ...prod, product_type: e.target.value })} />
+                  </label>
+                </div>
+                <div className="two">
+                  <label>
+                    Material
+                    <input value={prod.material || ""} placeholder="Silver, Gold, Brass..."
+                      onChange={(e) => setProd({ ...prod, material: e.target.value })} />
+                  </label>
+                  <label>
+                    Gemstone
+                    <input value={prod.gemstone_name || ""} placeholder="Emerald, Citrine..."
+                      onChange={(e) => setProd({ ...prod, gemstone_name: e.target.value })} />
+                  </label>
+                </div>
+                <div className="two">
+                  <label>
+                    Stone Weight (Carat)
+                    <input type="number" step="0.001" value={prod.carat_weight || ""}
+                      onChange={(e) => setProd({ ...prod, carat_weight: e.target.value })} />
+                  </label>
+                  <label>
+                    Weight (grams)
+                    <input type="number" step="0.001" value={prod.weight_grams || ""}
+                      onChange={(e) => setProd({ ...prod, weight_grams: e.target.value })} />
+                  </label>
+                </div>
+                <div className="two">
+                  <label>
+                    Shape
+                    <input value={prod.shape || ""}
+                      onChange={(e) => setProd({ ...prod, shape: e.target.value })} />
+                  </label>
+                  <label>
+                    Colour
+                    <input value={prod.color || ""}
+                      onChange={(e) => setProd({ ...prod, color: e.target.value })} />
+                  </label>
+                </div>
+                <div className="two">
+                  <label>
+                    Natural / Lab Status
+                    <select value={prod.natural_lab_status || ""}
+                      onChange={(e) => setProd({ ...prod, natural_lab_status: e.target.value })}>
+                      <option value="">Not specified</option>
+                      <option value="Natural">Natural</option>
+                      <option value="Lab Created">Lab Created</option>
+                    </select>
+                  </label>
+                  <label>
+                    Certification
+                    <select value={prod.certification || ""}
+                      onChange={(e) => setProd({ ...prod, certification: e.target.value })}>
+                      <option value="">Not specified</option>
+                      <option value="Certificate Available">Yes — Certificate Available</option>
+                      <option value="No Certificate">No Certificate</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="two">
+                  <label>
+                    Origin
+                    <input value={prod.origin || ""} placeholder="Only enter if verified"
+                      onChange={(e) => setProd({ ...prod, origin: e.target.value })} />
+                  </label>
+                  <label>
+                    Treatment
+                    <input value={prod.treatment || ""} placeholder="Only enter if known"
+                      onChange={(e) => setProd({ ...prod, treatment: e.target.value })} />
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "6px" }}>Chakra</h3>
+                <small style={{ display: "block", marginBottom: "10px", color: "#806f68" }}>
+                  Select only associations you want to use for this product.
+                </small>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: "8px" }}>
+                  {chakraOptions.map((name) => (
+                    <label className="check" key={name}>
+                      <input type="checkbox" checked={(prod.chakras || []).includes(name)}
+                        onChange={(e) => {
+                          const current = prod.chakras || [];
+                          setProd({ ...prod, chakras: e.target.checked
+                            ? Array.from(new Set([...current, name]))
+                            : current.filter((x: string) => x !== name) });
+                        }} />{" "}{name}
+                    </label>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "6px" }}>Zodiac</h3>
+                <small style={{ display: "block", marginBottom: "10px", color: "#806f68" }}>
+                  You may select more than one zodiac sign.
+                </small>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: "8px" }}>
+                  {zodiacOptions.map((name) => (
+                    <label className="check" key={name}>
+                      <input type="checkbox" checked={(prod.zodiac_signs || []).includes(name)}
+                        onChange={(e) => {
+                          const current = prod.zodiac_signs || [];
+                          setProd({ ...prod, zodiac_signs: e.target.checked
+                            ? Array.from(new Set([...current, name]))
+                            : current.filter((x: string) => x !== name) });
+                        }} />{" "}{name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "12px" }}>Google / SEO</h3>
+                <label>
+                  SEO Title
+                  <input value={prod.seo_title || ""} maxLength={70}
+                    placeholder={prod.name ? prod.name + " | Shree Gauri" : "Product title for Google"}
+                    onChange={(e) => setProd({ ...prod, seo_title: e.target.value })} />
+                </label>
+                <label>
+                  SEO Description
+                  <textarea value={prod.seo_description || ""} maxLength={170}
+                    placeholder="Short accurate description for search engines"
+                    onChange={(e) => setProd({ ...prod, seo_description: e.target.value })} />
+                </label>
+              </div>
+
               <label>
                 Main Product Photo
                 <input

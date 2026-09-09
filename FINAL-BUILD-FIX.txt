@@ -1,0 +1,3 @@
+Full Shree Gauri patch chain was pre-applied successfully once.
+Legacy prebuild mutation scripts are disabled during Vercel builds because they are not idempotent.
+Live app contains country/currency UI with INR, USD, GBP, EUR, AED, CAD, AUD, SGD.
