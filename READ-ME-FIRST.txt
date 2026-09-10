@@ -1,0 +1,24 @@
+SHREE GAURI GLOBAL BRAND PATCH
+
+UPLOAD LOCATION IN GITHUB:
+Repository: gouravrulez/shreegauri
+Branch: Main-Branch-SG
+Folder: app
+
+Replace these TWO existing files inside app:
+1. storefront.tsx
+2. globals.css
+
+What this patch does:
+- Adds a clearly visible Shop Worldwide bar on desktop and mobile
+- Country/Region selector
+- Currency selector: INR, USD, GBP, EUR, AED, CAD, AUD, SGD
+- Saves selected country and currency in the browser
+- Preserves the selected country for international checkout when no saved India address is chosen
+- Keeps India PhonePe checkout unchanged
+- Keeps international payment blocked until a compatible gateway is enabled
+- Adds transparent international price/shipping wording
+- Replaces misleading free-shipping banner wording with India & Worldwide Support
+- Keeps the approved Shree Gauri design, products, admin and Supabase structure intact
+
+After upload, commit changes and wait for Vercel to show Ready.
