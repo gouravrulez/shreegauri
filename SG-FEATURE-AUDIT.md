@@ -4,85 +4,58 @@ Working branch: `SG-FEATURE-RESTORE`
 Safety backup: `SG-CLEAN-RECOVERY` (do not modify)
 Production branch: `Main-Branch-SG`
 
-## A. Confirmed already present in recovered Shree Gauri
+## Verified recovered build
+The recovered Shree Gauri project already runs its restoration scripts during `prebuild`. These include multi-category products, premium product manager, launch hardening, PhonePe preparation/finalization/type fixes, mobile/footer fixes, customer/admin upgrades, customer checkout upgrades, Email OTP, login/profile-photo support, image-speed optimization, and zero-cost auth cleanup.
+
+The feature-restore branch passed its Vercel status check with this recovered build chain intact.
+
+## Confirmed application foundation
 - Supabase-backed storefront/admin foundation
 - Email OTP API routes and customer login flow
-- Mandatory authenticated customer before checkout/payment
+- Authenticated customer checkout/payment flow
 - Cart persistence through login
 - Saved delivery addresses + default address
 - Checkout customer/address autofill
 - Orders linked to authenticated customer
 - My Orders with payment/order/tracking status
-- On-site payment/order return page
 - PhonePe create/status/verify/webhook integration
 - Order notification helper
-- Products, categories, multiple product images
+- Products, categories and multiple product images
 - Reviews foundation
 - Admin products/categories/orders/customers/reviews/site settings foundation
+- Multi-category assignment applied by prebuild
+- Premium product-manager upgrade applied by prebuild
+- Customer/admin and checkout upgrades applied by prebuild
+- Product image-speed optimization applied by prebuild
 
-## B. Restore/verify from our later Shree Gauri work
-- Product multi-category assignment
-- Premium product manager and gemstone-specific fields
-- Inventory hardening / one-of-one stock behavior
-- Order fulfillment, courier, tracking number/link and refund status
-- Customer dashboard/profile/address book polish
-- Product image loading/performance optimization
-- Add-to-cart confirmation and working Buy Now path
-- Coupons: compact apply UI, validation and authoritative discount calculation
-- Mobile product catalogue: two product cards per row
-- Filters/sorting/wishlist behavior
-- Featured / Best Seller / New Arrival controls
-
-## C. KAOMA-level functionality to bring to Shree Gauri (functionality only)
+## KAOMA-parity expansion still tracked separately
+Functionality useful to Shree Gauri, without copying KAOMA branding/design/content:
 - Product variants where relevant: size, colour, SKU, variant stock, optional variant price/image
 - Free-size option
-- Product share link
-- Similar products
-- Customer profile photo support where appropriate
+- Product share link and similar products
 - Full country selector and international phone country codes
-- Country-aware address fields and postal-code labels
+- Country-aware addresses
 - Broad currency display with INR as authoritative base
-- Approximate converted-price disclosure
 - India/international shipping-rule structure
 - Admin-editable shipping charges and free-shipping thresholds
-- International availability messaging without pretending international payment is enabled
-- Strong mobile checkout/account/admin layouts
-- Fast product/dashboard loading
+- Stronger international/account/admin UX where needed
+- Back-in-stock notifications and cart recovery where appropriate
+- Strong admin authorization
+- SEO/sitemap/robots and performance hardening
 
-## D. Admin business control centre target
-- Overview metrics: orders, revenue, customers, low stock
-- Products + inventory + variants
-- Categories/subcategories + multi-category assignment
-- Orders + fulfillment/tracking/refund state
-- Customers
-- Reviews moderation
-- Coupons/promotions
-- Homepage/site content and images
-- Featured/Best Seller/New Arrival merchandising
-- Shipping rules: India and international
-- Currency/display settings
-- International settings
-- Gemstone-specific product attributes
-- Admin access verification/authorization, not merely any logged-in Supabase session
+## Payment and international rules
+- Keep the existing PhonePe India integration intact.
+- Never store payment secrets in GitHub/client code.
+- Server must remain authoritative for prices, discounts, shipping and order totals.
+- Do not pretend international online payment is available until a compatible approved gateway is configured.
 
-## E. Checkout/payment rules
-- Keep existing PhonePe India integration intact
-- Never store payment secrets in GitHub/client code
-- Server-side authoritative product prices, discounts, shipping and order total
-- Do not enable/fake international online payment until a compatible approved gateway is configured
-- Successful payment must confirm order, update inventory and trigger customer/admin order notifications
+## Brand/design constraints
+- Shree Gauri remains jewellery/spiritual only.
+- Do not copy KAOMA branding, design, content or products.
+- Preserve approved Shree Gauri logo, Maa Lakshmi hero and founder identity.
+- No public admin login in customer navigation.
+- Customer login remains visible.
 
-## F. Brand/design constraints
-- Shree Gauri remains jewellery/spiritual only
-- Do not copy KAOMA branding, design, content or products
-- Preserve approved Shree Gauri logo, Maa Lakshmi hero and founder identity
-- No public admin login in customer navigation
-- Customer login remains visible
-- Bright/prosperous spiritual visual direction; no arbitrary redesign
-
-## G. Release process
-1. Implement only on `SG-FEATURE-RESTORE`.
-2. Keep `SG-CLEAN-RECOVERY` untouched.
-3. Verify build/deployment after meaningful batches.
-4. Verify storefront, admin, OTP/account and checkout behavior.
-5. Merge/reset production only after the feature branch is green and reviewed.
+## Safety/release
+- `SG-CLEAN-RECOVERY` remains untouched as emergency backup.
+- `Main-Branch-SG` is only advanced after a Vercel-successful feature commit.
