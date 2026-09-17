@@ -1,0 +1,19 @@
+import fs from 'node:fs';
+const admin='app/admin/admin-dashboard.tsx';
+let a=fs.readFileSync(admin,'utf8');
+// Make the existing multi-image uploader clearly unlimited and resilient for repeated batches.
+a=a.replace('async function uploadGallery(files: FileList) {\n    setNotice("Uploading promotional images...");','async function uploadGallery(files: FileList) {\n    setNotice(`Uploading ${files.length} additional product image(s)...`);');
+a=a.replace('setNotice(`${urls.length} promotional image(s) ready. Save the product.`);','setNotice(`${urls.length} additional image(s) uploaded. You can add another batch or Save Product.`);');
+a=a.replace('Additional Promotional Images (select many)','Additional Product Images — Unlimited (select many, repeat anytime)');
+fs.writeFileSync(admin,a);
+
+// Expand country + dial-code catalogue to a worldwide ISO-style checkout list.
+const gp='app/lib/global-commerce.ts';
+let g=fs.readFileSync(gp,'utf8');
+const countries=[
+['IN','India','+91'],['US','United States','+1'],['CA','Canada','+1'],['GB','United Kingdom','+44'],['AE','United Arab Emirates','+971'],['AU','Australia','+61'],['NZ','New Zealand','+64'],['SG','Singapore','+65'],['DE','Germany','+49'],['FR','France','+33'],['IT','Italy','+39'],['ES','Spain','+34'],['NL','Netherlands','+31'],['BE','Belgium','+32'],['CH','Switzerland','+41'],['AT','Austria','+43'],['SE','Sweden','+46'],['NO','Norway','+47'],['DK','Denmark','+45'],['FI','Finland','+358'],['IE','Ireland','+353'],['PT','Portugal','+351'],['GR','Greece','+30'],['PL','Poland','+48'],['CZ','Czechia','+420'],['HU','Hungary','+36'],['RO','Romania','+40'],['BG','Bulgaria','+359'],['HR','Croatia','+385'],['SK','Slovakia','+421'],['SI','Slovenia','+386'],['EE','Estonia','+372'],['LV','Latvia','+371'],['LT','Lithuania','+370'],['LU','Luxembourg','+352'],['MT','Malta','+356'],['CY','Cyprus','+357'],['IS','Iceland','+354'],['JP','Japan','+81'],['KR','South Korea','+82'],['CN','China','+86'],['HK','Hong Kong','+852'],['TW','Taiwan','+886'],['MY','Malaysia','+60'],['TH','Thailand','+66'],['ID','Indonesia','+62'],['PH','Philippines','+63'],['VN','Vietnam','+84'],['PK','Pakistan','+92'],['BD','Bangladesh','+880'],['LK','Sri Lanka','+94'],['NP','Nepal','+977'],['BT','Bhutan','+975'],['MV','Maldives','+960'],['SA','Saudi Arabia','+966'],['QA','Qatar','+974'],['KW','Kuwait','+965'],['OM','Oman','+968'],['BH','Bahrain','+973'],['IL','Israel','+972'],['JO','Jordan','+962'],['LB','Lebanon','+961'],['TR','Türkiye','+90'],['EG','Egypt','+20'],['ZA','South Africa','+27'],['MU','Mauritius','+230'],['KE','Kenya','+254'],['TZ','Tanzania','+255'],['UG','Uganda','+256'],['NG','Nigeria','+234'],['GH','Ghana','+233'],['MA','Morocco','+212'],['TN','Tunisia','+216'],['BR','Brazil','+55'],['MX','Mexico','+52'],['AR','Argentina','+54'],['CL','Chile','+56'],['CO','Colombia','+57'],['PE','Peru','+51'],['UY','Uruguay','+598'],['PY','Paraguay','+595'],['BO','Bolivia','+591'],['EC','Ecuador','+593'],['VE','Venezuela','+58'],['CR','Costa Rica','+506'],['PA','Panama','+507'],['GT','Guatemala','+502'],['DO','Dominican Republic','+1'],['JM','Jamaica','+1'],['TT','Trinidad and Tobago','+1'],['BS','Bahamas','+1'],['BB','Barbados','+1'],['RU','Russia','+7'],['UA','Ukraine','+380'],['GE','Georgia','+995'],['AM','Armenia','+374'],['AZ','Azerbaijan','+994'],['KZ','Kazakhstan','+7'],['UZ','Uzbekistan','+998'],['FJ','Fiji','+679'],['PG','Papua New Guinea','+675']
+];
+const list='export const COUNTRY_OPTIONS: CountryOption[] = [\n'+countries.map(([c,n,d])=>`  { code: "${c}", name: "${n}", dialCode: "${d}", postalLabel: "Postal code" },`).join('\n')+'\n];';
+g=g.replace(/export const COUNTRY_OPTIONS: CountryOption\[] = \[[\s\S]*?\n\];/,list);
+fs.writeFileSync(gp,g);
+console.log('Global complete package applied: worldwide countries/dial codes + unlimited product gallery.');
