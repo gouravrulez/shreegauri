@@ -721,6 +721,7 @@ export default function Storefront() {
                     <button
                       className="photo"
                       onClick={() => {
+                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                         setItem(p);
                         setQty(1);
                       }}
@@ -728,9 +729,13 @@ export default function Storefront() {
                       <img
                         src={
                           p.primary_image_url ||
-                          "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=85"
+                          p.image_urls?.[0] ||
+                          "/logo.png"
                         }
                         alt={p.name}
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
@@ -1052,14 +1057,15 @@ export default function Storefront() {
                       }
                       onClick={() => setSelectedImage(url)}
                     >
-                      <img src={url} alt={`${item.name} view ${i + 1}`} />
+                      <img src={url} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
                     </button>
                   ))}
               </div>
               <img
                 className="gallery-main"
-                src={selectedImage || item.primary_image_url}
+                src={selectedImage || item.primary_image_url || item.image_urls?.[0] || "/logo.png"}
                 alt={item.name}
+                decoding="async"
               />
             </div>
             <div className="product-copy">
