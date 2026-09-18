@@ -201,3 +201,22 @@ body {
   .product-detail .gallery-main{height:min(62vh,520px);min-height:320px}
   .product-detail .product-copy{padding:28px 18px 56px}
 }
+
+
+/* Product detail UX: one natural scroll surface on every device. */
+.backdrop:has(.product-detail){overflow-y:auto;overscroll-behavior:contain;align-items:start;-webkit-overflow-scrolling:touch}
+.product-detail{max-height:none;margin:auto;overflow:visible}
+.product-detail .product-copy{max-height:none;overflow:visible}
+.product-detail .gallery-thumbs{max-height:570px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.product-detail .gallery-main{display:block}
+@media(max-width:900px){
+  .backdrop:has(.product-detail){padding:0;display:block;background:#fff}
+  .product-detail{width:100%;min-height:100dvh;margin:0;display:block;border-radius:0}
+  .product-detail .close{position:fixed;z-index:5;right:12px;top:12px;box-shadow:0 2px 12px #0002}
+  .product-gallery{display:flex;flex-direction:column-reverse;min-height:0;padding:10px;gap:10px}
+  .gallery-thumbs{flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scroll-snap-type:x proximity}
+  .gallery-thumbs button{flex:0 0 auto;scroll-snap-align:start}
+  .gallery-thumbs img{width:62px;height:62px}
+  .gallery-main{height:min(72vw,420px);min-height:300px}
+  .product-copy{padding:24px 18px 48px}
+}
