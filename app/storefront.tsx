@@ -751,7 +751,7 @@ export default function Storefront() {
                         src={
                           p.primary_image_url ||
                           p.image_urls?.[0] ||
-                          "/logo.png"
+                          "/shree-gauri-logo.png"
                         }
                         alt={p.name}
                         loading="lazy"
@@ -772,13 +772,12 @@ export default function Storefront() {
                         <button onClick={() => setCart((c) => [...c, p])}>
                           ADD TO CART
                         </button>
-                        <a
-                          href={wa(
-                            `Hello Shree Gauri, I want to buy ${p.name}.`,
-                          )}
+                        <button
+                          className="buy-now-site"
+                          onClick={() => { setCart([p]); setTimeout(() => openSecureCheckout(), 0); }}
                         >
                           BUY NOW
-                        </a>
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -1158,13 +1157,12 @@ export default function Storefront() {
                 >
                   ADD TO CART
                 </button>
-                <a
-                  href={wa(
-                    `Hello Shree Gauri, I want to buy ${qty} × ${item.name}.`,
-                  )}
+                <button
+                  className="buy-now-site"
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setTimeout(() => openSecureCheckout(), 0); }}
                 >
                   BUY NOW
-                </a>
+                </button>
               </div>
               <div className="share">
                 <button
