@@ -182,7 +182,7 @@ export default function Storefront() {
   });
   const trackCommerce = (event: string, products: P[], value?: number) => {
     if (typeof window === "undefined") return;
-    const gtag = (window as typeof window & { gtag?: (...args: unknown[]) => void }).gtag;
+    const gtag = (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
     if (!gtag) return;
     gtag("event", event, {
       currency: "INR",
