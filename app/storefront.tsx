@@ -174,6 +174,28 @@ export default function Storefront() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(n);
+  const gaItem = (p: P, quantity = 1) => ({
+    item_id: p.id,
+    item_name: p.name,
+    price: Number(p.price_inr) || 0,
+    quantity,
+  });
+  const trackCommerce = (event: string, products: P[], value?: number) => {
+    if (typeof window === "undefined") return;
+    const gtag = (window as typeof window & { gtag?: (...args: unknown[]) => void }).gtag;
+    if (!gtag) return;
+    gtag("event", event, {
+      currency: "INR",
+      ...(typeof value === "number" ? { value } : {}),
+      items: products.map((p) => gaItem(p)),
+    });
+  };
+  const openProduct = (p: P) => {
+    setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+    setItem(p);
+    setQty(1);
+    trackCommerce("view_item", [p], Number(p.price_inr) || 0);
+  };
   const go = (v: string) => {
     setView(v);
     setMenu(false);
@@ -711,9 +733,7 @@ export default function Storefront() {
                     tabIndex={0}
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
-                      setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);
-                      setQty(1);
+                      openProduct(p);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -769,12 +789,12 @@ export default function Storefront() {
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setCart((c) => [...c, p])}>
+                        <button onClick={() => setCart((c) => [...c, p]); trackCommerce("add_to_cart", [p], Number(p.price_inr) || 0); }}>
                           ADD TO CART
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { setCart([p]); trackCommerce("begin_checkout", [p], Number(p.price_inr) || 0); setTimeout(() => openSecureCheckout(), 0); }}
                         >
                           BUY NOW
                         </button>
@@ -1152,6 +1172,7 @@ export default function Storefront() {
                 <button
                   onClick={() => {
                     setCart((c) => [...c, ...Array(qty).fill(item)]);
+                    trackCommerce("add_to_cart", Array(qty).fill(item), (Number(item.price_inr) || 0) * qty);
                     setItem(null);
                   }}
                 >
@@ -1159,7 +1180,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setTimeout(() => openSecureCheckout(), 0); }}
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); trackCommerce("begin_checkout", chosen, (Number(item.price_inr) || 0) * qty); setItem(null); setTimeout(() => openSecureCheckout(), 0); }}
                 >
                   BUY NOW
                 </button>
