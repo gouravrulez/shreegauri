@@ -173,7 +173,7 @@ export default function AdminDashboard() {
     setNotice("Image ready. Save the item to apply it.");
   }
   async function uploadGallery(files: FileList) {
-    setNotice("Uploading promotional images...");
+    setNotice(`Uploading ${files.length} additional image(s)...`);
     const urls: string[] = [];
     for (const file of Array.from(files)) {
       const path = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
@@ -189,8 +189,8 @@ export default function AdminDashboard() {
           .publicUrl,
       );
     }
-    setProd({ ...prod, image_urls: [...(prod.image_urls || []), ...urls] });
-    setNotice(`${urls.length} promotional image(s) ready. Save the product.`);
+    setProd((current: any) => ({ ...current, image_urls: [...new Set([...(current.image_urls || []), ...urls])] }));
+    setNotice(`${urls.length} additional image(s) ready. Save the product below.`);
   }
   async function moderateReview(id: string, is_approved: boolean) {
     const { error } = await supabase
@@ -727,7 +727,7 @@ export default function AdminDashboard() {
                 <img className="admin-preview" src={prod.primary_image_url} />
               )}
               <label>
-                Additional Promotional Images (select many)
+                Additional Product Images (select many)
                 <input
                   type="file"
                   accept="image/*"
@@ -738,7 +738,7 @@ export default function AdminDashboard() {
                 />
               </label>
               {prod.image_urls?.length > 0 && (
-                <div className="admin-gallery">
+                <div className="admin-gallery admin-gallery-compact">
                   {prod.image_urls.map((url: string, i: number) => (
                     <div key={url}>
                       <img src={url} />
@@ -778,12 +778,16 @@ export default function AdminDashboard() {
                 />{" "}
                 Visible on website
               </label>
-              <div className="editor-actions">
+              <div className="editor-actions product-save-actions">
                 <button onClick={saveProd}>
                   <Save />
                   Save Product
                 </button>
                 <button onClick={() => setProd(blankProd)}>Clear</button>
+              </div>
+              <div className="bottom-save-product">
+                <span>{prod.image_urls?.length || 0} additional image(s) attached</span>
+                <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
               </div>
             </div>
             <div className="records">
