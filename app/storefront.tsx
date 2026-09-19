@@ -182,8 +182,8 @@ export default function Storefront() {
   });
   const trackCommerce = (event: string, products: P[], value?: number) => {
     if (typeof window === "undefined") return;
-    const gtag = (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
-    if (!gtag) return;
+    const gtag = (window as any).gtag;
+    if (typeof gtag !== "function") return;
     gtag("event", event, {
       currency: "INR",
       ...(typeof value === "number" ? { value } : {}),
@@ -789,7 +789,7 @@ export default function Storefront() {
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setCart((c) => [...c, p]); trackCommerce("add_to_cart", [p], Number(p.price_inr) || 0); }}>
+                        <button onClick={() => { setCart((c) => [...c, p]); trackCommerce("add_to_cart", [p], Number(p.price_inr) || 0); }}>
                           ADD TO CART
                         </button>
                         <button
