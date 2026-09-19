@@ -1043,30 +1043,30 @@ export default function Storefront() {
             <button className="close" onClick={() => setItem(null)}>
               <X />
             </button>
-            <div className="product-gallery">
-              <div className="gallery-thumbs">
-                {[item.primary_image_url, ...(item.image_urls || [])]
-                  .filter(Boolean)
+            <div className="product-gallery amazon-gallery">
+              <div className="gallery-thumbs" aria-label="Product images">
+                {[...new Set([item.primary_image_url, ...(item.image_urls || [])].filter(Boolean))]
                   .map((url, i) => (
                     <button
-                      key={url + i}
-                      className={
-                        (selectedImage || item.primary_image_url) === url
-                          ? "active"
-                          : ""
-                      }
+                      key={url}
+                      aria-label={`View product image ${i + 1}`}
+                      className={(selectedImage || item.primary_image_url || item.image_urls?.[0]) === url ? "active" : ""}
                       onClick={() => setSelectedImage(url)}
+                      onMouseEnter={() => setSelectedImage(url)}
                     >
                       <img src={url} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
                     </button>
                   ))}
               </div>
-              <img
-                className="gallery-main"
-                src={selectedImage || item.primary_image_url || item.image_urls?.[0] || "/logo.png"}
-                alt={item.name}
-                decoding="async"
-              />
+              <div className="gallery-stage">
+                <img
+                  className="gallery-main"
+                  src={selectedImage || item.primary_image_url || item.image_urls?.[0] || "/shree-gauri-logo.png"}
+                  alt={item.name}
+                  decoding="async"
+                />
+                <small>Tap or hover a thumbnail to view</small>
+              </div>
             </div>
             <div className="product-copy">
               <small className="kicker">AUTHENTIC • CAREFULLY SELECTED</small>
