@@ -6,6 +6,9 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
   description: "Authentic gemstones, sacred jewellery, Rudraksha, spiritual products and meaningful gifts.",
+  verification: {
+    google: "1N23qxr7DWCu_KG2ZnDpYvCJqteP-1Yq-_JxK1gJAbm-k",
+  },
   icons: {
     icon: [{ url: "/shree-gauri-om.svg", type: "image/svg+xml" }],
     shortcut: "/shree-gauri-om.svg",
