@@ -108,6 +108,7 @@ export default function Storefront() {
     [menu, setMenu] = useState(false),
     [item, setItem] = useState<P | null>(null),
     [selectedImage, setSelectedImage] = useState(""),
+    [imageZoomOpen, setImageZoomOpen] = useState(false),
     [qty, setQty] = useState(1),
     [cart, setCart] = useState<P[]>([]),
     [wish, setWish] = useState<string[]>([]),
@@ -1054,6 +1055,12 @@ export default function Storefront() {
           </form>
         </div>
       )}
+      {imageZoomOpen && item && (
+        <div className="image-zoom-modal" onClick={() => setImageZoomOpen(false)}>
+          <button aria-label="Close image viewer" onClick={() => setImageZoomOpen(false)}><X /></button>
+          <img src={selectedImage || item.primary_image_url || item.image_urls?.[0] || "/shree-gauri-logo.png"} alt={item.name} onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
       {item && (
         <div className="backdrop" onClick={() => setItem(null)}>
           <div
@@ -1079,13 +1086,24 @@ export default function Storefront() {
                   ))}
               </div>
               <div className="gallery-stage">
-                <img
-                  className="gallery-main"
-                  src={selectedImage || item.primary_image_url || item.image_urls?.[0] || "/shree-gauri-logo.png"}
-                  alt={item.name}
-                  decoding="async"
-                />
-                <small>Tap or hover a thumbnail to view</small>
+                {(() => {
+                  const images = [...new Set([item.primary_image_url, ...(item.image_urls || [])].filter(Boolean))];
+                  const active = selectedImage || images[0] || "/shree-gauri-logo.png";
+                  const index = Math.max(0, images.indexOf(active));
+                  const move = (step: number) => {
+                    if (!images.length) return;
+                    setSelectedImage(images[(index + step + images.length) % images.length]);
+                  };
+                  return <>
+                    <button className="gallery-arrow gallery-prev" aria-label="Previous image" onClick={() => move(-1)}>‹</button>
+                    <button className="gallery-zoom-trigger" aria-label="Open full size product image" onClick={() => setImageZoomOpen(true)}>
+                      <img className="gallery-main" src={active} alt={item.name} decoding="async" />
+                    </button>
+                    <button className="gallery-arrow gallery-next" aria-label="Next image" onClick={() => move(1)}>›</button>
+                    <span className="gallery-counter">{images.length ? index + 1 : 1} / {Math.max(images.length, 1)}</span>
+                    <small>Tap image to zoom • Swipe thumbnails to browse</small>
+                  </>;
+                })()}
               </div>
             </div>
             <div className="product-copy">
