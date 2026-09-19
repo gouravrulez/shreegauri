@@ -703,7 +703,26 @@ export default function Storefront() {
             <div className="product-grid">
               {shown.length ? (
                 shown.map((p) => (
-                  <article key={p.id}>
+                  <article
+                    key={p.id}
+                    className="product-card-clickable"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
+                      setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+                      setItem(p);
+                      setQty(1);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+                        setItem(p);
+                        setQty(1);
+                      }
+                    }}
+                  >
                     <button
                       className="heart"
                       onClick={() =>
@@ -720,7 +739,8 @@ export default function Storefront() {
                     </button>
                     <button
                       className="photo"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                         setItem(p);
                         setQty(1);
@@ -747,7 +767,7 @@ export default function Storefront() {
                       {p.compare_at_price_inr && (
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
-                      <div>
+                      <div className="product-actions" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => setCart((c) => [...c, p])}>
                           ADD TO CART
                         </button>
