@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import CartFix from "./cart-fix";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
@@ -29,6 +30,16 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-14K0LF1DHG"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-14K0LF1DHG');`}
+        </Script>
         {children}
         <CartFix />
       </body>
