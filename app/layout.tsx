@@ -6,7 +6,6 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
   description: "Shop authentic gemstones, sacred jewellery, Rudraksha, E-Pooja and meaningful spiritual gifts from Shree Gauri.",
-  metadataBase: new URL("https://shreegauri.in"),
   alternates: { canonical: "/" },
   openGraph: {
     title: "Shree Gauri | Gemstones, Rudraksha, Jewellery & E-Pooja",
