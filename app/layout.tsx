@@ -5,7 +5,24 @@ import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Shree Gauri | Divine Energy. Timeless Beauty.",
-  description: "Authentic gemstones, sacred jewellery, Rudraksha, spiritual products and meaningful gifts.",
+  description: "Shop authentic gemstones, sacred jewellery, Rudraksha, E-Pooja and meaningful spiritual gifts from Shree Gauri.",
+  metadataBase: new URL("https://shreegauri.in"),
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Shree Gauri | Gemstones, Rudraksha, Jewellery & E-Pooja",
+    description: "Authentic gemstones, sacred jewellery, Rudraksha, E-Pooja and spiritual products from Shree Gauri.",
+    url: "https://shreegauri.in",
+    siteName: "Shree Gauri",
+    type: "website",
+    images: [{ url: "/maa-lakshmi-hero-fast.webp", alt: "Shree Gauri spiritual products" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shree Gauri | Gemstones, Rudraksha, Jewellery & E-Pooja",
+    description: "Authentic gemstones, sacred jewellery, Rudraksha, E-Pooja and spiritual products.",
+    images: ["/maa-lakshmi-hero-fast.webp"],
+  },
+  robots: { index: true, follow: true },
   verification: {
     google: "lN23qxr0DWCu_kG2znDpYCJqtep-1Yq-Jxk1gJAbM_k",
   },
