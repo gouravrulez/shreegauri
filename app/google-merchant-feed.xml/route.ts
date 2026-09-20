@@ -17,7 +17,7 @@ export async function GET() {
   const absoluteImage = (value: unknown) => {
     const raw = String(value ?? "").trim();
     if (!raw) return "";
-    if (/^https?:\\/\\//i.test(raw)) return raw.replace(/^http:\\/\\//i, "https://");
+    if (/^https?:\/\//i.test(raw)) return raw.replace(/^http:\/\//i, "https://");
     return origin + (raw.startsWith("/") ? raw : "/" + raw);
   };
   const items = (data || []).filter((p:any)=>absoluteImage(p.primary_image_url) && Number(p.price_inr)>0).map((p:any)=>{
