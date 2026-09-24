@@ -32,7 +32,35 @@ if (!s.includes("const fastImage =")) {
   s = s.replace(marker, helper + "\n" + marker);
 }
 
-// Product grid: optimized transformed thumbnails. First visible products load immediately.
+// Product grid: optimize the markup produced by the later storefront patches too.
+s = s.replace(
+  `                        src={
+                          p.primary_image_url ||
+                          p.image_urls?.[0] ||
+                          "/shree-gauri-logo.png"
+                        }
+                        alt={p.name}
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                      />`,
+  `                        src={
+                          p.primary_image_url
+                            ? fastImage(p.primary_image_url, 420, 68)
+                            : p.image_urls?.[0]
+                              ? fastImage(p.image_urls[0], 420, 68)
+                              : "/shree-gauri-logo.png"
+                        }
+                        alt={p.name}
+                        loading={shown.indexOf(p) < 8 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={shown.indexOf(p) < 4 ? "high" : "auto"}
+                        width={420}
+                        height={420}
+                      />`
+);
+
+// Keep compatibility with the older product-card markup if present.
 s = s.replace(
 `                        src={
                           p.primary_image_url ||
@@ -42,15 +70,15 @@ s = s.replace(
                       />`,
 `                        src={
                           p.primary_image_url
-                            ? fastImage(p.primary_image_url, 520, 72)
-                            : "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=520&q=72"
+                            ? fastImage(p.primary_image_url, 420, 68)
+                            : "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=420&q=68"
                         }
                         alt={p.name}
-                        loading={products.indexOf(p) < 6 ? "eager" : "lazy"}
-                        fetchPriority={products.indexOf(p) < 4 ? "high" : "auto"}
+                        loading={shown.indexOf(p) < 8 ? "eager" : "lazy"}
+                        fetchPriority={shown.indexOf(p) < 4 ? "high" : "auto"}
                         decoding="async"
-                        width={520}
-                        height={520}
+                        width={420}
+                        height={420}
                       />`
 );
 
