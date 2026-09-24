@@ -109,6 +109,7 @@ export default function Storefront() {
     [item, setItem] = useState<P | null>(null),
     [selectedImage, setSelectedImage] = useState(""),
     [imageZoomOpen, setImageZoomOpen] = useState(false),
+    [descriptionOpen, setDescriptionOpen] = useState(false),
     [qty, setQty] = useState(1),
     [cart, setCart] = useState<P[]>([]),
     [wish, setWish] = useState<string[]>([]),
@@ -713,6 +714,7 @@ export default function Storefront() {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
                       setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                       setItem(p);
+                      setDescriptionOpen(false);
                       setQty(1);
                     }}
                     onKeyDown={(e) => {
@@ -720,6 +722,7 @@ export default function Storefront() {
                         e.preventDefault();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                         setItem(p);
+                        setDescriptionOpen(false);
                         setQty(1);
                       }
                     }}
@@ -744,6 +747,7 @@ export default function Storefront() {
                         e.stopPropagation();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                         setItem(p);
+                        setDescriptionOpen(false);
                         setQty(1);
                       }}
                     >
@@ -1122,8 +1126,24 @@ export default function Storefront() {
                 </span>
                 <span>{ratingFor(item.id).count} review(s)</span>
               </div>
-              <p>{item.description || item.short_description}</p>
-              <h3>{money(Number(item.price_inr))}</h3>
+              <div className="product-short-description">
+                <b>About this item</b>
+                <p>{item.short_description || item.description}</p>
+              </div>
+              {item.description && item.description !== item.short_description && (
+                <div className={`product-full-description ${descriptionOpen ? "open" : ""}`}>
+                  <div className="description-text">{item.description}</div>
+                  <button type="button" onClick={() => setDescriptionOpen((v) => !v)}>
+                    {descriptionOpen ? "SHOW LESS" : "LOAD MORE"}
+                  </button>
+                </div>
+              )}
+              <div className="product-price-block">
+                <small>Price</small>
+                <h3>{money(Number(item.price_inr))}</h3>
+                {item.compare_at_price_inr && <del>{money(Number(item.compare_at_price_inr))}</del>}
+                <span>Inclusive of all taxes</span>
+              </div>
               <span className={item.stock_quantity ? "in-stock" : "out-stock"}>
                 {item.stock_quantity
                   ? `In stock · Only ${item.stock_quantity} available`
