@@ -96,7 +96,7 @@ const blankProd = {
 };
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
-    [email, setEmail] = useState("gauritechnologiespvt@gmail.com"),
+    [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [error, setError] = useState(""),
     [tab, setTab] = useState("orders"),
@@ -291,14 +291,23 @@ export default function AdminDashboard() {
   if (!session)
     return (
       <main className="admin-login">
-        <form onSubmit={login}>
-          <a href="/">← Return to store</a>
-          <h1>Shree Gauri Admin</h1>
-          <p>Sign in securely to manage the complete store.</p>
+        <form onSubmit={login} autoComplete="off">
+          <a className="admin-back" href="/">← Return to store</a>
+          <div className="admin-login-brand">
+            <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
+            <span>SHREE GAURI</span>
+            <small>ADMINISTRATION</small>
+          </div>
+          <div className="admin-login-divider"><span>✦</span></div>
+          <h1>Welcome Back</h1>
+          <p>Secure access to your Shree Gauri store control centre.</p>
           <label>
             Email
             <input
               type="email"
+              name="sg-admin-email"
+              autoComplete="off"
+              placeholder="Enter admin email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -308,13 +317,17 @@ export default function AdminDashboard() {
             Password
             <input
               type="password"
+              name="sg-admin-password"
+              autoComplete="new-password"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </label>
           {error && <b>{error}</b>}
-          <button>LOGIN</button>
+          <button>SECURE LOGIN</button>
+          <small className="admin-secure-note">Protected administration portal • Shree Gauri</small>
         </form>
       </main>
     );
