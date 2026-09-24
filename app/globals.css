@@ -261,3 +261,8 @@ body {
 .product-full-description{position:relative;margin:4px 0 12px}.product-full-description .description-text{white-space:pre-line;line-height:1.65;color:#514743;max-height:72px;overflow:hidden;position:relative}.product-full-description:not(.open) .description-text:after{content:"";position:absolute;left:0;right:0;bottom:0;height:32px;background:linear-gradient(transparent,#fff)}.product-full-description.open .description-text{max-height:none}.product-full-description button{border:0;background:transparent;color:#7b1420;font-weight:800;padding:8px 0;cursor:pointer}
 .product-price-block{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:10px 0 7px;padding:12px 0;border-top:1px solid #eee3d9;border-bottom:1px solid #eee3d9}.product-price-block>small{width:100%;font-size:11px;color:#6c625d}.product-price-block h3{font-size:34px!important;line-height:1;margin:0!important;color:#24120f!important;font-weight:600}.product-price-block del{font-size:14px;color:#82746e}.product-price-block>span{width:100%;font-size:11px;color:#4c7652}
 @media(max-width:760px){.product-price-block h3{font-size:31px!important}.product-short-description{margin-top:10px}.product-full-description .description-text{max-height:68px}}
+
+/* Product listing artwork: show the complete uploaded poster/image without cropping */
+.product-grid .photo{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+.product-grid .photo img{width:100%;height:100%;object-fit:contain!important;object-position:center;background:#fff}
+@media(max-width:760px){.product-grid .photo{height:210px}.product-grid .photo img{object-fit:contain!important}}
