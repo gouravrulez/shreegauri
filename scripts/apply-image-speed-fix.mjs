@@ -82,10 +82,10 @@ s = s.replace(
                       />`
 );
 
-// Category/purpose/planet cards: lightweight thumbnails.
+// Category/purpose/planet logo cards are visible near the top: prioritize them.
 s = s.replaceAll(
   '<img src={c.image_url} alt={c.name} />',
-  '<img src={fastImage(c.image_url, 240, 68)} alt={c.name} loading="lazy" decoding="async" width={240} height={240} />'
+  '<img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />'
 );
 
 // Cart uses a tiny thumbnail.
