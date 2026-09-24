@@ -32,7 +32,7 @@ if (!s.includes("const fastImage =")) {
   s = s.replace(marker, helper + "\n" + marker);
 }
 
-// Product grid: smaller transformed thumbnails + native lazy loading/async decode.
+// Product grid: optimized transformed thumbnails. First visible products load immediately.
 s = s.replace(
 `                        src={
                           p.primary_image_url ||
@@ -46,7 +46,8 @@ s = s.replace(
                             : "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=520&q=72"
                         }
                         alt={p.name}
-                        loading="lazy"
+                        loading={products.indexOf(p) < 6 ? "eager" : "lazy"}
+                        fetchPriority={products.indexOf(p) < 4 ? "high" : "auto"}
                         decoding="async"
                         width={520}
                         height={520}
