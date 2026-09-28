@@ -109,17 +109,31 @@ if (!admin.includes(`tab === "customers" ? "on" : ""`)) {
   admin = admin.replace(orderButtonEnd, customerButtonBlock);
 }
 
-addOnce(
-  `              {tab === "orders"
+if (!admin.includes('tab === "customers"\n                  ? "Customer Accounts"')) {
+  const oldHeader = `              {tab === "orders"
                 ? "Customer Orders"
-                : tab === "categories"`,
-  `              {tab === "orders"
+                : tab === "categories"`;
+  const dashboardHeader = `              {tab === "dashboard"
+                ? "Store Overview"
+                : tab === "orders"
+                ? "Customer Orders"
+                : tab === "categories"`;
+  const customerHeader = `              {tab === "dashboard"
+                ? "Store Overview"
+                : tab === "orders"
                 ? "Customer Orders"
                 : tab === "customers"
                   ? "Customer Accounts"
-                  : tab === "categories"`,
-  "customer header",
-);
+                  : tab === "categories"`;
+  const legacyCustomerHeader = `              {tab === "orders"
+                ? "Customer Orders"
+                : tab === "customers"
+                  ? "Customer Accounts"
+                  : tab === "categories"`;
+  if (admin.includes(dashboardHeader)) admin = admin.replace(dashboardHeader, customerHeader);
+  else if (admin.includes(oldHeader)) admin = admin.replace(oldHeader, legacyCustomerHeader);
+  else throw new Error("Customer admin patch failed: customer header");
+}
 
 const customersRender = `        {tab === "customers" && (
           <div className="customers-admin">
