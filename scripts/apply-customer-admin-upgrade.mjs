@@ -214,7 +214,7 @@ if (!admin.includes(`className="customers-admin"`)) {
 if (!admin.includes('<option value="packed">Packed</option>')) {
   const shippedOption = '<option value="shipped">Shipped</option>';
   if (!admin.includes(shippedOption)) throw new Error("Customer admin patch failed: shipped status option");
-  admin = admin.replace(shippedOption, '<option value="packed">Packed</option>\\n                      ' + shippedOption);
+  admin = admin.replace(shippedOption, '<option value="packed">Packed</option>\n                      ' + shippedOption);
 }
 
 fs.writeFileSync(adminPath, admin);
