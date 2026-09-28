@@ -210,13 +210,6 @@ if (!admin.includes(`className="customers-admin"`)) {
 }
 
 
-// Keep the Packed fulfilment status available after every prebuild.
-if (!admin.includes('<option value="packed">Packed</option>')) {
-  const shippedOption = '<option value="shipped">Shipped</option>';
-  if (!admin.includes(shippedOption)) throw new Error("Customer admin patch failed: shipped status option");
-  admin = admin.replace(shippedOption, '<option value="packed">Packed</option>\n                      ' + shippedOption);
-}
-
 fs.writeFileSync(adminPath, admin);
 
 const styles = `
