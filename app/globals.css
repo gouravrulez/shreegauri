@@ -272,3 +272,8 @@ body {
 .google-login-button:hover{background:#fafafa!important;border-color:#bdb5af!important}
 .google-g{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:#4285f4;background:#fff}
 .login-divider{display:flex;align-items:center;gap:12px;margin:17px 0 14px;color:#8a817c;font-size:10px;font-weight:700;letter-spacing:.1em}.login-divider:before,.login-divider:after{content:"";height:1px;background:#e5dfda;flex:1}
+
+/* Quick product visibility controls in administration */
+.records .product-hide-button,.records .product-show-button{min-width:72px;font-weight:800;border-radius:7px;padding:9px 12px}
+.records .product-hide-button{background:#fff7ed;color:#8a4515;border:1px solid #e8c9a9}
+.records .product-show-button{background:#eef8f0;color:#28623a;border:1px solid #b9d8c1}
