@@ -103,6 +103,17 @@ export default function CustomerLogin() {
     }
   }, [user]);
 
+  async function signInWithGoogle() {
+    setMessage("Opening Google sign in...");
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get("returnTo") === "checkout" ? "/?checkout=1" : "/login";
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}${returnTo}` },
+    });
+    if (error) setMessage(error.message);
+  }
+
   async function sendOtp(e: FormEvent) {
     e.preventDefault();
     setMessage("Sending verification code...");
@@ -294,6 +305,12 @@ export default function CustomerLogin() {
               <a href="/">← Return to store</a>
               <small>YOUR SHREE GAURI ACCOUNT</small>
               <h1>Login or Sign Up</h1>
+
+              <button type="button" className="google-login-button" onClick={signInWithGoogle}>
+                <span className="google-g">G</span>
+                CONTINUE WITH GOOGLE
+              </button>
+              <div className="login-divider"><span>OR USE OTP</span></div>
 
               <div className="otp-channel">
                 <button type="button" className={channel === "email" ? "active" : ""} onClick={() => { setChannel("email"); setIdentifier(""); setMessage(""); }}>
