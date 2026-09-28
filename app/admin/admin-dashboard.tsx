@@ -99,7 +99,7 @@ export default function AdminDashboard() {
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [error, setError] = useState(""),
-    [tab, setTab] = useState("orders"),
+    [tab, setTab] = useState("dashboard"),
     [cats, setCats] = useState<Cat[]>([]),
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
@@ -107,7 +107,8 @@ export default function AdminDashboard() {
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
     [prod, setProd] = useState<any>(blankProd),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [lastSeenActivity, setLastSeenActivity] = useState(0);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -349,6 +350,10 @@ export default function AdminDashboard() {
           <Store /> Shree Gauri
         </h2>
         <span>Store Control Centre</span>
+        <button className={tab === "dashboard" ? "on" : ""} onClick={openDashboard}>
+          <Store /> Dashboard
+          {newActivityCount > 0 && <b className="order-count">{newActivityCount}</b>}
+        </button>
         <button
           className={tab === "orders" ? "on" : ""}
           onClick={() => setTab("orders")}
@@ -400,7 +405,9 @@ export default function AdminDashboard() {
           <div>
             <small>ADMIN DASHBOARD</small>
             <h1>
-              {tab === "orders"
+              {tab === "dashboard"
+                ? "Store Overview"
+                : tab === "orders"
                 ? "Customer Orders"
                 : tab === "categories"
                   ? "Categories & Subcategories"
@@ -413,6 +420,35 @@ export default function AdminDashboard() {
           </div>
           {notice && <p>{notice}</p>}
         </header>
+        {tab === "dashboard" && (
+          <div className="sg-dashboard">
+            <div className="dashboard-stats">
+              <button onClick={() => setTab("orders")}><small>TOTAL ORDERS</small><strong>{orders.length}</strong><span>{pendingOrders} pending</span></button>
+              <button onClick={() => setTab("orders")}><small>PAID SALES</small><strong>₹{paidRevenue.toLocaleString("en-IN")}</strong><span>Recorded paid orders</span></button>
+              <button onClick={() => setTab("products")}><small>PRODUCTS</small><strong>{products.length}</strong><span>{products.filter((p) => p.is_active).length} visible · {products.filter((p) => !p.is_active).length} hidden</span></button>
+              <button onClick={() => setTab("products")}><small>LOW STOCK</small><strong>{lowStock}</strong><span>3 or fewer remaining</span></button>
+              <button onClick={() => setTab("reviews")}><small>REVIEWS</small><strong>{reviews.length}</strong><span>{pendingReviews} awaiting approval</span></button>
+            </div>
+            <div className="dashboard-panels">
+              <section className="activity-panel">
+                <div className="dashboard-panel-head"><div><small>LIVE ACTIVITY</small><h2>Notifications</h2></div>{newActivityCount > 0 && <b>{newActivityCount} NEW</b>}</div>
+                {activity.length ? activity.map((a) => (
+                  <button key={a.id} className="activity-row" onClick={() => setTab(a.kind === "order" ? "orders" : "reviews")}>
+                    <span className={a.kind}>{a.kind === "order" ? "O" : "★"}</span>
+                    <div><b>{a.title}</b><small>{a.detail}</small><em>{new Date(a.time).toLocaleString("en-IN")}</em></div>
+                  </button>
+                )) : <p className="dashboard-empty">New orders and reviews will appear here automatically.</p>}
+              </section>
+              <section className="dashboard-side-panel">
+                <div className="dashboard-panel-head"><div><small>ATTENTION</small><h2>Store checks</h2></div></div>
+                <button onClick={() => setTab("orders")}><b>{pendingOrders}</b><span>Orders awaiting action</span></button>
+                <button onClick={() => setTab("reviews")}><b>{pendingReviews}</b><span>Reviews awaiting approval</span></button>
+                <button onClick={() => setTab("products")}><b>{lowStock}</b><span>Low-stock products</span></button>
+                <button onClick={() => setTab("products")}><b>{products.filter((p) => !p.is_active).length}</b><span>Hidden products</span></button>
+              </section>
+            </div>
+          </div>
+        )}
         {tab === "orders" && (
           <div className="orders-admin">
             {orders.length ? (
