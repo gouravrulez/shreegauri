@@ -293,11 +293,24 @@ export default function AdminDashboard() {
     setNotice(error?.message || "Website content updated.");
   }
   async function updateOrder(id: string, order_status: string) {
-    const { error } = await supabase
-      .from("orders")
-      .update({ order_status, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    setNotice(error?.message || `Order marked ${order_status}.`);
+    setNotice(`Updating order to ${order_status}...`);
+    const { data: authData } = await supabase.auth.getSession();
+    const token = authData.session?.access_token;
+    if (!token) {
+      setNotice("Admin session expired. Please log in again.");
+      return;
+    }
+    const response = await fetch("/api/admin/order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ order_id: id, order_status }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setNotice(result.error || "Unable to update order.");
+      return;
+    }
+    setNotice(result.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`);
     load();
   }
   const activity = [
