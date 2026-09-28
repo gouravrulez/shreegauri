@@ -267,6 +267,17 @@ export default function AdminDashboard() {
       load();
     }
   }
+  async function toggleProductVisibility(p: Prod) {
+    const next = !p.is_active;
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: next })
+      .eq("id", p.id);
+    setNotice(error?.message || (next ? "Product is now visible on the website." : "Product hidden from the website."));
+    if (!error && prod.id === p.id) setProd({ ...prod, is_active: next });
+    load();
+  }
+
   async function remove(table: string, id: string) {
     if (!confirm("Delete this permanently?")) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
@@ -817,6 +828,12 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <button onClick={() => setProd(p)}>Edit</button>
+                    <button
+                      className={p.is_active ? "product-hide-button" : "product-show-button"}
+                      onClick={() => toggleProductVisibility(p)}
+                    >
+                      {p.is_active ? "HIDE" : "SHOW"}
+                    </button>
                     <button
                       className="delete"
                       onClick={() => remove("products", p.id)}
