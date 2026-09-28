@@ -16,12 +16,12 @@ export async function POST(request:Request){
   if(!admin)return NextResponse.json({error:"This account is not authorized for administration."},{status:403});
   const body=await request.json(); const id=String(body?.order_id||""); const status=String(body?.order_status||"").toLowerCase();
   if(!id||!allowed.has(status))return NextResponse.json({error:"Invalid order update."},{status:400});
-  const {data:order,error:oe}=await db.from("orders").select("id,order_number,customer_name,customer_email,order_status").eq("id",id).single();
+  const {data:order,error:oe}=await db.from("orders").select("id,order_number,customer_name,email,order_status").eq("id",id).single();
   if(oe||!order)return NextResponse.json({error:"Order not found."},{status:404});
   const {error:ue}=await db.from("orders").update({order_status:status,updated_at:new Date().toISOString()}).eq("id",id); if(ue)throw ue;
   let emailSent=false;
   const emailStatus = ["confirmed","processing","packed","shipped","delivered"].includes(status);
-  if(emailStatus&&order.order_status!==status&&order.customer_email){
+  if(emailStatus&&order.order_status!==status&&order.email){
    const rk=process.env.RESEND_API_KEY;
    if(!rk)return NextResponse.json({ok:true,email_sent:false,warning:"Order updated, but email service is not configured."});
    const from=process.env.ORDER_EMAIL_FROM||"Shree Gauri <orders@shreegauri.in>";
@@ -34,7 +34,7 @@ export async function POST(request:Request){
    };
    const m = status === "confirmed" ? copy.confirmed : status === "processing" ? copy.processing : status === "packed" ? copy.packed : status === "shipped" ? copy.shipped : status === "delivered" ? copy.delivered : null;
    if(!m) return NextResponse.json({ok:true,email_sent:false});
-   const res=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${rk}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[order.customer_email],subject:m.subject,html:`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1 style="color:#6b2334">${m.heading}</h1><p>Namaste ${esc(order.customer_name||"Customer")},</p><p>${m.message}</p><p>Order: <strong>${esc(order.order_number)}</strong></p><p>You can check the latest status from your Shree Gauri customer account.</p><p style="margin-top:28px">Thank you for choosing Shree Gauri.</p><p><strong>Shree Gauri</strong><br>www.shreegauri.in</p></div>`})});
+   const res=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${rk}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[order.email],subject:m.subject,html:`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1 style="color:#6b2334">${m.heading}</h1><p>Namaste ${esc(order.customer_name||"Customer")},</p><p>${m.message}</p><p>Order: <strong>${esc(order.order_number)}</strong></p><p>You can check the latest status from your Shree Gauri customer account.</p><p style="margin-top:28px">Thank you for choosing Shree Gauri.</p><p><strong>Shree Gauri</strong><br>www.shreegauri.in</p></div>`})});
    emailSent=res.ok; if(!res.ok)console.error("Order status email failed:",await res.text());
   }
   return NextResponse.json({ok:true,email_sent:emailSent});
