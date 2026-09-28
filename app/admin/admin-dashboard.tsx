@@ -300,6 +300,22 @@ export default function AdminDashboard() {
     setNotice(error?.message || `Order marked ${order_status}.`);
     load();
   }
+  const activity = [
+    ...orders.slice(0, 12).map((o) => ({ id: `order-${o.id}`, time: new Date(o.created_at).getTime(), title: `New order ${o.order_number}`, detail: `${o.customer_name} · ₹${Number(o.total_inr).toLocaleString("en-IN")} · ${o.payment_status || o.order_status}`, kind: "order" })),
+    ...reviews.slice(0, 12).map((r) => ({ id: `review-${r.id}`, time: new Date(r.created_at).getTime(), title: "New customer review", detail: `${r.reviewer_name} · ${r.rating}/5 · ${r.title || "Review received"}`, kind: "review" })),
+  ].sort((a, b) => b.time - a.time).slice(0, 15);
+  const newActivityCount = activity.filter((a) => a.time > lastSeenActivity).length;
+  const pendingOrders = orders.filter((o) => o.order_status === "pending").length;
+  const pendingReviews = reviews.filter((r) => !r.is_approved).length;
+  const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
+  const paidRevenue = orders.filter((o) => ["paid", "success", "completed"].includes(String(o.payment_status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+  function openDashboard() {
+    const now = Date.now();
+    setLastSeenActivity(now);
+    if (typeof window !== "undefined") localStorage.setItem("sg-admin-last-seen", String(now));
+    setTab("dashboard");
+  }
+
   if (!session)
     return (
       <main className="admin-login">
