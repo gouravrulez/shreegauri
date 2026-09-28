@@ -25,15 +25,15 @@ export async function POST(request:Request){
    const rk=process.env.RESEND_API_KEY;
    if(!rk)return NextResponse.json({ok:true,email_sent:false,warning:"Order updated, but email service is not configured."});
    const from=process.env.ORDER_EMAIL_FROM||"Shree Gauri <orders@shreegauri.in>";
-   const copy:Record<string,{subject:string;heading:string;message:string}> = {
+   const copy: Record<"confirmed"|"processing"|"packed"|"shipped"|"delivered",{subject:string;heading:string;message:string}> = {
     confirmed:{subject:`Your Shree Gauri order ${order.order_number} is confirmed`,heading:"Order confirmed",message:"We have confirmed your order and will begin preparing it shortly."},
     processing:{subject:`Your Shree Gauri order ${order.order_number} is being prepared`,heading:"We are preparing your order",message:"Your order is now being prepared by our team."},
     packed:{subject:`Your Shree Gauri order ${order.order_number} is packed`,heading:"Your order is packed",message:"Your order has been packed and is ready for dispatch."},
     shipped:{subject:`Your Shree Gauri order ${order.order_number} has been shipped`,heading:"Your order has been shipped",message:"Your order has been shipped and is on its way."},
     delivered:{subject:`Your Shree Gauri order ${order.order_number} has been delivered`,heading:"Your order has been delivered",message:"Your order has been marked as delivered. We hope you love your purchase."}
    };
-   const m=copy[status];
-   if(!m)return NextResponse.json({ok:true,email_sent:false});
+   if(!["confirmed","processing","packed","shipped","delivered"].includes(status)) return NextResponse.json({ok:true,email_sent:false});
+   const m=copy[status as keyof typeof copy];
    const res=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${rk}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[order.email],subject:m.subject,html:`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1 style="color:#6b2334">${m.heading}</h1><p>Namaste ${esc(order.customer_name||"Customer")},</p><p>${m.message}</p><p>Order: <strong>${esc(order.order_number)}</strong></p><p>You can check the latest status from your Shree Gauri customer account.</p><p style="margin-top:28px">Thank you for choosing Shree Gauri.</p><p><strong>Shree Gauri</strong><br>www.shreegauri.in</p></div>`})});
    emailSent=res.ok; if(!res.ok)console.error("Order status email failed:",await res.text());
   }
