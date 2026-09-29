@@ -173,15 +173,21 @@ replaceOnce(
 "auth header"
 );
 
-replaceOnce(
+if (!text.includes("onClick={openSecureCheckout}")) {
+  const checkoutNeedles = [
 `                onClick={() => setCheckoutOpen(true)}
               >
                 PLACE ORDER`,
-`                onClick={openSecureCheckout}
+`                onClick={() => { setCheckoutOpen(true); }}
               >
-                PLACE ORDER`,
-"cart checkout login gate"
-);
+                PLACE ORDER`
+  ];
+  const checkoutNeedle = checkoutNeedles.find((n) => text.includes(n));
+  if (!checkoutNeedle) throw new Error("Customer checkout patch failed: cart checkout login gate");
+  text = text.replace(checkoutNeedle, `                onClick={openSecureCheckout}
+              >
+                PLACE ORDER`);
+}
 
 replaceOnce(
 `              Enter your delivery address, then complete payment securely
