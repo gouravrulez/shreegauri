@@ -78,7 +78,7 @@ export default function CustomerLogin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [newAddress, setNewAddress] = useState(blankAddress);
-  const [section, setSection] = useState<"overview" | "orders" | "profile" | "addresses">("overview");
+  const [section, setSection] = useState<"overview" | "orders" | "profile" | "addresses">(() => { if (typeof window === "undefined") return "overview"; const requested = new URLSearchParams(window.location.search).get("section"); return requested === "orders" || requested === "profile" || requested === "addresses" ? requested : "overview"; });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
