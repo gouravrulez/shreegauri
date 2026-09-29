@@ -217,6 +217,13 @@ replaceOnce(
 "saved address selector"
 );
 
+
+// Route every cart checkout entry through the authenticated checkout loader.
+text = text.replace(
+  /onClick=\{\(\) => setCheckoutOpen\(true\)\}(\s*>\s*PLACE ORDER)/g,
+  "onClick={openSecureCheckout}$1"
+);
+
 fs.writeFileSync(storefrontPath, text);
 
 const styles = `
