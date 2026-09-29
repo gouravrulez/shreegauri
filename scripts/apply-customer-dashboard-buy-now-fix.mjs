@@ -15,11 +15,11 @@ function rep(text,from,to,label){
 
 // BUY NOW must use the website's authenticated secure checkout, never WhatsApp.
 const cardWa=`                        <a\n                          href={wa(\n                            \`Hello Shree Gauri, I want to buy \${p.name}.\`,\n                          )}\n                        >\n                          BUY NOW\n                        </a>`;
-const cardCheckout=`                        <button\n                          className="buy-now-site"\n                          onClick={() => { setCart([p]); setItem(null); setCheckoutOpen(true); }}\n                        >\n                          BUY NOW\n                        </button>`;
+const cardCheckout=`                        <button\n                          className="buy-now-site"\n                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}\n                        >\n                          BUY NOW\n                        </button>`;
 store=rep(store,cardWa,cardCheckout,"product-card Buy Now");
 
 const modalWa=`                <a\n                  href={wa(\n                    \`Hello Shree Gauri, I want to buy \${qty} × \${item.name}.\`,\n                  )}\n                >\n                  BUY NOW\n                </a>`;
-const modalCheckout=`                <button\n                  className="buy-now-site"\n                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setCheckoutOpen(true); }}\n                >\n                  BUY NOW\n                </button>`;
+const modalCheckout=`                <button\n                  className="buy-now-site"\n                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}\n                >\n                  BUY NOW\n                </button>`;
 store=rep(store,modalWa,modalCheckout,"product-detail Buy Now");
 
 // Dashboard: add useful commerce shortcuts and clearer order status without changing data model.
