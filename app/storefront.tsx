@@ -778,7 +778,7 @@ export default function Storefront() {
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setItem(null); setCheckoutOpen(true); }}
+                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
                         >
                           BUY NOW
                         </button>
@@ -857,7 +857,7 @@ export default function Storefront() {
               </h3>
               <button
                 className="gold link"
-                onClick={() => setCheckoutOpen(true)}
+                onClick={openSecureCheckout}
               >
                 PLACE ORDER
               </button>
@@ -1179,7 +1179,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setCheckoutOpen(true); }}
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
                 >
                   BUY NOW
                 </button>
