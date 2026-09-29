@@ -778,7 +778,7 @@ export default function Storefront() {
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { setCart([p]); setItem(null); setCheckoutOpen(true); }}
                         >
                           BUY NOW
                         </button>
@@ -1179,7 +1179,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setTimeout(() => openSecureCheckout(), 0); }}
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); setCheckoutOpen(true); }}
                 >
                   BUY NOW
                 </button>
