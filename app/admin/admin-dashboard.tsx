@@ -294,24 +294,9 @@ export default function AdminDashboard() {
   }
   async function updateOrder(id: string, order_status: string) {
     setNotice(`Updating order to ${order_status}...`);
-    const { data: authData } = await supabase.auth.getSession();
-    const token = authData.session?.access_token;
-    if (!token) {
-      setNotice("Admin session expired. Please log in again.");
-      return;
-    }
-    const response = await fetch("/api/admin/order-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ order_id: id, order_status }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setNotice(result.error || "Unable to update order.");
-      return;
-    }
-    setNotice(result.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`);
-    load();
+    const { error } = await supabase.from("orders").update({ order_status }).eq("id", id);
+    setNotice(error?.message || `Order marked ${order_status}.`);
+    if (!error) load();
   }
   const activity = [
     ...orders.slice(0, 12).map((o) => ({ id: `order-${o.id}`, time: new Date(o.created_at).getTime(), title: `New order ${o.order_number}`, detail: `${o.customer_name} · ₹${Number(o.total_inr).toLocaleString("en-IN")} · ${o.payment_status || o.order_status}`, kind: "order" })),
@@ -540,7 +525,6 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
-                      <option value="packed">Packed</option>
                       <option value="shipped">Shipped</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
