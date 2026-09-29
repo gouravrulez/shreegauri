@@ -32,7 +32,10 @@ export default function PaymentReturnPage() {
           setSuccess(true);
           setDone(true);
           localStorage.removeItem("sg_cart");
-          setMessage(`Order confirmed${result.order_number ? ` — ${result.order_number}` : ""}. Thank you for shopping with Shree Gauri.`);
+          setMessage(`Order confirmed${result.order_number ? ` — ${result.order_number}` : ""}. Taking you to your orders...`);
+          window.setTimeout(() => {
+            window.location.replace("/login?section=orders&payment=success");
+          }, 1400);
           return;
         }
         if (result.status === "failed") {
