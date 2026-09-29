@@ -282,3 +282,20 @@ body {
 .sg-dashboard{display:grid;gap:22px}.dashboard-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.dashboard-stats button{background:#fff;border:1px solid #eadfd8;border-radius:14px;padding:18px;text-align:left;display:grid;gap:5px;box-shadow:0 5px 18px rgba(75,28,40,.06)}.dashboard-stats small,.dashboard-panel-head small{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#8b6870}.dashboard-stats strong{font-size:25px;color:#54233a}.dashboard-stats span{font-size:12px;color:#75666a}.dashboard-panels{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.7fr);gap:18px}.activity-panel,.dashboard-side-panel{background:#fff;border:1px solid #eadfd8;border-radius:16px;padding:18px;box-shadow:0 5px 18px rgba(75,28,40,.05)}.dashboard-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.dashboard-panel-head h2{margin:2px 0 0;color:#54233a}.dashboard-panel-head>b{background:#54233a;color:#fff;border-radius:999px;padding:5px 9px;font-size:10px}.activity-row{width:100%;border:0;border-top:1px solid #f0e8e4;background:transparent;padding:12px 4px;display:flex;gap:11px;text-align:left;align-items:flex-start}.activity-row>span{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:#f7edef;color:#54233a;font-weight:900;flex:0 0 auto}.activity-row div{display:grid;gap:2px}.activity-row small,.activity-row em{font-size:11px;color:#796d70;font-style:normal}.dashboard-side-panel>button{width:100%;background:#fff;border:0;border-top:1px solid #f0e8e4;padding:13px 3px;display:flex;align-items:center;gap:12px;text-align:left}.dashboard-side-panel>button b{font-size:22px;color:#54233a;min-width:34px}.dashboard-side-panel>button span{font-size:12px}.dashboard-empty{padding:25px 5px;color:#786c70}
 @media(max-width:1050px){.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-panels{grid-template-columns:1fr}}
 @media(max-width:620px){.dashboard-stats{grid-template-columns:1fr 1fr}.dashboard-stats button{padding:13px}.dashboard-stats strong{font-size:21px}.dashboard-panels{display:block}.dashboard-side-panel{margin-top:15px}}
+
+/* Mobile secure checkout: compact, app-like and easy to complete on iPhone */
+@media(max-width:600px){
+  .backdrop:has(.checkout-modal){display:block;padding:0;background:#fffaf4;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .checkout-modal{width:100%;min-height:100dvh;max-height:none;margin:0;padding:24px 18px calc(28px + env(safe-area-inset-bottom));border-radius:0;box-shadow:none;overflow:visible}
+  .checkout-modal .close{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:60;width:40px;height:40px;display:grid;place-items:center;box-shadow:0 2px 12px #0002}
+  .checkout-modal .kicker{display:block;padding-right:48px;font-size:10px}
+  .checkout-modal h2{font-size:30px;line-height:1.1;margin:7px 48px 7px 0}
+  .checkout-modal>p{font-size:13px;line-height:1.5;margin:0 0 18px}
+  .checkout-grid{display:grid;grid-template-columns:1fr;gap:11px;margin-top:0}
+  .checkout-grid .wide{grid-column:auto}
+  .checkout-grid label{gap:5px;font-size:11px}
+  .checkout-grid input{min-height:46px;padding:11px 12px;border-radius:7px;font-size:16px}
+  .checkout-summary{position:sticky;bottom:64px;z-index:3;background:#fffaf4;margin:18px -18px 0;padding:13px 18px}
+  .place-order{position:sticky;bottom:0;z-index:4;min-height:52px;margin:0;border-radius:7px;font-size:13px;box-shadow:0 -8px 20px #fffaf4}
+  .checkout-message{font-size:12px;margin:10px 0 0}
+}
