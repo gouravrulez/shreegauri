@@ -294,9 +294,11 @@ export default function AdminDashboard() {
   }
   async function updateOrder(id: string, order_status: string) {
     setNotice(`Updating order to ${order_status}...`);
-    const { error } = await supabase.from("orders").update({ order_status }).eq("id", id);
-    setNotice(error?.message || `Order marked ${order_status}.`);
-    if (!error) load();
+    const { data, error } = await supabase.functions.invoke("order-status-email", {
+      body: { order_id: id, order_status },
+    });
+    setNotice(error?.message || data?.error || (data?.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`));
+    if (!error && !data?.error) load();
   }
   const activity = [
     ...orders.slice(0, 12).map((o) => ({ id: `order-${o.id}`, time: new Date(o.created_at).getTime(), title: `New order ${o.order_number}`, detail: `${o.customer_name} · ₹${Number(o.total_inr).toLocaleString("en-IN")} · ${o.payment_status || o.order_status}`, kind: "order" })),
@@ -525,6 +527,7 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
+                      <option value="packed">Packed</option>
                       <option value="shipped">Shipped</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
