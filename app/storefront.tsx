@@ -1043,6 +1043,20 @@ export default function Storefront() {
                 />
               </label>
             </div>
+            <div className="checkout-nav-actions">
+              <button type="button" onClick={() => { setCheckoutOpen(false); go("cart"); }}>GO TO CART</button>
+              <a href="/login?section=overview">MY DASHBOARD</a>
+            </div>
+            <div className="checkout-products">
+              <div className="checkout-products-head"><b>Order Items</b><span>{cart.length} item(s)</span></div>
+              {cart.map((p, i) => (
+                <div className="checkout-product-row" key={`${p.id}-${i}`}>
+                  <img src={p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"} alt={p.name} />
+                  <div><b>{p.name}</b><small>{money(Number(p.price_inr))}</small></div>
+                  <button type="button" aria-label={`Remove ${p.name}`} onClick={() => setCart((items) => items.filter((_, index) => index !== i))}><X /> REMOVE</button>
+                </div>
+              ))}
+            </div>
             <div className="checkout-summary">
               <b>{cart.length} item(s)</b>
               <strong>
