@@ -243,6 +243,13 @@ export default function AdminDashboard() {
     }
   }
   async function saveProd() {
+    setNotice("Saving product...");
+    const { data: authData, error: authError } = await supabase.auth.refreshSession();
+    const adminUserId = "42dcd32a-2ec6-406c-8be3-703237a33d0d";
+    if (authError || authData.session?.user?.id !== adminUserId) {
+      setNotice("Admin session expired or invalid. Please sign in again.");
+      return;
+    }
     const data = {
       ...prod,
       slug:
@@ -261,12 +268,13 @@ export default function AdminDashboard() {
     const r = prod.id
       ? await supabase.from("products").update(data).eq("id", prod.id)
       : await supabase.from("products").insert(data);
-    if (r.error) setNotice(r.error.message);
-    else {
-      setNotice("Product saved.");
-      setProd(blankProd);
-      load();
+    if (r.error) {
+      setNotice(`Product could not be saved: ${r.error.message}`);
+      return;
     }
+    setNotice("Product saved successfully.");
+    setProd(blankProd);
+    await load();
   }
   async function toggleProductVisibility(p: Prod) {
     const next = !p.is_active;
