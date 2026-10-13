@@ -5,6 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "https://hhtqnpxarrbagyvswqrj.supabase.co";
+const PRIMARY_ADMIN_USER_ID = "42dcd32a-2ec6-406c-8be3-703237a33d0d";
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -43,6 +44,7 @@ async function listStaff(admin: ReturnType<typeof serviceClient>) {
   return (rows || []).map((row) => ({
     user_id: row.user_id,
     role: row.role,
+    is_primary_admin: row.user_id === PRIMARY_ADMIN_USER_ID,
     created_at: row.created_at,
     email: users.get(row.user_id)?.email || "(email unavailable)"
   }));
@@ -53,8 +55,9 @@ export async function GET(request: Request) {
     const auth = await authorized(request);
     if ("error" in auth) return auth.error;
     const needsPasswordSetup = auth.user.user_metadata?.staff_password_setup === true;
-    const staff = auth.role === "admin" ? await listStaff(auth.admin) : [];
-    return NextResponse.json({ role: auth.role, staff, needs_password_setup: needsPasswordSetup });
+    const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
+    const staff = isPrimaryAdmin ? await listStaff(auth.admin) : [];
+    return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Admin request failed." }, { status: 500 });
   }
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const action = String(body?.action || "");
     const isMainAdmin = auth.role === "admin";
+    const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
 
     if (action === "set_password") {
       if (auth.user.user_metadata?.staff_password_setup !== true) {
@@ -84,13 +88,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    if (!isMainAdmin) return NextResponse.json({ error: "Only the main administrator can perform this action." }, { status: 403 });
+    if (!isMainAdmin) return NextResponse.json({ error: "Administrator access is required for this action." }, { status: 403 });
 
     if (action === "invite_staff") {
       const email = String(body?.email || "").trim().toLowerCase();
       const role = String(body?.role || "");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid staff email." }, { status: 400 });
-      if (!["manager", "orders", "support", "catalog"].includes(role)) return NextResponse.json({ error: "Choose a valid staff role." }, { status: 400 });
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can invite or manage team access." }, { status: 403 });
+      if (!["admin", "manager", "orders", "support", "catalog"].includes(role)) return NextResponse.json({ error: "Choose a valid staff role." }, { status: 400 });
       const { data: authUsers, error: listError } = await auth.admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (listError) return NextResponse.json({ error: listError.message }, { status: 400 });
       const match = (authUsers.users || []).find((u) => (u.email || "").toLowerCase() === email);
@@ -115,11 +120,12 @@ export async function POST(request: Request) {
     }
 
     if (action === "remove_staff") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can revoke team access." }, { status: 403 });
       const userId = String(body?.user_id || "");
       if (!userId || userId === auth.user.id) return NextResponse.json({ error: "You cannot remove your own main-admin access." }, { status: 400 });
       const { data: staffRow, error: staffError } = await auth.admin.from("admin_users").select("role").eq("user_id", userId).maybeSingle();
       if (staffError || !staffRow) return NextResponse.json({ error: "Staff record not found." }, { status: 404 });
-      if (staffRow.role === "admin") return NextResponse.json({ error: "A main administrator cannot be removed through staff management." }, { status: 403 });
+      if (userId === PRIMARY_ADMIN_USER_ID) return NextResponse.json({ error: "The primary main administrator account is protected and cannot be removed." }, { status: 403 });
       await audit(auth.admin, auth.user, "staff_access_revoked", "staff", userId, { previous_role: staffRow.role });
       const { error } = await auth.admin.from("admin_users").delete().eq("user_id", userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -127,6 +133,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "delete_order") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can delete orders." }, { status: 403 });
       const id = String(body?.id || "");
       const { data: order, error } = await auth.admin.from("orders").select("id,order_number,payment_status,payment_provider,payment_reference,total_inr").eq("id", id).maybeSingle();
       if (error || !order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
@@ -145,6 +152,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "delete_customer") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can delete customer records." }, { status: 403 });
       const id = String(body?.id || "");
       const { data: customer, error } = await auth.admin.from("customers").select("id,auth_user_id,email").eq("id", id).maybeSingle();
       if (error || !customer) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
