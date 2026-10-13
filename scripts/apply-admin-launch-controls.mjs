@@ -66,8 +66,8 @@ replaceOnce(
 );
 
 replaceOnce(
-  `              {tab === "orders"\n                ? "Customer Orders"`,
-  `              {tab === "staff"\n                ? "Staff & Permissions"\n                : tab === "orders"\n                ? "Customer Orders"`,
+  `: tab === "orders"\n                ? "Customer Orders"`,
+  `: tab === "staff"\n                  ? "Staff & Permissions"\n                : tab === "orders"\n                ? "Customer Orders"`,
   "staff page heading"
 );
 
