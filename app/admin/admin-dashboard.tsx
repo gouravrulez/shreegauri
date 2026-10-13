@@ -117,6 +117,7 @@ export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("dashboard"),
     [cats, setCats] = useState<Cat[]>([]),
@@ -190,11 +191,26 @@ export default function AdminDashboard() {
   async function login(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
       password,
     });
-    if (error) setError(error.message);
+    if (signInError || !data.session) {
+      setError(signInError?.message || "Unable to start a secure session. Please try again.");
+      return;
+    }
+    const roleResponse = await fetch("/api/admin/manage", {
+      headers: { Authorization: "Bearer " + data.session.access_token },
+    });
+    const roleData = await roleResponse.json().catch(() => ({}));
+    const isMainAdmin = roleResponse.ok && roleData.role === "admin";
+    const isStaff = roleResponse.ok && ["manager", "orders", "support", "catalog"].includes(roleData.role);
+    if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
+      await supabase.auth.signOut();
+      setError(loginMode === "admin"
+        ? "This work email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
+        : "This work email does not have an active staff role. Ask the main administrator to invite or enable your access.");
+    }
   }
   async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -318,9 +334,8 @@ export default function AdminDashboard() {
   async function saveProd() {
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
-    const adminUserId = "42dcd32a-2ec6-406c-8be3-703237a33d0d";
-    if (authError || authData.session?.user?.id !== adminUserId) {
-      setNotice("Admin session expired or invalid. Please sign in again.");
+    if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
+      setNotice("Your session is invalid or your role cannot manage products.");
       return;
     }
     const data = {
@@ -410,15 +425,19 @@ export default function AdminDashboard() {
             <small>ADMINISTRATION</small>
           </div>
           <div className="admin-login-divider"><span>✦</span></div>
-          <h1>Welcome Back</h1>
-          <p>Secure access to your Shree Gauri store control centre.</p>
+          <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
+          <p>{loginMode === "admin" ? "Secure access for the main administrator." : "Use your invited work email and password to access your assigned tasks."}</p>
+          <div role="group" aria-label="Choose sign-in type" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 0 18px" }}>
+            <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "admin" ? "#3d2a20" : "#fff", color: loginMode === "admin" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Main Admin</button>
+            <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "staff" ? "#3d2a20" : "#fff", color: loginMode === "staff" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Staff Login</button>
+          </div>
           <label>
-            Email
+            Work email
             <input
               type="email"
               name="sg-admin-email"
               autoComplete="off"
-              placeholder="Enter admin email"
+              placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -437,8 +456,8 @@ export default function AdminDashboard() {
             />
           </label>
           {error && <b>{error}</b>}
-          <button>SECURE LOGIN</button>
-          <small className="admin-secure-note">Protected administration portal • Shree Gauri</small>
+          <button>{loginMode === "admin" ? "SECURE ADMIN LOGIN" : "SECURE STAFF LOGIN"}</button>
+          <small className="admin-secure-note">{loginMode === "admin" ? "Main administrator access • Shree Gauri" : "Role-based staff access • Shree Gauri"}</small>
         </form>
       </main>
     );
