@@ -52,17 +52,33 @@ async function listStaff(admin: ReturnType<typeof serviceClient>) {
 
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!token) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    const serviceConfigured = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    if (!serviceConfigured) {
+      const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_0J2bflpzARaNejs8jFwDcA_Izlmpdwj";
+      const userClient = createClient(url, publishableKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: "Bearer " + token } },
+      });
+      const { data, error } = await userClient.auth.getUser(token);
+      if (error || !data.user) return NextResponse.json({ error: "Session expired. Sign in again." }, { status: 401 });
+      const { data: roleRow, error: roleError } = await userClient.from("admin_users").select("role").eq("user_id", data.user.id).maybeSingle();
+      if (roleError) return NextResponse.json({ error: "Unable to verify staff permissions." }, { status: 500 });
+      if (!roleRow?.role) return NextResponse.json({ error: "This account has no Shree Gauri staff access." }, { status: 403 });
+      return NextResponse.json({ role: String(roleRow.role), staff: [], is_primary_admin: data.user.id === PRIMARY_ADMIN_USER_ID, needs_password_setup: data.user.user_metadata?.staff_password_setup === true, service_configured: false });
+    }
     const auth = await authorized(request);
     if ("error" in auth) return auth.error;
     const needsPasswordSetup = auth.user.user_metadata?.staff_password_setup === true;
     const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
     const staff = isPrimaryAdmin ? await listStaff(auth.admin) : [];
-    return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup });
+    return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup, service_configured: true });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Admin request failed." }, { status: 500 });
   }
 }
-
 export async function POST(request: Request) {
   let auth: Awaited<ReturnType<typeof authorized>>;
   try {
