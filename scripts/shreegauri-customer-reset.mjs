@@ -110,18 +110,20 @@ async function countExisting(table) {
 async function backupAndDryRun() {
   const authUsers = await listAuthUsers();
 
-  const adminResult = await readAll("admins");
-  if (adminResult.error) throw adminResult.error;
-  if (!adminResult.exists) {
-    throw new Error("ABORTED: public.admins could not be read. Admin protection cannot be verified.");
+  // Protect real staff identities from public.admin_users, which is the
+  // table checked by private.is_admin() and the live RLS policies.
+  const staffResult = await readAll("admin_users");
+  if (staffResult.error) throw staffResult.error;
+  if (!staffResult.exists || staffResult.rows.length === 0) {
+    throw new Error("ABORTED: public.admin_users is missing or empty. Main-admin protection cannot be verified.");
+  }
+  const adminAuthIds = getAdminAuthIds(staffResult.rows, authUsers);
+  if (adminAuthIds.length === 0) {
+    throw new Error("ABORTED: no admin_users identity matched an auth user. Refusing to risk deleting the main administrator.");
   }
 
-  const adminAuthIds = getAdminAuthIds(adminResult.rows, authUsers);
-  if (adminResult.rows.length > 0 && adminAuthIds.length === 0) {
-    throw new Error(
-      "ABORTED: admin records exist but no auth user IDs could be matched. Refusing to risk deleting an administrator."
-    );
-  }
+  const adminResult = await readAll("admins");
+  if (adminResult.error) throw adminResult.error;
 
   const backup = {
     generated_at: new Date().toISOString(),
@@ -130,6 +132,7 @@ async function backupAndDryRun() {
     tables: {},
     auth_users: authUsers,
     admins: adminResult.rows,
+    admin_users: staffResult.rows,
     admin_auth_ids: adminAuthIds
   };
 
@@ -147,7 +150,7 @@ async function backupAndDryRun() {
   const stat = await fs.stat(backupFile);
   if (stat.size < 2) throw new Error("ABORTED: backup verification failed; backup file is empty.");
   const verification = JSON.parse(await fs.readFile(backupFile, "utf8"));
-  if (!verification.auth_users || !verification.admins || !verification.tables) {
+  if (!verification.auth_users || !verification.admins || !verification.admin_users || !verification.tables) {
     throw new Error("ABORTED: backup verification failed; expected sections are missing.");
   }
 
@@ -211,7 +214,7 @@ async function executeReset(backup, counts, adminAuthIds) {
   }
 
   const remainingAuth = await listAuthUsers();
-  const remainingAdmins = getAdminAuthIds(backup.admins, remainingAuth);
+  const remainingAdmins = getAdminAuthIds(backup.admin_users, remainingAuth);
   if (remainingAdmins.length !== adminAuthIds.length) {
     throw new Error("POST-RESET VERIFICATION FAILED: admin authentication count changed.");
   }
