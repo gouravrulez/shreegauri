@@ -14,11 +14,11 @@ function serviceClient() {
 }
 
 async function authorized(request: Request) {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error("Admin service is not configured.");
   const authHeader = request.headers.get("authorization") || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) return { error: NextResponse.json({ error: "Sign in required." }, { status: 401 }) } as const;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("Admin service is not configured.");
   const admin = serviceClient();
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data.user) return { error: NextResponse.json({ error: "Session expired. Sign in again." }, { status: 401 }) } as const;
