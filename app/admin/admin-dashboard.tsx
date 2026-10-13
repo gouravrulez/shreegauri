@@ -11,6 +11,10 @@ import {
   Settings,
   Star,
   ClipboardList,
+  Users,
+  ShieldCheck,
+  UserPlus,
+  UserX,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -56,6 +60,21 @@ type OrderItem = {
   unit_price_inr: number;
   line_total_inr: number;
 };
+type Customer = {
+  id: string;
+  auth_user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  created_at: string;
+  updated_at: string;
+};
 type Order = {
   id: string;
   order_number: string;
@@ -98,17 +117,27 @@ export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("dashboard"),
     [cats, setCats] = useState<Cat[]>([]),
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
     [orders, setOrders] = useState<Order[]>([]),
+    [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
-    [lastSeenActivity, setLastSeenActivity] = useState(0);
+    [lastSeenActivity, setLastSeenActivity] = useState(0),
+    [staffRole, setStaffRole] = useState<string>("loading"),
+    [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false),
+    [adminServiceConfigured, setAdminServiceConfigured] = useState(true),
+    [staffRows, setStaffRows] = useState<any[]>([]),
+    [staffEmail, setStaffEmail] = useState(""),
+    [staffInviteRole, setStaffInviteRole] = useState("orders"),
+    [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
+    [newStaffPassword, setNewStaffPassword] = useState("");
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -120,7 +149,17 @@ export default function AdminDashboard() {
     if (session) load();
   }, [session]);
   async function load() {
-    const [a, b, c, d, o] = await Promise.all([
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) return;
+    const roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${currentSession.access_token}` } });
+    const roleData = await roleResponse.json().catch(() => ({}));
+    if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
+    setStaffRole(roleData.role);
+    setIsPrimaryAdmin(Boolean(roleData.is_primary_admin));
+    setAdminServiceConfigured(roleData.service_configured !== false);
+    setStaffRows(roleData.staff || []);
+    setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
+    const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
         .from("products")
@@ -135,6 +174,10 @@ export default function AdminDashboard() {
         .from("orders")
         .select("*,order_items(*)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("customers")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
     if (a.data) setCats(a.data);
     if (b.data)
@@ -147,16 +190,66 @@ export default function AdminDashboard() {
     if (c.data) setSettings(c.data);
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
+    if (u.data) setCustomers(u.data as Customer[]);
   }
   async function login(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
       password,
     });
-    if (error) setError(error.message);
+    if (signInError || !data.session) {
+      setError(signInError?.message || "Unable to start a secure session. Please try again.");
+      return;
+    }
+    const roleResponse = await fetch("/api/admin/manage", {
+      headers: { Authorization: "Bearer " + data.session.access_token },
+    });
+    const roleData = await roleResponse.json().catch(() => ({}));
+    const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
+    const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
+    if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
+      await supabase.auth.signOut();
+      setError(loginMode === "admin"
+        ? "This work email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
+        : "This work email does not have an active staff role. Ask the main administrator to invite or enable your access.");
+    }
   }
+  async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) { setNotice("Your session expired. Please sign in again."); return false; }
+    const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
+    const result = await response.json().catch(() => ({}));
+    setNotice(result.message || result.error || (response.ok ? "Done." : "Action failed."));
+    if (response.ok) await load();
+    return response.ok;
+  }
+  async function deleteAdminRecord(kind: "customer" | "order", id: string) {
+    if (!isPrimaryAdmin) { setNotice("Only the primary main administrator can delete records."); return; }
+    const warning = kind === "order"
+      ? "Permanently delete this order and its line items/reservations? A restricted audit record will retain its payment reference for reconciliation."
+      : "Delete this customer profile and personal data? Any linked order history will be anonymized and retained for financial reconciliation.";
+    if (!window.confirm(warning)) return;
+    await runAdminAction(kind === "order" ? "delete_order" : "delete_customer", { id });
+  }
+  async function inviteStaff(e: FormEvent) {
+    e.preventDefault();
+    if (!isPrimaryAdmin) return;
+    const ok = await runAdminAction("invite_staff", { email: staffEmail, role: staffInviteRole });
+    if (ok) setStaffEmail("");
+  }
+  async function removeStaff(userId: string) {
+    if (!isPrimaryAdmin || !window.confirm("Revoke this team member’s Shree Gauri access? The primary main administrator account is protected.")) return;
+    await runAdminAction("remove_staff", { user_id: userId });
+  }
+  async function saveStaffPassword(e: FormEvent) {
+    e.preventDefault();
+    if (newStaffPassword.length < 12) { setNotice("Use at least 12 characters."); return; }
+    const ok = await runAdminAction("set_password", { password: newStaffPassword });
+    if (ok) { setNewStaffPassword(""); await supabase.auth.refreshSession(); }
+  }
+
   async function upload(file: File, kind: "cat" | "prod") {
     setNotice("Uploading image...");
     const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
@@ -245,9 +338,8 @@ export default function AdminDashboard() {
   async function saveProd() {
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
-    const adminUserId = "42dcd32a-2ec6-406c-8be3-703237a33d0d";
-    if (authError || authData.session?.user?.id !== adminUserId) {
-      setNotice("Admin session expired or invalid. Please sign in again.");
+    if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
+      setNotice("Your session is invalid or your role cannot manage products.");
       return;
     }
     const data = {
@@ -337,15 +429,19 @@ export default function AdminDashboard() {
             <small>ADMINISTRATION</small>
           </div>
           <div className="admin-login-divider"><span>✦</span></div>
-          <h1>Welcome Back</h1>
-          <p>Secure access to your Shree Gauri store control centre.</p>
+          <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
+          <p>{loginMode === "admin" ? "Secure access for the main administrator." : "Use your invited work email and password to access your assigned tasks."}</p>
+          <div role="group" aria-label="Choose sign-in type" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 0 18px" }}>
+            <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "admin" ? "#3d2a20" : "#fff", color: loginMode === "admin" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Main Admin</button>
+            <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "staff" ? "#3d2a20" : "#fff", color: loginMode === "staff" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Staff Login</button>
+          </div>
           <label>
-            Email
+            Work email
             <input
               type="email"
               name="sg-admin-email"
               autoComplete="off"
-              placeholder="Enter admin email"
+              placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -364,11 +460,16 @@ export default function AdminDashboard() {
             />
           </label>
           {error && <b>{error}</b>}
-          <button>SECURE LOGIN</button>
-          <small className="admin-secure-note">Protected administration portal • Shree Gauri</small>
+          <button>{loginMode === "admin" ? "SECURE ADMIN LOGIN" : "SECURE STAFF LOGIN"}</button>
+          <small className="admin-secure-note">{loginMode === "admin" ? "Main administrator access • Shree Gauri" : "Role-based staff access • Shree Gauri"}</small>
         </form>
       </main>
     );
+  if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
+  if (session && staffRole === "unauthorized") return <main className="admin"><section className="admin-loading"><h1>Access denied</h1><p>{notice || "This account is not authorized for Shree Gauri administration."}</p><button onClick={() => supabase.auth.signOut()}>Sign out</button></section></main>;
+  if (session && needsPasswordSetup) return (
+    <main className="admin-login"><form onSubmit={saveStaffPassword}><div className="admin-login-brand"><img src="/shree-gauri-logo.png" alt="Shree Gauri" /><span>SHREE GAURI</span><small>STAFF ACCOUNT SETUP</small></div><h1>Create your password</h1><p>Use at least 12 characters. Keep this password private.</p><label>New password<input type="password" minLength={12} autoComplete="new-password" value={newStaffPassword} onChange={(e) => setNewStaffPassword(e.target.value)} required /></label>{notice && <p>{notice}</p>}<button>SET PASSWORD</button></form></main>
+  );
   return (
     <main className="admin">
       <aside>
@@ -380,7 +481,7 @@ export default function AdminDashboard() {
           <Store /> Dashboard
           {newActivityCount > 0 && <b className="order-count">{newActivityCount}</b>}
         </button>
-        <button
+        {["admin", "manager", "orders", "support"].includes(staffRole) && (<button
           className={tab === "orders" ? "on" : ""}
           onClick={() => setTab("orders")}
         >
@@ -392,34 +493,51 @@ export default function AdminDashboard() {
             </b>
           )}
         </button>
-        <button
+        )}
+        {["admin", "manager", "orders", "support"].includes(staffRole) && (<button
+          className={tab === "customers" ? "on" : ""}
+          onClick={() => setTab("customers")}
+        >
+          <Users />
+          Customers
+          {customers.filter((c) => c.auth_user_id).length > 0 && (
+            <b className="order-count">{customers.filter((c) => c.auth_user_id).length}</b>
+          )}
+        </button>
+        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<button
           className={tab === "categories" ? "on" : ""}
           onClick={() => setTab("categories")}
         >
           <Layers />
           Categories & Subcategories
         </button>
-        <button
+        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<button
           className={tab === "products" ? "on" : ""}
           onClick={() => setTab("products")}
         >
           <Package />
           Products & Inventory
         </button>
-        <button
+        )}
+        {["admin", "manager"].includes(staffRole) && (<button
           className={tab === "reviews" ? "on" : ""}
           onClick={() => setTab("reviews")}
         >
           <Star />
           Customer Reviews
         </button>
-        <button
+        )}
+        {staffRole === "admin" && (<button
           className={tab === "settings" ? "on" : ""}
           onClick={() => setTab("settings")}
         >
           <Settings />
           Photos, Logo & Homepage
         </button>
+        )}
+        {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
         <a href="/">View Store</a>
         <button onClick={() => supabase.auth.signOut()}>
           <LogOut />
@@ -435,6 +553,10 @@ export default function AdminDashboard() {
                 ? "Store Overview"
                 : tab === "orders"
                 ? "Customer Orders"
+                : tab === "staff"
+                  ? "Staff & Permissions"
+                : tab === "customers"
+                  ? "Customer Accounts"
                 : tab === "categories"
                   ? "Categories & Subcategories"
                   : tab === "products"
@@ -472,6 +594,68 @@ export default function AdminDashboard() {
                 <button onClick={() => setTab("products")}><b>{lowStock}</b><span>Low-stock products</span></button>
                 <button onClick={() => setTab("products")}><b>{products.filter((p) => !p.is_active).length}</b><span>Hidden products</span></button>
               </section>
+            </div>
+          </div>
+        )}
+        {tab === "customers" && (
+          <div className="customers-admin">
+            <div className="customer-admin-summary">
+              <div><small>TOTAL CUSTOMER RECORDS</small><strong>{customers.length}</strong></div>
+              <div><small>REGISTERED ACCOUNTS</small><strong>{customers.filter((c) => c.auth_user_id).length}</strong></div>
+              <div><small>CUSTOMERS WITH ORDERS</small><strong>{new Set(orders.map((o) => o.email?.toLowerCase()).filter(Boolean)).size}</strong></div>
+            </div>
+            <div className="customer-admin-list">
+              {customers.length ? customers.map((c) => {
+                const customerOrders = orders.filter((o) =>
+                  (c.id && (o as any).customer_id === c.id) ||
+                  (!!c.email && !!o.email && o.email.toLowerCase() === c.email.toLowerCase())
+                );
+                const spent = customerOrders
+                  .filter((o) => o.payment_status === "paid")
+                  .reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+                return (
+                  <article key={c.id} className="customer-admin-card">
+                    <div className="customer-admin-head">
+                      <div>
+                        <span className={c.auth_user_id ? "account-live" : "account-guest"}>
+                          {c.auth_user_id ? "REGISTERED ACCOUNT" : "CHECKOUT CUSTOMER"}
+                        </span>
+                        <h2>{c.full_name || "Customer"}</h2>
+                        <small>Customer since {new Date(c.created_at).toLocaleDateString("en-IN")}</small>
+                      </div>
+                      <div className="customer-admin-metrics">
+                        <span><b>{customerOrders.length}</b> Orders</span>
+                        <span><b>₹{spent.toLocaleString("en-IN")}</b> Paid Value</span>
+                      </div>
+                    </div>
+                    <div className="customer-admin-grid">
+                      <div>
+                        <small>CONTACT</small>
+                        {c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span>—</span>}
+                        {c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : <span>—</span>}
+                      </div>
+                      <div>
+                        <small>PERSONAL</small>
+                        <span>DOB: {c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString("en-IN") : "Not provided"}</span>
+                        <span>Account: {c.auth_user_id ? "Active customer login" : "No login linked"}</span>
+                      </div>
+                      <div>
+                        <small>SAVED ADDRESS</small>
+                        <span>{[c.address_line1,c.address_line2,c.city,c.state,c.pincode].filter(Boolean).join(", ") || "Not provided"}</span>
+                      </div>
+                    </div>
+                    {customerOrders.length > 0 && (
+                      <div className="customer-admin-orders">
+                        <small>RECENT ORDERS</small>
+                        {customerOrders.slice(0,3).map((o) => (
+                          <span key={o.id}><b>{o.order_number}</b>{o.order_status} • ₹{Number(o.total_inr).toLocaleString("en-IN")}</span>
+                        ))}
+                      </div>
+                    )}
+                    {isPrimaryAdmin && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
+                  </article>
+                );
+              }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
             </div>
           </div>
         )}
@@ -541,6 +725,7 @@ export default function AdminDashboard() {
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
+                    {isPrimaryAdmin && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
                   </div>
                 </article>
               ))
@@ -958,7 +1143,20 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-        {tab === "settings" && settings && (
+        {tab === "staff" && isPrimaryAdmin && (
+          <div className="staff-admin">
+            <section className="staff-intro"><ShieldCheck /><div><h2>Main administrator controls</h2><p>Invite staff by email and grant only the access they need. Only the main admin can invite or revoke staff and delete customer/order records.</p></div></section>
+            <form className="staff-invite-form" onSubmit={inviteStaff}>
+              <h2><UserPlus /> Invite staff member</h2>
+              {!adminServiceConfigured && <p className="staff-config-warning" role="status">Preview mode: invitation sending is disabled because the server-only admin key is not configured here. For security, the Production key is not copied into Preview. The form will become active in a deployment with the secure server configuration.</p>}
+              <label>Staff email<input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="staff@example.com" required disabled={!adminServiceConfigured} /></label>
+              <label>Access role<select value={staffInviteRole} onChange={(e) => setStaffInviteRole(e.target.value)} disabled={!adminServiceConfigured}><option value="orders">Orders & fulfilment</option><option value="support">Customer support</option><option value="catalog">Products & catalogue</option><option value="manager">Store manager</option><option value="admin">Administrator</option></select></label>
+              <button type="submit" disabled={!adminServiceConfigured}><UserPlus /> {adminServiceConfigured ? "SEND SECURE INVITATION" : "INVITATIONS UNAVAILABLE IN PREVIEW"}</button>
+            </form>
+            <section className="staff-list"><h2>Team access</h2>{!adminServiceConfigured ? <p>Team members cannot be listed in this Preview because it has no server-only admin key. This does not change or expose Production data.</p> : staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{member.user_id === "42dcd32a-2ec6-406c-8be3-703237a33d0d" ? "Primary main administrator" : ({admin:"Administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.user_id !== "42dcd32a-2ec6-406c-8be3-703237a33d0d" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
+          </div>
+        )}
+        {tab === "settings" && staffRole === "admin" && settings && (
           <div className="editor settings">
             <h2>Edit Website Content & Brand Images</h2>
             <label>
