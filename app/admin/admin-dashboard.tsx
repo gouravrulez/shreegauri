@@ -11,6 +11,7 @@ import {
   Settings,
   Star,
   ClipboardList,
+  Users,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -55,6 +56,21 @@ type OrderItem = {
   quantity: number;
   unit_price_inr: number;
   line_total_inr: number;
+};
+type Customer = {
+  id: string;
+  auth_user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  created_at: string;
+  updated_at: string;
 };
 type Order = {
   id: string;
@@ -104,6 +120,7 @@ export default function AdminDashboard() {
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
     [orders, setOrders] = useState<Order[]>([]),
+    [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
     [prod, setProd] = useState<any>(blankProd),
@@ -120,7 +137,7 @@ export default function AdminDashboard() {
     if (session) load();
   }, [session]);
   async function load() {
-    const [a, b, c, d, o] = await Promise.all([
+    const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
         .from("products")
@@ -135,6 +152,10 @@ export default function AdminDashboard() {
         .from("orders")
         .select("*,order_items(*)")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("customers")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
     if (a.data) setCats(a.data);
     if (b.data)
@@ -147,6 +168,7 @@ export default function AdminDashboard() {
     if (c.data) setSettings(c.data);
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
+    if (u.data) setCustomers(u.data as Customer[]);
   }
   async function login(e: FormEvent) {
     e.preventDefault();
@@ -393,6 +415,16 @@ export default function AdminDashboard() {
           )}
         </button>
         <button
+          className={tab === "customers" ? "on" : ""}
+          onClick={() => setTab("customers")}
+        >
+          <Users />
+          Customers
+          {customers.filter((c) => c.auth_user_id).length > 0 && (
+            <b className="order-count">{customers.filter((c) => c.auth_user_id).length}</b>
+          )}
+        </button>
+        <button
           className={tab === "categories" ? "on" : ""}
           onClick={() => setTab("categories")}
         >
@@ -435,6 +467,8 @@ export default function AdminDashboard() {
                 ? "Store Overview"
                 : tab === "orders"
                 ? "Customer Orders"
+                : tab === "customers"
+                  ? "Customer Accounts"
                 : tab === "categories"
                   ? "Categories & Subcategories"
                   : tab === "products"
@@ -472,6 +506,67 @@ export default function AdminDashboard() {
                 <button onClick={() => setTab("products")}><b>{lowStock}</b><span>Low-stock products</span></button>
                 <button onClick={() => setTab("products")}><b>{products.filter((p) => !p.is_active).length}</b><span>Hidden products</span></button>
               </section>
+            </div>
+          </div>
+        )}
+        {tab === "customers" && (
+          <div className="customers-admin">
+            <div className="customer-admin-summary">
+              <div><small>TOTAL CUSTOMER RECORDS</small><strong>{customers.length}</strong></div>
+              <div><small>REGISTERED ACCOUNTS</small><strong>{customers.filter((c) => c.auth_user_id).length}</strong></div>
+              <div><small>CUSTOMERS WITH ORDERS</small><strong>{new Set(orders.map((o) => o.email?.toLowerCase()).filter(Boolean)).size}</strong></div>
+            </div>
+            <div className="customer-admin-list">
+              {customers.length ? customers.map((c) => {
+                const customerOrders = orders.filter((o) =>
+                  (c.id && (o as any).customer_id === c.id) ||
+                  (!!c.email && !!o.email && o.email.toLowerCase() === c.email.toLowerCase())
+                );
+                const spent = customerOrders
+                  .filter((o) => o.payment_status === "paid")
+                  .reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+                return (
+                  <article key={c.id} className="customer-admin-card">
+                    <div className="customer-admin-head">
+                      <div>
+                        <span className={c.auth_user_id ? "account-live" : "account-guest"}>
+                          {c.auth_user_id ? "REGISTERED ACCOUNT" : "CHECKOUT CUSTOMER"}
+                        </span>
+                        <h2>{c.full_name || "Customer"}</h2>
+                        <small>Customer since {new Date(c.created_at).toLocaleDateString("en-IN")}</small>
+                      </div>
+                      <div className="customer-admin-metrics">
+                        <span><b>{customerOrders.length}</b> Orders</span>
+                        <span><b>₹{spent.toLocaleString("en-IN")}</b> Paid Value</span>
+                      </div>
+                    </div>
+                    <div className="customer-admin-grid">
+                      <div>
+                        <small>CONTACT</small>
+                        {c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span>—</span>}
+                        {c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : <span>—</span>}
+                      </div>
+                      <div>
+                        <small>PERSONAL</small>
+                        <span>DOB: {c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString("en-IN") : "Not provided"}</span>
+                        <span>Account: {c.auth_user_id ? "Active customer login" : "No login linked"}</span>
+                      </div>
+                      <div>
+                        <small>SAVED ADDRESS</small>
+                        <span>{[c.address_line1,c.address_line2,c.city,c.state,c.pincode].filter(Boolean).join(", ") || "Not provided"}</span>
+                      </div>
+                    </div>
+                    {customerOrders.length > 0 && (
+                      <div className="customer-admin-orders">
+                        <small>RECENT ORDERS</small>
+                        {customerOrders.slice(0,3).map((o) => (
+                          <span key={o.id}><b>{o.order_number}</b>{o.order_status} • ₹{Number(o.total_inr).toLocaleString("en-IN")}</span>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
             </div>
           </div>
         )}
