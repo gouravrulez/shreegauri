@@ -131,6 +131,7 @@ export default function AdminDashboard() {
     [notice, setNotice] = useState(""),
     [lastSeenActivity, setLastSeenActivity] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
+    [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false),
     [staffRows, setStaffRows] = useState<any[]>([]),
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
@@ -153,6 +154,7 @@ export default function AdminDashboard() {
     const roleData = await roleResponse.json().catch(() => ({}));
     if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
     setStaffRole(roleData.role);
+    setIsPrimaryAdmin(Boolean(roleData.is_primary_admin));
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
     const [a, b, c, d, o, u] = await Promise.all([
@@ -203,8 +205,8 @@ export default function AdminDashboard() {
       headers: { Authorization: "Bearer " + data.session.access_token },
     });
     const roleData = await roleResponse.json().catch(() => ({}));
-    const isMainAdmin = roleResponse.ok && roleData.role === "admin";
-    const isStaff = roleResponse.ok && ["manager", "orders", "support", "catalog"].includes(roleData.role);
+    const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
+    const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
     if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
       await supabase.auth.signOut();
       setError(loginMode === "admin"
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
     return response.ok;
   }
   async function deleteAdminRecord(kind: "customer" | "order", id: string) {
-    if (staffRole !== "admin") { setNotice("Only the main administrator can delete records."); return; }
+    if (!isPrimaryAdmin) { setNotice("Only the primary main administrator can delete records."); return; }
     const warning = kind === "order"
       ? "Permanently delete this order and its line items/reservations? A restricted audit record will retain its payment reference for reconciliation."
       : "Delete this customer profile and personal data? Any linked order history will be anonymized and retained for financial reconciliation.";
@@ -231,12 +233,12 @@ export default function AdminDashboard() {
   }
   async function inviteStaff(e: FormEvent) {
     e.preventDefault();
-    if (staffRole !== "admin") return;
+    if (!isPrimaryAdmin) return;
     const ok = await runAdminAction("invite_staff", { email: staffEmail, role: staffInviteRole });
     if (ok) setStaffEmail("");
   }
   async function removeStaff(userId: string) {
-    if (staffRole !== "admin" || !window.confirm("Revoke this staff member’s Shree Gauri admin access? Their sign-in account will not be deleted.")) return;
+    if (!isPrimaryAdmin || !window.confirm("Revoke this team member’s Shree Gauri access? The primary main administrator account is protected.")) return;
     await runAdminAction("remove_staff", { user_id: userId });
   }
   async function saveStaffPassword(e: FormEvent) {
@@ -533,7 +535,7 @@ export default function AdminDashboard() {
           Photos, Logo & Homepage
         </button>
         )}
-        {staffRole === "admin" && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
+        {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
         <a href="/">View Store</a>
         <button onClick={() => supabase.auth.signOut()}>
           <LogOut />
@@ -648,7 +650,7 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     )}
-                    {staffRole === "admin" && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
+                    {isPrimaryAdmin && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
                   </article>
                 );
               }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
@@ -721,7 +723,7 @@ export default function AdminDashboard() {
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
-                    {staffRole === "admin" && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
+                    {isPrimaryAdmin && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
                   </div>
                 </article>
               ))
@@ -1139,16 +1141,16 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-        {tab === "staff" && staffRole === "admin" && (
+        {tab === "staff" && isPrimaryAdmin && (
           <div className="staff-admin">
             <section className="staff-intro"><ShieldCheck /><div><h2>Main administrator controls</h2><p>Invite staff by email and grant only the access they need. Only the main admin can invite or revoke staff and delete customer/order records.</p></div></section>
             <form className="staff-invite-form" onSubmit={inviteStaff}>
               <h2><UserPlus /> Invite staff member</h2>
               <label>Staff email<input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="staff@example.com" required /></label>
-              <label>Access role<select value={staffInviteRole} onChange={(e) => setStaffInviteRole(e.target.value)}><option value="orders">Orders & fulfilment</option><option value="support">Customer support</option><option value="catalog">Products & catalogue</option><option value="manager">Store manager</option></select></label>
+              <label>Access role<select value={staffInviteRole} onChange={(e) => setStaffInviteRole(e.target.value)}><option value="orders">Orders & fulfilment</option><option value="support">Customer support</option><option value="catalog">Products & catalogue</option><option value="manager">Store manager</option><option value="admin">Administrator</option></select></label>
               <button><UserPlus /> SEND SECURE INVITATION</button>
             </form>
-            <section className="staff-list"><h2>Team access</h2>{staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{({admin:"Main administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.role !== "admin" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
+            <section className="staff-list"><h2>Team access</h2>{staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{member.user_id === "42dcd32a-2ec6-406c-8be3-703237a33d0d" ? "Primary main administrator" : ({admin:"Administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.user_id !== "42dcd32a-2ec6-406c-8be3-703237a33d0d" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
           </div>
         )}
         {tab === "settings" && staffRole === "admin" && settings && (
