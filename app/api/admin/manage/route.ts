@@ -91,7 +91,6 @@ export async function POST(request: Request) {
       const role = String(body?.role || "");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid staff email." }, { status: 400 });
       if (!["manager", "orders", "support", "catalog"].includes(role)) return NextResponse.json({ error: "Choose a valid staff role." }, { status: 400 });
-      const { data: existing } = await auth.admin.from("admin_users").select("user_id").limit(1);
       const { data: authUsers, error: listError } = await auth.admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (listError) return NextResponse.json({ error: listError.message }, { status: 400 });
       const match = (authUsers.users || []).find((u) => (u.email || "").toLowerCase() === email);
