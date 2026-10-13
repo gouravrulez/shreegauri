@@ -12,6 +12,9 @@ import {
   Star,
   ClipboardList,
   Users,
+  ShieldCheck,
+  UserPlus,
+  UserX,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -125,7 +128,13 @@ export default function AdminDashboard() {
     [cat, setCat] = useState<any>(blankCat),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
-    [lastSeenActivity, setLastSeenActivity] = useState(0);
+    [lastSeenActivity, setLastSeenActivity] = useState(0),
+    [staffRole, setStaffRole] = useState<string>("loading"),
+    [staffRows, setStaffRows] = useState<any[]>([]),
+    [staffEmail, setStaffEmail] = useState(""),
+    [staffInviteRole, setStaffInviteRole] = useState("orders"),
+    [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
+    [newStaffPassword, setNewStaffPassword] = useState("");
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -137,6 +146,14 @@ export default function AdminDashboard() {
     if (session) load();
   }, [session]);
   async function load() {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) return;
+    const roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${currentSession.access_token}` } });
+    const roleData = await roleResponse.json().catch(() => ({}));
+    if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
+    setStaffRole(roleData.role);
+    setStaffRows(roleData.staff || []);
+    setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
     const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
@@ -179,6 +196,40 @@ export default function AdminDashboard() {
     });
     if (error) setError(error.message);
   }
+  async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) { setNotice("Your session expired. Please sign in again."); return false; }
+    const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
+    const result = await response.json().catch(() => ({}));
+    setNotice(result.message || result.error || (response.ok ? "Done." : "Action failed."));
+    if (response.ok) await load();
+    return response.ok;
+  }
+  async function deleteAdminRecord(kind: "customer" | "order", id: string) {
+    if (staffRole !== "admin") { setNotice("Only the main administrator can delete records."); return; }
+    const warning = kind === "order"
+      ? "Permanently delete this order and its line items/reservations? A restricted audit record will retain its payment reference for reconciliation."
+      : "Delete this customer profile and personal data? Any linked order history will be anonymized and retained for financial reconciliation.";
+    if (!window.confirm(warning)) return;
+    await runAdminAction(kind === "order" ? "delete_order" : "delete_customer", { id });
+  }
+  async function inviteStaff(e: FormEvent) {
+    e.preventDefault();
+    if (staffRole !== "admin") return;
+    const ok = await runAdminAction("invite_staff", { email: staffEmail, role: staffInviteRole });
+    if (ok) setStaffEmail("");
+  }
+  async function removeStaff(userId: string) {
+    if (staffRole !== "admin" || !window.confirm("Revoke this staff member’s Shree Gauri admin access? Their sign-in account will not be deleted.")) return;
+    await runAdminAction("remove_staff", { user_id: userId });
+  }
+  async function saveStaffPassword(e: FormEvent) {
+    e.preventDefault();
+    if (newStaffPassword.length < 12) { setNotice("Use at least 12 characters."); return; }
+    const ok = await runAdminAction("set_password", { password: newStaffPassword });
+    if (ok) { setNewStaffPassword(""); await supabase.auth.refreshSession(); }
+  }
+
   async function upload(file: File, kind: "cat" | "prod") {
     setNotice("Uploading image...");
     const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
@@ -391,6 +442,11 @@ export default function AdminDashboard() {
         </form>
       </main>
     );
+  if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
+  if (session && staffRole === "unauthorized") return <main className="admin"><section className="admin-loading"><h1>Access denied</h1><p>{notice || "This account is not authorized for Shree Gauri administration."}</p><button onClick={() => supabase.auth.signOut()}>Sign out</button></section></main>;
+  if (session && needsPasswordSetup) return (
+    <main className="admin-login"><form onSubmit={saveStaffPassword}><div className="admin-login-brand"><img src="/shree-gauri-logo.png" alt="Shree Gauri" /><span>SHREE GAURI</span><small>STAFF ACCOUNT SETUP</small></div><h1>Create your password</h1><p>Use at least 12 characters. Keep this password private.</p><label>New password<input type="password" minLength={12} autoComplete="new-password" value={newStaffPassword} onChange={(e) => setNewStaffPassword(e.target.value)} required /></label>{notice && <p>{notice}</p>}<button>SET PASSWORD</button></form></main>
+  );
   return (
     <main className="admin">
       <aside>
@@ -402,7 +458,7 @@ export default function AdminDashboard() {
           <Store /> Dashboard
           {newActivityCount > 0 && <b className="order-count">{newActivityCount}</b>}
         </button>
-        <button
+        {["admin", "manager", "orders", "support"].includes(staffRole) && (<button
           className={tab === "orders" ? "on" : ""}
           onClick={() => setTab("orders")}
         >
@@ -414,7 +470,8 @@ export default function AdminDashboard() {
             </b>
           )}
         </button>
-        <button
+        )}
+        {["admin", "manager", "orders", "support"].includes(staffRole) && (<button
           className={tab === "customers" ? "on" : ""}
           onClick={() => setTab("customers")}
         >
@@ -424,34 +481,40 @@ export default function AdminDashboard() {
             <b className="order-count">{customers.filter((c) => c.auth_user_id).length}</b>
           )}
         </button>
-        <button
+        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<button
           className={tab === "categories" ? "on" : ""}
           onClick={() => setTab("categories")}
         >
           <Layers />
           Categories & Subcategories
         </button>
-        <button
+        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<button
           className={tab === "products" ? "on" : ""}
           onClick={() => setTab("products")}
         >
           <Package />
           Products & Inventory
         </button>
-        <button
+        )}
+        {["admin", "manager"].includes(staffRole) && (<button
           className={tab === "reviews" ? "on" : ""}
           onClick={() => setTab("reviews")}
         >
           <Star />
           Customer Reviews
         </button>
-        <button
+        )}
+        {staffRole === "admin" && (<button
           className={tab === "settings" ? "on" : ""}
           onClick={() => setTab("settings")}
         >
           <Settings />
           Photos, Logo & Homepage
         </button>
+        )}
+        {staffRole === "admin" && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
         <a href="/">View Store</a>
         <button onClick={() => supabase.auth.signOut()}>
           <LogOut />
@@ -467,6 +530,8 @@ export default function AdminDashboard() {
                 ? "Store Overview"
                 : tab === "orders"
                 ? "Customer Orders"
+                : tab === "staff"
+                  ? "Staff & Permissions"
                 : tab === "customers"
                   ? "Customer Accounts"
                 : tab === "categories"
@@ -564,6 +629,7 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     )}
+                    {staffRole === "admin" && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
                   </article>
                 );
               }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
@@ -636,6 +702,7 @@ export default function AdminDashboard() {
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
+                    {staffRole === "admin" && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
                   </div>
                 </article>
               ))
@@ -1053,7 +1120,19 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-        {tab === "settings" && settings && (
+        {tab === "staff" && staffRole === "admin" && (
+          <div className="staff-admin">
+            <section className="staff-intro"><ShieldCheck /><div><h2>Main administrator controls</h2><p>Invite staff by email and grant only the access they need. Only the main admin can invite or revoke staff and delete customer/order records.</p></div></section>
+            <form className="staff-invite-form" onSubmit={inviteStaff}>
+              <h2><UserPlus /> Invite staff member</h2>
+              <label>Staff email<input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="staff@example.com" required /></label>
+              <label>Access role<select value={staffInviteRole} onChange={(e) => setStaffInviteRole(e.target.value)}><option value="orders">Orders & fulfilment</option><option value="support">Customer support</option><option value="catalog">Products & catalogue</option><option value="manager">Store manager</option></select></label>
+              <button><UserPlus /> SEND SECURE INVITATION</button>
+            </form>
+            <section className="staff-list"><h2>Team access</h2>{staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{({admin:"Main administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.role !== "admin" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
+          </div>
+        )}
+        {tab === "settings" && staffRole === "admin" && settings && (
           <div className="editor settings">
             <h2>Edit Website Content & Brand Images</h2>
             <label>
