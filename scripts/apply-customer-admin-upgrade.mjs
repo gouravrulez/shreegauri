@@ -11,14 +11,16 @@ function addOnce(needle, replacement, label) {
   admin = admin.replace(needle, replacement);
 }
 
-addOnce(
-  `  ClipboardList,
+if (!admin.includes("  Users,")) {
+  addOnce(
+    `  ClipboardList,
 } from "lucide-react";`,
-  `  ClipboardList,
+    `  ClipboardList,
   Users,
 } from "lucide-react";`,
-  "Users icon",
-);
+    "Users icon",
+  );
+}
 
 addOnce(
   `type Order = {`,
