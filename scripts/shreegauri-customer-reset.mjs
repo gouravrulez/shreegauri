@@ -164,7 +164,7 @@ async function backupAndDryRun() {
   }
   console.log(`auth users total       ${authUsers.length}`);
   console.log(`admin auth users KEEP  ${adminAuthIds.length}`);
-  console.log(`customer auth users DEL ${authUsers.filter(u => !adminAuthIds.includes(u.id)).length}`);
+  console.log(`customer auth users PRESERVED ${authUsers.filter(u => !adminAuthIds.includes(u.id)).length}`);
 
   console.log("\nProtected: admins, products, categories, coupons, payment configuration, site configuration.");
   console.log("RLS/table structure are not changed by this tool.");
@@ -197,13 +197,9 @@ async function executeReset(backup, counts, adminAuthIds) {
     }
   }
 
-  const authUsers = backup.auth_users || [];
-  const adminSet = new Set(adminAuthIds);
-  for (const user of authUsers) {
-    if (adminSet.has(user.id)) continue;
-    const { error } = await supabase.auth.admin.deleteUser(user.id);
-    if (error) throw new Error(`auth user ${user.id}: ${error.message}`);
-  }
+  // Authentication accounts are intentionally preserved by this reset.
+  // Only explicit per-customer deletion in the protected admin UI may remove
+  // a customer's auth account after its dependent data is checked.
 
   // Final verification.
   for (const table of ["orders", "customer_addresses", "return_requests", "abandoned_carts", "customers"]) {
@@ -220,8 +216,8 @@ async function executeReset(backup, counts, adminAuthIds) {
   }
 
   console.log("\n=== RESET SUCCESSFUL ===");
-  console.log("Customer/order data is cleared.");
-  console.log(`Admin auth users preserved: ${adminAuthIds.length}`);
+  console.log("Customer/order profile data is cleared; auth accounts are preserved.");
+  console.log(`Protected staff auth users preserved: ${adminAuthIds.length}`);
   console.log(`Backup retained at: ${backupFile}`);
   console.log("\nIMPORTANT: Do not commit the backup file to GitHub.");
 }
