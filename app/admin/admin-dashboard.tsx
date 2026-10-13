@@ -132,6 +132,7 @@ export default function AdminDashboard() {
     [lastSeenActivity, setLastSeenActivity] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
     [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false),
+    [adminServiceConfigured, setAdminServiceConfigured] = useState(true),
     [staffRows, setStaffRows] = useState<any[]>([]),
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
@@ -155,6 +156,7 @@ export default function AdminDashboard() {
     if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
     setStaffRole(roleData.role);
     setIsPrimaryAdmin(Boolean(roleData.is_primary_admin));
+    setAdminServiceConfigured(roleData.service_configured !== false);
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
     const [a, b, c, d, o, u] = await Promise.all([
@@ -1144,13 +1146,13 @@ export default function AdminDashboard() {
         {tab === "staff" && isPrimaryAdmin && (
           <div className="staff-admin">
             <section className="staff-intro"><ShieldCheck /><div><h2>Main administrator controls</h2><p>Invite staff by email and grant only the access they need. Only the main admin can invite or revoke staff and delete customer/order records.</p></div></section>
-            <form className="staff-invite-form" onSubmit={inviteStaff}>
+            {adminServiceConfigured ? <form className="staff-invite-form" onSubmit={inviteStaff}>
               <h2><UserPlus /> Invite staff member</h2>
               <label>Staff email<input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="staff@example.com" required /></label>
               <label>Access role<select value={staffInviteRole} onChange={(e) => setStaffInviteRole(e.target.value)}><option value="orders">Orders & fulfilment</option><option value="support">Customer support</option><option value="catalog">Products & catalogue</option><option value="manager">Store manager</option><option value="admin">Administrator</option></select></label>
               <button><UserPlus /> SEND SECURE INVITATION</button>
-            </form>
-            <section className="staff-list"><h2>Team access</h2>{staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{member.user_id === "42dcd32a-2ec6-406c-8be3-703237a33d0d" ? "Primary main administrator" : ({admin:"Administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.user_id !== "42dcd32a-2ec6-406c-8be3-703237a33d0d" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
+            </form> : <p className="staff-config-warning">Staff invitations and revocations are disabled on this preview because its server-only admin key is not configured. This does not affect the protected production environment.</p>}
+            <section className="staff-list"><h2>Team access</h2>{!adminServiceConfigured ? <p>The full staff list is hidden on this preview.</p> : staffRows.length ? staffRows.map((member) => <article key={member.user_id}><div><b>{member.email}</b><small>{member.user_id === "42dcd32a-2ec6-406c-8be3-703237a33d0d" ? "Primary main administrator" : ({admin:"Administrator",manager:"Store manager",orders:"Orders & fulfilment",support:"Customer support",catalog:"Products & catalogue"} as Record<string,string>)[member.role] || member.role} · Added {new Date(member.created_at).toLocaleDateString("en-IN")}</small></div>{member.user_id !== "42dcd32a-2ec6-406c-8be3-703237a33d0d" && <button onClick={() => removeStaff(member.user_id)}><UserX /> Revoke access</button>}</article>) : <p>No staff members yet. Invite your first staff member above.</p>}</section>
           </div>
         )}
         {tab === "settings" && staffRole === "admin" && settings && (
