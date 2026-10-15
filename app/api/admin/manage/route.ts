@@ -172,12 +172,26 @@ export async function POST(request: Request) {
       const id = String(body?.id || "");
       const { data: customer, error } = await auth.admin.from("customers").select("id,auth_user_id,email").eq("id", id).maybeSingle();
       if (error || !customer) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+      let linkedStaffAccount = false;
       if (customer.auth_user_id) {
-        const { data: staffRecord } = await auth.admin.from("admin_users").select("role").eq("user_id", customer.auth_user_id).maybeSingle();
-        if (staffRecord) return NextResponse.json({ error: "This customer profile is linked to a staff account and cannot be deleted here." }, { status: 403 });
+        const { data: staffRecord, error: staffLookupError } = await auth.admin
+          .from("admin_users")
+          .select("role")
+          .eq("user_id", customer.auth_user_id)
+          .maybeSingle();
+        if (staffLookupError) {
+          return NextResponse.json({ error: "Unable to verify whether this login is a staff account. No customer data was deleted." }, { status: 500 });
+        }
+        linkedStaffAccount = Boolean(staffRecord);
       }
-      await audit(auth.admin, auth.user, "customer_data_deleted", "customer", customer.id, { had_login: Boolean(customer.auth_user_id) });
-      if (customer.auth_user_id) {
+      await audit(auth.admin, auth.user, "customer_data_deleted", "customer", customer.id, {
+        had_login: Boolean(customer.auth_user_id),
+        linked_staff_account: linkedStaffAccount
+      });
+      // A customer profile may share a login with a staff member. Remove the
+      // customer record and anonymize linked orders, but never remove staff
+      // authentication, addresses, carts, reviews, or other staff-linked data.
+      if (customer.auth_user_id && !linkedStaffAccount) {
         const userId = customer.auth_user_id;
         const { error: addressesError } = await auth.admin.from("customer_addresses").delete().eq("user_id", userId);
         if (addressesError) return NextResponse.json({ error: addressesError.message }, { status: 400 });
@@ -194,11 +208,16 @@ export async function POST(request: Request) {
       if (anonymizeError) return NextResponse.json({ error: anonymizeError.message }, { status: 400 });
       const { error: customerError } = await auth.admin.from("customers").delete().eq("id", customer.id);
       if (customerError) return NextResponse.json({ error: customerError.message }, { status: 400 });
-      if (customer.auth_user_id) {
+      if (customer.auth_user_id && !linkedStaffAccount) {
         const { error: authDeleteError } = await auth.admin.auth.admin.deleteUser(customer.auth_user_id);
         if (authDeleteError) return NextResponse.json({ error: "Customer data was removed, but the sign-in account could not be deleted. " + authDeleteError.message }, { status: 409 });
       }
-      return NextResponse.json({ ok: true, message: "Customer profile and personal account data deleted. Order financial records, if any, were retained with customer details anonymized." });
+      return NextResponse.json({
+        ok: true,
+        message: linkedStaffAccount
+          ? "Customer profile deleted and linked order details anonymized. The staff login and staff data were kept intact."
+          : "Customer profile and personal account data deleted. Order financial records, if any, were retained with customer details anonymized."
+      });
     }
 
     return NextResponse.json({ error: "Unknown admin action." }, { status: 400 });
