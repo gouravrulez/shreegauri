@@ -110,7 +110,7 @@ const blankProd = {
   primary_image_url: "",
   image_urls: [] as string[],
   badge: "",
-  is_active: true,
+  is_active: false,
   is_featured: false,
 };
 export default function AdminDashboard() {
@@ -528,14 +528,11 @@ export default function AdminDashboard() {
           Categories & Subcategories
         </button>
         )}
-        {["admin", "manager", "catalog"].includes(staffRole) && (<button
-          className={tab === "products" ? "on" : ""}
-          onClick={() => setTab("products")}
-        >
-          <Package />
-          Products & Inventory
-        </button>
-        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<>
+          <button className={tab === "products" ? "on" : ""} onClick={() => setTab("products")}><Package /> Products</button>
+          <button className={tab === "inventory" ? "on" : ""} onClick={() => setTab("inventory")}><ClipboardList /> Inventory {lowStock > 0 && <b className="order-count">{lowStock}</b>}</button>
+          <button className={tab === "add-product" ? "on" : ""} onClick={() => { setProd(blankProd); setTab("add-product"); }}><Package /> Add New Product</button>
+        </>)}
         {["admin", "manager"].includes(staffRole) && (<button
           className={tab === "reviews" ? "on" : ""}
           onClick={() => setTab("reviews")}
@@ -897,9 +894,9 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        {tab === "products" && (
-          <div className="admin-grid">
-            <div className="editor">
+        {(tab === "products" || tab === "add-product") && (
+          <div className="admin-product-workspace">
+            {tab === "add-product" && <div className="editor product-editor">
               <h2>{prod.id ? "Edit Product" : "Add Product"}</h2>
               <label>
                 Product Name
@@ -1075,17 +1072,17 @@ export default function AdminDashboard() {
                 <span>{prod.image_urls?.length || 0} additional image(s) attached</span>
                 <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
               </div>
-            </div>
-            <div className="records">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 16 }}>
+            </div>}
+            {tab === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(245px, 1fr))", alignItems: "stretch", gap: 14 }}>
+              <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
                 <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 220px", minWidth: 180 }} />
                 <select aria-label="Filter products" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
                 <small style={{ color: "#806f68" }}>{products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length} of {products.length} products</small>
               </div>
               {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length ? (
                 products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
-                  <article key={p.id}>
-                    <img src={p.primary_image_url} />
+                  <article key={p.id} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 9, minWidth: 0, borderRadius: 10, padding: 12, boxShadow: "0 2px 10px #3b160b0a" }}>
+                    <img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 58, height: 58, objectFit: "cover", borderRadius: 7 }} />
                     <div>
                       <b>{p.name}</b>
                       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
@@ -1120,6 +1117,38 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               )}
+            </div>}
+          </div>
+        )}
+        {tab === "inventory" && (
+          <div className="inventory-admin">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 18 }}>
+              <div><h2 style={{ margin: 0, font: "28px Georgia,serif", color: "#421015" }}>Inventory Overview</h2><small style={{ color: "#806f68" }}>Update stock directly here. Changes save to your product inventory.</small></div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ background: "#fff", border: "1px solid #e2d7cc", padding: "9px 12px", borderRadius: 8 }}>{products.length} total products</span>
+                <span style={{ background: "#fff4e5", border: "1px solid #efd4a9", padding: "9px 12px", borderRadius: 8 }}>{lowStock} low stock (3 or less)</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
+              <select aria-label="Filter inventory" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
+            </div>
+            <div style={{ background: "#fff", border: "1px solid #e2d7cc", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+                <thead><tr style={{ background: "#f8f2eb", textAlign: "left" }}><th style={{ padding: 13 }}>Product</th><th style={{ padding: 13 }}>Price</th><th style={{ padding: 13 }}>Available stock</th><th style={{ padding: 13 }}>Status</th><th style={{ padding: 13 }}>Action</th></tr></thead>
+                <tbody>
+                  {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
+                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
+                      <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
+                      <td style={{ padding: 10 }}>{quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 90, padding: 8, border: "1px solid #d8c5ae" }} /> : <button type="button" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "8px 12px", background: Number(p.stock_quantity) <= 3 ? "#fff4e5" : "#fff", color: "#4b3529", fontWeight: 700 }}>{p.stock_quantity} ✎</button>}</td>
+                      <td style={{ padding: 10 }}><span style={{ color: !p.is_active ? "#806f68" : Number(p.stock_quantity) <= 3 ? "#a45b00" : "#267347", fontWeight: 700 }}>{!p.is_active ? "Hidden" : Number(p.stock_quantity) <= 3 ? "Low stock" : "In stock"}</span></td>
+                      <td style={{ padding: 10 }}><button onClick={() => { setProd(p); setTab("add-product"); }} style={{ border: "1px solid #d8c5ae", padding: "8px 11px", background: "#fff" }}>Edit product</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!products.length && <p style={{ padding: 24 }}>No products found.</p>}
             </div>
           </div>
         )}
