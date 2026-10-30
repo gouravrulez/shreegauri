@@ -26,7 +26,7 @@ type Cat = {
   parent_id: string | null;
   sort_order: number;
   is_active: boolean;
-  collection_type: "category" | "purpose" | "planet";
+  collection_type: "category";
 };
 type Prod = {
   id: string;
@@ -324,6 +324,8 @@ export default function AdminDashboard() {
   async function saveCat() {
     const data = {
       ...cat,
+      collection_type: "category",
+      parent_id: null,
       slug:
         cat.slug ||
         cat.name
@@ -806,30 +808,12 @@ export default function AdminDashboard() {
         {tab === "categories" && (
           <div className="admin-grid">
             <div className="editor">
-              <h2>
-                {cat.id ? "Edit Item" : "Add Category, Purpose or Planet"}
-              </h2>
+              <h2>{cat.id ? "Edit Product Category" : "Add Product Category"}</h2>
               <label>
-                Homepage Section
-                <select
-                  value={cat.collection_type || "category"}
-                  onChange={(e) =>
-                    setCat({
-                      ...cat,
-                      collection_type: e.target.value,
-                      parent_id: "",
-                    })
-                  }
-                >
-                  <option value="category">Shop by Category</option>
-                  <option value="purpose">Shop by Purpose</option>
-                  <option value="planet">Shop by Planet</option>
-                </select>
-              </label>
-              <label>
-                Name
+                Category Name
                 <input
                   value={cat.name}
+                  placeholder="e.g. Gemstones"
                   onChange={(e) => setCat({ ...cat, name: e.target.value })}
                 />
               </label>
@@ -845,36 +829,10 @@ export default function AdminDashboard() {
                 Description
                 <textarea
                   value={cat.description}
-                  onChange={(e) =>
-                    setCat({ ...cat, description: e.target.value })
-                  }
+                  placeholder="A short description of the products in this category"
+                  onChange={(e) => setCat({ ...cat, description: e.target.value })}
                 />
               </label>
-              {cat.collection_type === "category" && (
-                <label>
-                  Parent Category
-                  <select
-                    value={cat.parent_id || ""}
-                    onChange={(e) =>
-                      setCat({ ...cat, parent_id: e.target.value })
-                    }
-                  >
-                    <option value="">None — Main Category</option>
-                    {cats
-                      .filter(
-                        (c) =>
-                          c.id !== cat.id &&
-                          !c.parent_id &&
-                          c.collection_type === "category",
-                      )
-                      .map((c) => (
-                        <option value={c.id} key={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              )}
               <label>
                 Display Order
                 <input
@@ -1042,7 +1000,7 @@ export default function AdminDashboard() {
                   }
                 >
                   <option value="">Select</option>
-                  {cats.map((c) => (
+                  {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
