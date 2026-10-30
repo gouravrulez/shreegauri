@@ -593,6 +593,7 @@ export default function AdminDashboard() {
           Photos, Logo & Homepage
         </button>
         )}
+        {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -618,7 +619,9 @@ export default function AdminDashboard() {
                     ? "Products & Inventory"
                     : tab === "reviews"
                       ? "Customer Review Approval"
-                      : "Photos, Logo & Homepage"}
+                      : tab === "currency"
+                        ? "Global Currency Rates"
+                        : "Photos, Logo & Homepage"}
             </h1>
           </div>
           {notice && <p>{notice}</p>}
@@ -1401,6 +1404,22 @@ export default function AdminDashboard() {
               <Save />
               SAVE ALL WEBSITE SETTINGS
             </button>
+          </div>
+        )}
+        {tab === "currency" && isPrimaryAdmin && settings && (
+          <div className="editor settings currency-settings">
+            <h2>Global Currency Conversion Rates</h2>
+            <p>INR is the base price. Set how much one Indian rupee equals in each currency. Storefront display conversions use these rates; order records and accounting remain in INR.</p>
+            <div className="currency-rate-grid">
+              {["INR","USD","EUR","GBP","AED","CAD","AUD","SGD","JPY","CHF","NZD","SAR","QAR","KWD","BHD","OMR","MYR","THB","IDR","PHP","VND","ZAR","MUR","NPR","LKR","BDT","KRW","SEK","NOK","DKK","PLN","HKD"].map((code) => {
+                const defaults: Record<string, number> = {INR:1,USD:.012,EUR:.010,GBP:.009,AED:.044,CAD:.016,AUD:.018,SGD:.015,JPY:1.75,CHF:.0095,NZD:.020,SAR:.045,QAR:.044,KWD:.0037,BHD:.0045,OMR:.0046,MYR:.051,THB:.38,IDR:190,PHP:.68,VND:315,ZAR:.21,MUR:.55,NPR:1.60,LKR:3.65,BDT:1.46,KRW:16.5,SEK:.112,NOK:.118,DKK:.069,PLN:.043,HKD:.093};
+                const rates = { ...defaults, ...(settings.currency_rates || {}) };
+                return <label key={code}>{code}{code === "INR" ? " (Base)" : ""}
+                  <input type="number" min="0" step="0.000001" disabled={code === "INR"} value={rates[code] ?? ""} onChange={(e) => setSettings({ ...settings, currency_rates: { ...rates, [code]: Number(e.target.value) } })} />
+                </label>;
+              })}
+            </div>
+            <button className="save-settings" onClick={saveSettings}><Save /> SAVE CURRENCY RATES</button>
           </div>
         )}
       </section>
