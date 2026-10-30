@@ -1067,7 +1067,7 @@ export default function AdminDashboard() {
                 <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
               </div>
             </div>}
-            {tab === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(245px, 1fr))", alignItems: "stretch", gap: 14 }}>
+            {tab === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
               <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
                 <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 220px", minWidth: 180 }} />
                 <select aria-label="Filter products" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
@@ -1075,30 +1075,25 @@ export default function AdminDashboard() {
               </div>
               {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length ? (
                 products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
-                  <article key={p.id} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 9, minWidth: 0, borderRadius: 10, padding: 12, boxShadow: "0 2px 10px #3b160b0a" }}>
-                    <img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 58, height: 58, objectFit: "cover", borderRadius: 7 }} />
-                    <div>
-                      <b>{p.name}</b>
-                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
-                        {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 112, padding: "6px 8px" }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "6px 9px", background: "#fffaf3", color: "#4b3529", fontWeight: 700, cursor: "pointer" }}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
-                        <span>· Stock</span>
-                        {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 76, padding: "6px 8px" }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "6px 9px", background: "#fff", color: "#4b3529", cursor: "pointer" }}>{p.stock_quantity} <small>✎</small></button>}
-                        <small style={{ color: "#806f68" }}>· {p.image_urls?.length || 0} extra photos · {p.is_active ? "Visible" : "Hidden"}</small>
+                  <article key={p.id} className="product-admin-card">
+                    <div className="product-admin-card-head">
+                      <img src={p.primary_image_url || "/placeholder.png"} alt="" />
+                      <div className="product-admin-card-title">
+                        <b title={p.name}>{p.name}</b>
+                        <span className={p.is_active ? "product-status-visible" : "product-status-hidden"}>{p.is_active ? "Visible on store" : "Hidden from store"}</span>
                       </div>
                     </div>
-                    <button onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
-                    <button
-                      className={p.is_active ? "product-hide-button" : "product-show-button"}
-                      onClick={() => toggleProductVisibility(p)}
-                    >
-                      {p.is_active ? "HIDE" : "SHOW"}
-                    </button>
-                    <button
-                      className="delete"
-                      onClick={() => remove("products", p.id)}
-                    >
-                      <Trash2 />
-                    </button>
+                    <div className="product-admin-card-meta">
+                      {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
+                      <span className="product-stock-label">Stock</span>
+                      {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })}>{p.stock_quantity} <small>✎</small></button>}
+                      <small>{p.image_urls?.length || 0} extra photos</small>
+                    </div>
+                    <div className="product-admin-card-actions">
+                      <button className="product-edit-action" onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
+                      <button className={p.is_active ? "product-hide-button" : "product-show-button"} onClick={() => toggleProductVisibility(p)}>{p.is_active ? "Hide" : "Show"}</button>
+                      <button className="product-delete-icon" aria-label={"Delete " + p.name} title="Delete product" onClick={() => remove("products", p.id)}><Trash2 /></button>
+                    </div>
                   </article>
                 ))
               ) : (
