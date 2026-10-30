@@ -1,0 +1,44 @@
+/* Shree Gauri — private office login */
+.loginShell{min-height:100vh;display:grid;grid-template-columns:minmax(360px,48%) 1fr;background:#f7f4ef;color:#30262a;font-family:Arial,Helvetica,sans-serif}
+.brandPanel{position:relative;isolation:isolate;overflow:hidden;min-height:100vh;padding:42px clamp(30px,5vw,78px);display:flex;flex-direction:column;justify-content:space-between;color:#fff9f0;background:linear-gradient(145deg,#26080f 0%,#4b111c 54%,#2b0b12 100%)}
+.brandPanel:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.17;background-image:linear-gradient(90deg,transparent 49.7%,#d8b777 50%,transparent 50.3%),linear-gradient(0deg,transparent 49.7%,#d8b777 50%,transparent 50.3%);background-size:76px 76px;mask-image:linear-gradient(135deg,black,transparent 75%)}
+.brandPanel:after{content:"";position:absolute;width:540px;height:540px;border:1px solid #d6b77830;border-radius:50%;right:-290px;top:16%;box-shadow:0 0 0 34px #d6b7780b,0 0 0 70px #d6b77809,0 0 0 110px #d6b77807;z-index:-1}
+.backLink{font-size:12px;letter-spacing:.04em;color:#e9d8c6;opacity:.85;transition:opacity .2s}.backLink:hover{opacity:1}
+.brandLockup{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:22px}
+.logoFrame{width:106px;height:106px;border:1px solid #d7b979;border-radius:50%;padding:10px;display:grid;place-items:center;background:#fffaf2;box-shadow:0 12px 40px #0003}
+.logoFrame img{width:100%;height:100%;object-fit:contain}
+.brandName{font:600 27px/1.1 Georgia,serif;letter-spacing:.17em;color:#f2d8a4;margin-top:10px}
+.brandCaption{font-size:9px;letter-spacing:.32em;color:#d6b777}
+.panelMessage{max-width:480px;margin:auto 0;padding:70px 0 90px}
+.eyebrow,.cardEyebrow{font-size:10px;font-weight:700;letter-spacing:.25em;color:#cba86b}
+.panelMessage h2{font:400 clamp(34px,4vw,54px)/1.14 Georgia,serif;letter-spacing:-.035em;margin:22px 0;color:#fff8ee}
+.panelMessage h2 em{font-weight:400;color:#dfbd7d}
+.panelMessage p{max-width:370px;color:#e3d2c9;font-size:14px;line-height:1.9}
+.panelFooter{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ffffff24;padding-top:18px;color:#d9c7bd;font-size:9px;letter-spacing:.15em}
+.panelFooter span:first-child{display:flex;align-items:center;gap:9px}.panelFooter i{width:7px;height:7px;border-radius:50%;background:#8fc3a1;box-shadow:0 0 0 4px #8fc3a122}
+.panelOrnament{position:absolute;right:9%;bottom:18%;font-size:170px;color:#d6b77713;line-height:1;pointer-events:none}
+.loginPanel{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:38px clamp(22px,5vw,76px);position:relative}
+.loginTopline{position:absolute;top:42px;left:clamp(22px,5vw,76px);right:clamp(22px,5vw,76px);display:flex;justify-content:space-between;align-items:center;color:#988b82;font-size:9px;letter-spacing:.18em;font-weight:700}
+.loginTopline span:last-child{display:flex;align-items:center;gap:7px;color:#7c887b;letter-spacing:.12em}
+.loginCard{width:min(100%,430px);background:#fff;border:1px solid #e9e1d7;padding:clamp(28px,4vw,46px);box-shadow:0 22px 65px #35111a0c}
+.mobileBrand{display:none}
+.cardIcon{width:46px;height:46px;border-radius:13px;background:#f6efe4;color:#8d682f;display:grid;place-items:center;margin-bottom:24px}
+.cardEyebrow{color:#9b7948}
+.loginCard h1{font:400 clamp(29px,3vw,36px)/1.15 Georgia,serif;color:#3c1720;margin:11px 0 10px;letter-spacing:-.025em}
+.cardIntro{font-size:13px;line-height:1.7;color:#81746f;margin:0 0 25px}
+.loginModes{display:grid;grid-template-columns:1fr 1fr;padding:4px;background:#f5f1eb;border:1px solid #eee7de;gap:4px;margin-bottom:25px}
+.loginModes button{border:0;background:transparent;color:#746963;padding:12px 8px;font-size:12px;font-weight:700;transition:background .2s,color .2s}
+.loginModes button.modeActive{background:#4a1722;color:#fff;box-shadow:0 3px 10px #3a0c171c}
+.credentials{display:flex;flex-direction:column;gap:17px}
+.credentials label{display:flex;flex-direction:column;gap:8px;color:#4a3a3d;font-size:12px;font-weight:700}
+.credentials input{width:100%;height:49px;border:1px solid #e3dcd4;background:#fffdfa;padding:0 14px;color:#33252a;font-size:13px;outline:none;transition:border .2s,box-shadow .2s}
+.credentials input:focus{border-color:#a9824b;box-shadow:0 0 0 3px #b58d4b1b}
+.credentials input::placeholder{color:#b3aaa3}
+.loginError{font-size:12px;line-height:1.6;color:#a52a38;background:#fff2f1;border:1px solid #f2d4d1;padding:11px 12px}
+.submitButton{width:100%;min-height:51px;margin-top:4px;border:0;background:linear-gradient(100deg,#45131e,#6a2930);color:#fff8ef;display:flex;justify-content:space-between;align-items:center;padding:0 17px;font-size:11px;font-weight:800;letter-spacing:.1em;transition:filter .2s,transform .2s}
+.submitButton:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.submitButton span{font-size:20px;font-weight:400}
+.cardFootnote{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:25px;color:#8a807a;font-size:10px}.cardFootnote svg{color:#9a794b}.cardFootnote span{color:#c5b9ad}
+.copyright{margin-top:34px;color:#a79b91;font-size:9px;letter-spacing:.15em;text-align:center}.copyright span{padding:0 7px;color:#c5b9ad}
+@media(max-width:850px){.loginShell{grid-template-columns:1fr}.brandPanel{min-height:0;padding:22px 24px 26px}.brandPanel:after{width:300px;height:300px;right:-200px;top:-150px}.backLink{font-size:11px}.brandLockup{flex-direction:row;align-items:center;gap:10px;margin-top:25px}.logoFrame{width:48px;height:48px;padding:5px}.brandName{font-size:18px;letter-spacing:.1em;margin:0}.brandCaption{display:none}.panelMessage{padding:25px 0 5px;margin:0}.panelMessage h2{font-size:27px;margin:10px 0}.panelMessage p{display:none}.eyebrow{font-size:8px}.panelFooter,.panelOrnament{display:none}.loginPanel{min-height:0;padding:28px 20px 22px}.loginTopline{display:none}.loginCard{width:min(100%,470px);padding:28px 23px;box-shadow:0 12px 36px #35111a0b}.cardIcon{margin-bottom:18px}.copyright{margin-top:20px}}
+@media(max-width:420px){.brandPanel{padding:18px 19px 22px}.panelMessage h2{font-size:24px}.loginPanel{padding:22px 14px}.loginCard{padding:25px 19px}.loginCard h1{font-size:29px}.cardFootnote{font-size:9px;flex-wrap:wrap}}
