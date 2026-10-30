@@ -26,7 +26,7 @@ type Cat = {
   parent_id: string | null;
   sort_order: number;
   is_active: boolean;
-  collection_type: "category";
+  collection_type: "category" | "purpose" | "planet";
 };
 type Prod = {
   id: string;
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
   async function saveCat() {
     const data = {
       ...cat,
-      collection_type: "category",
+      collection_type: cat.collection_type || "category",
       parent_id: null,
       slug:
         cat.slug ||
@@ -807,7 +807,15 @@ export default function AdminDashboard() {
         {tab === "categories" && (
           <div className="admin-grid">
             <div className="editor">
-              <h2>{cat.id ? "Edit Product Category" : "Add Product Category"}</h2>
+              <h2>{cat.id ? "Edit Collection" : "Add Product Category or Collection"}</h2>
+              <label>
+                Collection Type
+                <select value={cat.collection_type || "category"} onChange={(e) => setCat({ ...cat, collection_type: e.target.value })}>
+                  <option value="category">Product Category</option>
+                  <option value="purpose">Shop by Purpose</option>
+                  <option value="planet">Shop by Planet</option>
+                </select>
+              </label>
               <label>
                 Category Name
                 <input
@@ -874,7 +882,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="records">
-              {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
+              {cats.filter((c) => c.is_active).sort((x, y) => x.collection_type.localeCompare(y.collection_type) || x.sort_order - y.sort_order).map((c) => (
                 <article key={c.id}>
                   <div className="record-icon">
                     {c.image_url ? <img src={c.image_url} /> : <span>✦</span>}
