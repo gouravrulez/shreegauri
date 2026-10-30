@@ -533,37 +533,66 @@ export default function Storefront() {
                 ))}
             </div>
           </section>
-          <section className="section">
-            <small className="kicker">CHOOSE WITH INTENTION</small>
+          <section className="section purpose-section">
+            <small className="kicker">CHOOSE YOUR INTENTION</small>
             <h2>Shop by Purpose</h2>
-            <p className="intro">Explore meaningful collections selected around the intentions that matter to you.</p>
-            <div className="cat-grid">
-              {cats.filter((c) => c.collection_type === "purpose").sort((x, y) =>  x.name.localeCompare(y.name)).map((c) => (
-                <button key={c.id} onClick={() => go(c.slug)}>
-                  <div>
-                    {c.image_url ? <img src={c.image_url} alt={c.name} /> : <span className="category-symbol">✦</span>}
-                  </div>
-                  <h3>{c.name}</h3>
-                </button>
-              ))}
+            <p className="intro">
+              Find meaningful selections aligned with what matters most to you.
+            </p>
+            <div className="purpose-grid">
+              {cats
+                .filter((c) => c.collection_type === "purpose")
+                .map((c) => (
+                  <button key={c.id} onClick={() => go(c.slug)}>
+                    <div>
+                      {c.image_url ? (
+                        <img src={c.image_url} alt={c.name} />
+                      ) : (
+                        <span>✦</span>
+                      )}
+                    </div>
+                    <h3>{c.name}</h3>
+                  </button>
+                ))}
             </div>
           </section>
-          <section className="section">
-            <small className="kicker">COSMIC CONNECTIONS</small>
+          <section className="section planet-section">
+            <small className="kicker">VEDIC PLANETARY WISDOM</small>
             <h2>Shop by Planet</h2>
-            <p className="intro">Discover collections inspired by the nine planetary influences of Vedic tradition.</p>
-            <div className="cat-grid">
-              {cats.filter((c) => c.collection_type === "planet").sort((x, y) => x.sort_order - y.sort_order).map((c) => (
-                <button key={c.id} onClick={() => go(c.slug)}>
-                  <div>
-                    {c.image_url ? <img src={c.image_url} alt={c.name} /> : <span className="category-symbol">✦</span>}
-                  </div>
-                  <h3>{c.name}</h3>
-                </button>
-              ))}
+            <p className="intro">
+              Explore products traditionally connected with the Navagraha.
+            </p>
+            <div className="planet-grid">
+              {cats
+                .filter((c) => c.collection_type === "planet")
+                .map((c) => (
+                  <button key={c.id} onClick={() => go(c.slug)}>
+                    <div>
+                      {c.image_url ? (
+                        <img src={c.image_url} alt={c.name} />
+                      ) : (
+                        <span>
+                          {(
+                            {
+                              Sun: "☉",
+                              Moon: "☾",
+                              Mars: "♂",
+                              Mercury: "☿",
+                              Jupiter: "♃",
+                              Venus: "♀",
+                              Saturn: "♄",
+                              Rahu: "☊",
+                              Ketu: "☋",
+                            } as Record<string, string>
+                          )[c.name] || "✦"}
+                        </span>
+                      )}
+                    </div>
+                    <h3>{c.name}</h3>
+                  </button>
+                ))}
             </div>
           </section>
-
         </>
       )}
       {(view === "home" ||
