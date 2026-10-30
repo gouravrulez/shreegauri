@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserPlus,
   UserX,
+  Globe,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -142,6 +143,7 @@ export default function AdminDashboard() {
     [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
     [productQuery, setProductQuery] = useState(""),
     [productFilter, setProductFilter] = useState("all"),
+    [productSort, setProductSort] = useState("newest"),
     [productPage, setProductPage] = useState(1),
     [productPageSize, setProductPageSize] = useState(24);
   useEffect(() => {
@@ -434,16 +436,24 @@ export default function AdminDashboard() {
       (productFilter === "hidden" && !p.is_active) ||
       (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))
   );
-  const productPageCount = Math.max(1, Math.ceil(filteredProducts.length / productPageSize));
+  const sortedProducts = [...filteredProducts].sort((left, right) => {
+    if (productSort === "name-asc") return left.name.localeCompare(right.name);
+    if (productSort === "price-low") return Number(left.price_inr) - Number(right.price_inr);
+    if (productSort === "price-high") return Number(right.price_inr) - Number(left.price_inr);
+    if (productSort === "stock-low") return Number(left.stock_quantity) - Number(right.stock_quantity);
+    if (productSort === "stock-high") return Number(right.stock_quantity) - Number(left.stock_quantity);
+    return 0;
+  });
+  const productPageCount = Math.max(1, Math.ceil(sortedProducts.length / productPageSize));
   const currentProductPage = Math.min(productPage, productPageCount);
-  const paginatedProducts = filteredProducts.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize);
+  const paginatedProducts = sortedProducts.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize);
   const pageNumbers = Array.from({ length: productPageCount }, (_, i) => i + 1)
     .filter((page) => productPageCount <= 7 || page === 1 || page === productPageCount || Math.abs(page - currentProductPage) <= 1);
   const paginationControls = (total: number) => (
     <div className="catalog-pagination">
       <label>Show
         <select value={productPageSize} onChange={(e) => { setProductPageSize(Number(e.target.value)); setProductPage(1); }}>
-          <option value={12}>12</option><option value={24}>24</option><option value={48}>48</option><option value={96}>96</option>
+          <option value={12}>12</option><option value={24}>24</option><option value={48}>48</option><option value={96}>96</option><option value={200}>200</option>
         </select>
         per page
       </label>
