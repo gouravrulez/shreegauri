@@ -385,3 +385,21 @@ body {
 .product-admin-card-actions .product-delete-icon svg{width:15px;height:15px}
 @media(max-width:900px){.records.product-card-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}.product-admin-card{padding:10px!important}.product-admin-card-actions button{min-height:34px}}
 @media(max-width:480px){.records.product-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-admin-card-head{align-items:flex-start;gap:8px}.product-admin-card-head>img{width:48px!important;height:48px!important;flex-basis:48px}.product-admin-card-actions{gap:5px}.product-admin-card-actions button{padding:6px 7px;font-size:9px}}
+
+
+/* Product catalogue view switch and scalable pagination controls. */
+.catalog-view-switch{display:flex;gap:10px;align-items:center;margin:0 0 20px;padding:0 0 14px;border-bottom:1px solid #e8ddd2}
+.catalog-view-switch button{display:inline-flex;align-items:center;gap:9px;padding:11px 16px;border:1px solid #d8c5ae;border-radius:9px;background:#fff;color:#4b3529;font-weight:700;cursor:pointer}
+.catalog-view-switch button.on{background:#4b1720;color:#fff;border-color:#4b1720;box-shadow:0 3px 10px rgba(75,23,32,.13)}
+.catalog-view-switch button span{font-size:11px;font-weight:700;padding:3px 7px;border-radius:20px;background:#f4eee8;color:#755c50}
+.catalog-view-switch button.on span{background:rgba(255,255,255,.14);color:#ffdc9c}
+.catalog-pagination{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 4px;padding:12px 0;border-top:1px solid #eadfd5}
+.catalog-pagination>label{display:flex;align-items:center;gap:8px;color:#705e54;font-size:13px}
+.catalog-pagination select{padding:8px 28px 8px 10px;border:1px solid #d8c9bd;border-radius:7px;background:#fff;color:#4b3529}
+.catalog-page-count{color:#806f68;font-size:12px;font-weight:600}
+.catalog-page-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.catalog-page-buttons button{min-width:34px;height:34px;padding:0 9px;border:1px solid #e0d4c9;border-radius:7px;background:#fff;color:#4b3529;font-size:12px;font-weight:700;cursor:pointer}
+.catalog-page-buttons button.current{background:#4b1720;border-color:#4b1720;color:#fff}
+.catalog-page-buttons button:disabled{opacity:.4;cursor:not-allowed}
+.catalog-page-ellipsis{padding:0 3px;color:#806f68}
+@media(max-width:600px){.catalog-view-switch{gap:7px}.catalog-view-switch button{flex:1;justify-content:center;padding:10px 8px;font-size:12px}.catalog-pagination{justify-content:center}.catalog-pagination>label{margin-right:auto}.catalog-page-count{width:100%;text-align:center;order:3}.catalog-page-buttons{justify-content:center;width:100%}}
