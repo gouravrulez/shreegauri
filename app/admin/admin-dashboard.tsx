@@ -549,12 +549,6 @@ export default function AdminDashboard() {
           Photos, Logo & Homepage
         </button>
         )}
-        {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
-        <a href="/">View Store</a>
-        <button onClick={() => supabase.auth.signOut()}>
-          <LogOut />
-          Log Out
-        </button>
       </aside>
       <section>
         <header>
@@ -1359,6 +1353,11 @@ export default function AdminDashboard() {
             </button>
           </div>
         )}
+        <footer className="admin-utility-actions" aria-label="Account and store actions">
+          {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
+          <a href="/"><Store /> View Store</a>
+          <button className="admin-logout-action" onClick={() => supabase.auth.signOut()}><LogOut /> Log Out</button>
+        </footer>
       </section>
     </main>
   );
