@@ -325,7 +325,7 @@ export default function AdminDashboard() {
     const data = {
       ...cat,
       collection_type: cat.collection_type || "category",
-      parent_id: null,
+      parent_id: cat.parent_id || null,
       slug:
         cat.slug ||
         cat.name
@@ -807,20 +807,30 @@ export default function AdminDashboard() {
         {tab === "categories" && (
           <div className="admin-grid">
             <div className="editor">
-              <h2>{cat.id ? "Edit Collection" : "Add Product Category or Collection"}</h2>
+              <h2>
+                {cat.id ? "Edit Item" : "Add Category, Purpose or Planet"}
+              </h2>
               <label>
-                Collection Type
-                <select value={cat.collection_type || "category"} onChange={(e) => setCat({ ...cat, collection_type: e.target.value })}>
-                  <option value="category">Product Category</option>
+                Homepage Section
+                <select
+                  value={cat.collection_type || "category"}
+                  onChange={(e) =>
+                    setCat({
+                      ...cat,
+                      collection_type: e.target.value,
+                      parent_id: "",
+                    })
+                  }
+                >
+                  <option value="category">Shop by Category</option>
                   <option value="purpose">Shop by Purpose</option>
                   <option value="planet">Shop by Planet</option>
                 </select>
               </label>
               <label>
-                Category Name
+                Name
                 <input
                   value={cat.name}
-                  placeholder="e.g. Gemstones"
                   onChange={(e) => setCat({ ...cat, name: e.target.value })}
                 />
               </label>
@@ -836,10 +846,36 @@ export default function AdminDashboard() {
                 Description
                 <textarea
                   value={cat.description}
-                  placeholder="A short description of the products in this category"
-                  onChange={(e) => setCat({ ...cat, description: e.target.value })}
+                  onChange={(e) =>
+                    setCat({ ...cat, description: e.target.value })
+                  }
                 />
               </label>
+              {cat.collection_type === "category" && (
+                <label>
+                  Parent Category
+                  <select
+                    value={cat.parent_id || ""}
+                    onChange={(e) =>
+                      setCat({ ...cat, parent_id: e.target.value })
+                    }
+                  >
+                    <option value="">None — Main Category</option>
+                    {cats
+                      .filter(
+                        (c) =>
+                          c.id !== cat.id &&
+                          !c.parent_id &&
+                          c.collection_type === "category",
+                      )
+                      .map((c) => (
+                        <option value={c.id} key={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
               <label>
                 Display Order
                 <input
@@ -882,7 +918,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="records">
-              {cats.filter((c) => c.is_active).sort((x, y) => x.collection_type.localeCompare(y.collection_type) || x.sort_order - y.sort_order).map((c) => (
+              {cats.map((c) => (
                 <article key={c.id}>
                   <div className="record-icon">
                     {c.image_url ? <img src={c.image_url} /> : <span>✦</span>}
@@ -890,7 +926,14 @@ export default function AdminDashboard() {
                   <div>
                     <b>{c.name}</b>
                     <span>
-                      Main product category · Visible
+                      {c.collection_type === "purpose"
+                        ? "Shop by Purpose"
+                        : c.collection_type === "planet"
+                          ? "Shop by Planet"
+                          : c.parent_id
+                            ? "Subcategory"
+                            : "Main category"}{" "}
+                      · {c.is_active ? "Visible" : "Hidden"}
                     </span>
                   </div>
                   <button onClick={() => setCat(c)}>Edit</button>
