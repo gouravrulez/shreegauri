@@ -653,7 +653,7 @@ export default function Storefront() {
                   All Categories
                 </label>
                 {cats
-                  .filter((c) => c.collection_type === "category")
+                  .filter((c) => c.collection_type === "category" && !c.parent_id)
                   .map((c) => (
                     <label key={c.id}>
                       <input
@@ -891,8 +891,8 @@ export default function Storefront() {
         <div>
           <b>Explore</b>
           {cats
-            .filter((c) => c.collection_type === "category")
-            .slice(0, 5)
+            .filter((c) => c.collection_type === "category" && !c.parent_id)
+            .slice(0, 6)
             .map((c) => (
               <button key={c.id} onClick={() => go(c.slug)}>
                 {c.name}
