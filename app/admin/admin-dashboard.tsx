@@ -332,7 +332,6 @@ export default function AdminDashboard() {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
-      parent_id: cat.parent_id || null,
       sort_order: Number(cat.sort_order),
     };
     const r = cat.id
