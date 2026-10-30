@@ -434,7 +434,8 @@ export default function AdminDashboard() {
     p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) &&
     (productFilter === "all" || (productFilter === "active" && p.is_active) ||
       (productFilter === "hidden" && !p.is_active) ||
-      (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))
+      (productFilter === "low-stock" && Number(p.stock_quantity) > 0 && Number(p.stock_quantity) <= 3) ||
+      (productFilter === "out-of-stock" && Number(p.stock_quantity) <= 0))
   );
   const sortedProducts = [...filteredProducts].sort((left, right) => {
     if (productSort === "name-asc") return left.name.localeCompare(right.name);
@@ -1180,7 +1181,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
-              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
+              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
               <select aria-label="Filter inventory" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
               <select aria-label="Sort inventory" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
             </div>
