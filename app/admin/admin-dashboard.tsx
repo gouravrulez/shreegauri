@@ -573,7 +573,7 @@ export default function AdminDashboard() {
           onClick={() => setTab("categories")}
         >
           <Layers />
-          Categories & Subcategories
+          Product Categories
         </button>
         )}
         {["admin", "manager", "catalog"].includes(staffRole) && (<>
@@ -617,7 +617,7 @@ export default function AdminDashboard() {
                 : tab === "customers"
                   ? "Customer Accounts"
                 : tab === "categories"
-                  ? "Categories & Subcategories"
+                  ? "Product Categories"
                   : tab === "products"
                     ? "Products & Inventory"
                     : tab === "reviews"
@@ -875,7 +875,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="records">
-              {cats.map((c) => (
+              {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
                 <article key={c.id}>
                   <div className="record-icon">
                     {c.image_url ? <img src={c.image_url} /> : <span>✦</span>}
@@ -883,14 +883,7 @@ export default function AdminDashboard() {
                   <div>
                     <b>{c.name}</b>
                     <span>
-                      {c.collection_type === "purpose"
-                        ? "Shop by Purpose"
-                        : c.collection_type === "planet"
-                          ? "Shop by Planet"
-                          : c.parent_id
-                            ? "Subcategory"
-                            : "Main category"}{" "}
-                      · {c.is_active ? "Visible" : "Hidden"}
+                      Main product category · Visible
                     </span>
                   </div>
                   <button onClick={() => setCat(c)}>Edit</button>
@@ -992,7 +985,7 @@ export default function AdminDashboard() {
                 </label>
               </div>
               <label>
-                Category
+                Product Category
                 <select
                   value={prod.category_id || ""}
                   onChange={(e) =>
