@@ -533,66 +533,7 @@ export default function Storefront() {
                 ))}
             </div>
           </section>
-          <section className="section purpose-section">
-            <small className="kicker">CHOOSE YOUR INTENTION</small>
-            <h2>Shop by Purpose</h2>
-            <p className="intro">
-              Find meaningful selections aligned with what matters most to you.
-            </p>
-            <div className="purpose-grid">
-              {cats
-                .filter((c) => c.collection_type === "purpose")
-                .map((c) => (
-                  <button key={c.id} onClick={() => go(c.slug)}>
-                    <div>
-                      {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
-                      ) : (
-                        <span>✦</span>
-                      )}
-                    </div>
-                    <h3>{c.name}</h3>
-                  </button>
-                ))}
-            </div>
-          </section>
-          <section className="section planet-section">
-            <small className="kicker">VEDIC PLANETARY WISDOM</small>
-            <h2>Shop by Planet</h2>
-            <p className="intro">
-              Explore products traditionally connected with the Navagraha.
-            </p>
-            <div className="planet-grid">
-              {cats
-                .filter((c) => c.collection_type === "planet")
-                .map((c) => (
-                  <button key={c.id} onClick={() => go(c.slug)}>
-                    <div>
-                      {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
-                      ) : (
-                        <span>
-                          {(
-                            {
-                              Sun: "☉",
-                              Moon: "☾",
-                              Mars: "♂",
-                              Mercury: "☿",
-                              Jupiter: "♃",
-                              Venus: "♀",
-                              Saturn: "♄",
-                              Rahu: "☊",
-                              Ketu: "☋",
-                            } as Record<string, string>
-                          )[c.name] || "✦"}
-                        </span>
-                      )}
-                    </div>
-                    <h3>{c.name}</h3>
-                  </button>
-                ))}
-            </div>
-          </section>
+
         </>
       )}
       {(view === "home" ||
@@ -653,7 +594,7 @@ export default function Storefront() {
                   All Categories
                 </label>
                 {cats
-                  .filter((c) => c.collection_type === "category")
+                  .filter((c) => c.collection_type === "category" && !c.parent_id)
                   .map((c) => (
                     <label key={c.id}>
                       <input
@@ -891,8 +832,8 @@ export default function Storefront() {
         <div>
           <b>Explore</b>
           {cats
-            .filter((c) => c.collection_type === "category")
-            .slice(0, 5)
+            .filter((c) => c.collection_type === "category" && !c.parent_id)
+            .slice(0, 6)
             .map((c) => (
               <button key={c.id} onClick={() => go(c.slug)}>
                 {c.name}
