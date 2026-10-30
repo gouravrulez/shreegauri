@@ -347,7 +347,7 @@ body {
 
 /* Keep account, store and sign-out actions inside the dark admin sidebar. */
 .admin>aside{overflow-y:auto;overscroll-behavior:contain}
-.admin-utility-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:auto;padding:22px 0 4px;border-top:1px solid rgba(255,255,255,.16)}
+.admin-utility-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:auto;padding:6px 0 4px;border-top:0}
 .admin-utility-actions button,.admin-utility-actions a{display:flex;align-items:center;justify-content:flex-start;gap:11px;width:100%;min-height:46px;padding:12px 13px;border:1px solid transparent;border-radius:7px;background:transparent;color:#d9c4c5;text-decoration:none;text-align:left;font:600 13px inherit;cursor:pointer}
 .admin-utility-actions button:hover,.admin-utility-actions a:hover{background:rgba(255,255,255,.08);color:#fff}
 .admin-utility-actions button.on{background:rgba(255,255,255,.12);color:#ffc85d;border-color:rgba(255,200,93,.25)}
@@ -388,7 +388,7 @@ body {
 
 
 /* Product catalogue view switch and scalable pagination controls. */
-.catalog-view-switch{display:flex;gap:10px;align-items:center;margin:0 0 20px;padding:0 0 14px;border-bottom:1px solid #e8ddd2}
+.catalog-view-switch{position:sticky;top:0;z-index:12;display:flex;gap:10px;align-items:center;margin:0 0 20px;padding:12px 0 14px;border-bottom:1px solid #e8ddd2;background:#f3eee8}
 .catalog-view-switch button{display:inline-flex;align-items:center;gap:9px;padding:11px 16px;border:1px solid #d8c5ae;border-radius:9px;background:#fff;color:#4b3529;font-weight:700;cursor:pointer}
 .catalog-view-switch button.on{background:#4b1720;color:#fff;border-color:#4b1720;box-shadow:0 3px 10px rgba(75,23,32,.13)}
 .catalog-view-switch button span{font-size:11px;font-weight:700;padding:3px 7px;border-radius:20px;background:#f4eee8;color:#755c50}
@@ -403,3 +403,14 @@ body {
 .catalog-page-buttons button:disabled{opacity:.4;cursor:not-allowed}
 .catalog-page-ellipsis{padding:0 3px;color:#806f68}
 @media(max-width:600px){.catalog-view-switch{gap:7px}.catalog-view-switch button{flex:1;justify-content:center;padding:10px 8px;font-size:12px}.catalog-pagination{justify-content:center}.catalog-pagination>label{margin-right:auto}.catalog-page-count{width:100%;text-align:center;order:3}.catalog-page-buttons{justify-content:center;width:100%}}
+
+/* Catalogue controls: keep paging visible above long product and stock lists */
+.catalog-pagination{background:#fff;border:1px solid #e8ddd2;border-radius:9px;padding:10px 12px;margin:8px 0 14px}
+.catalog-pagination select{min-width:70px}
+.catalog-page-count{font-size:12px;color:#806f68;font-weight:700}
+.catalog-page-buttons button:focus-visible,.catalog-view-switch button:focus-visible{outline:2px solid #a56b19;outline-offset:2px}
+.currency-rate-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
+.currency-rate-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:#5b4038}
+.currency-rate-grid input{width:100%;padding:10px;border:1px solid #d8cbc0;background:#fff}
+.currency-rate-grid input:disabled{background:#f4eee8;color:#806f68}
+@media(max-width:600px){.catalog-view-switch{top:0;gap:7px;padding:9px 0 12px}.catalog-pagination{padding:10px;gap:9px}.catalog-pagination>label{margin-right:0}.catalog-page-count{width:auto;text-align:left;order:0}.catalog-page-buttons{width:100%;justify-content:center}.currency-rate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
