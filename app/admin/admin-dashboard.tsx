@@ -988,7 +988,7 @@ export default function AdminDashboard() {
                 <select
                   value={prod.category_id || ""}
                   onChange={(e) =>
-                    setProd({ ...prod, category_id: e.target.value })
+                    setProd({ ...prod, category_id: e.target.value, category_ids: e.target.value ? [e.target.value] : [] })
                   }
                 >
                   <option value="">Select</option>
