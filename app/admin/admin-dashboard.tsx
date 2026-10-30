@@ -120,6 +120,7 @@ export default function AdminDashboard() {
     [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("dashboard"),
+    [catalogView, setCatalogView] = useState<"products" | "inventory">("products"),
     [cats, setCats] = useState<Cat[]>([]),
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
@@ -529,8 +530,7 @@ export default function AdminDashboard() {
         </button>
         )}
         {["admin", "manager", "catalog"].includes(staffRole) && (<>
-          <button className={tab === "products" ? "on" : ""} onClick={() => setTab("products")}><Package /> Products</button>
-          <button className={tab === "inventory" ? "on" : ""} onClick={() => setTab("inventory")}><ClipboardList /> Inventory {lowStock > 0 && <b className="order-count">{lowStock}</b>}</button>
+          <button className={tab === "products" || tab === "inventory" ? "on" : ""} onClick={() => { setCatalogView("products"); setTab("products"); }}><Package /> Products & Inventory {lowStock > 0 && <b className="order-count">{lowStock}</b>}</button>
           <button className={tab === "add-product" ? "on" : ""} onClick={() => { setProd(blankProd); setTab("add-product"); }}><Package /> Add New Product</button>
         </>)}
         {["admin", "manager"].includes(staffRole) && (<button
@@ -894,7 +894,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        {(tab === "products" || tab === "add-product") && (
+        {(tab === "products" && catalogView === "products" || tab === "add-product") && (
           <div className="admin-product-workspace">
             {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
               <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
@@ -1120,7 +1120,13 @@ export default function AdminDashboard() {
             </div>}
           </div>
         )}
-        {tab === "inventory" && (
+        {tab === "products" && (
+          <div className="catalog-view-switch" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 16px", borderBottom: "1px solid #e8ddd2", paddingBottom: 12 }}>
+            <button type="button" onClick={() => setCatalogView("products")} className={catalogView === "products" ? "on" : ""} style={{ padding: "10px 16px", border: "1px solid #d8c5ae", borderRadius: 8, background: catalogView === "products" ? "#4b1720" : "#fff", color: catalogView === "products" ? "#fff" : "#4b3529" }}>Product List</button>
+            <button type="button" onClick={() => setCatalogView("inventory")} className={catalogView === "inventory" ? "on" : ""} style={{ padding: "10px 16px", border: "1px solid #d8c5ae", borderRadius: 8, background: catalogView === "inventory" ? "#4b1720" : "#fff", color: catalogView === "inventory" ? "#fff" : "#4b3529" }}>Stock Overview {lowStock > 0 ? "(" + lowStock + " low)" : ""}</button>
+          </div>
+        )}
+        {tab === "products" && catalogView === "inventory" && (
           <div className="inventory-admin">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 18 }}>
               <div><h2 style={{ margin: 0, font: "28px Georgia,serif", color: "#421015" }}>Inventory Overview</h2><small style={{ color: "#806f68" }}>Update stock directly here. Changes save to your product inventory.</small></div>
