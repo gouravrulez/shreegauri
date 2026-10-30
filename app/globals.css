@@ -352,3 +352,27 @@ body {
 .admin-utility-actions .admin-logout-action{background:#fff7f5;color:#8b2424;border-color:#e8c7c2}
 .admin-utility-actions svg{width:17px;height:17px}
 @media(max-width:900px){.admin-utility-actions{justify-content:stretch;margin-top:28px;padding-top:16px}.admin-utility-actions button,.admin-utility-actions a{flex:1 1 150px}}
+
+
+/* Compact premium product cards for the admin catalogue. */
+.records.product-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));align-items:stretch;gap:14px}
+.product-admin-card{display:flex!important;flex-direction:column;gap:12px!important;min-width:0;padding:13px!important;border:1px solid #e8ddd2!important;border-radius:12px;background:linear-gradient(180deg,#fff 0%,#fffdf9 100%);box-shadow:0 3px 14px rgba(59,22,11,.055);transition:box-shadow .18s ease,border-color .18s ease}
+.product-admin-card:hover{border-color:#d8c19d!important;box-shadow:0 7px 20px rgba(59,22,11,.09)}
+.product-admin-card-head{display:flex;align-items:center;gap:11px;min-width:0}
+.product-admin-card-head>img{width:58px!important;height:58px!important;flex:0 0 58px;object-fit:contain!important;border:1px solid #eee4da;border-radius:9px;background:#fff}
+.product-admin-card-title{display:flex;flex-direction:column;gap:5px;min-width:0}
+.product-admin-card-title>b{font-size:13px;line-height:1.35;color:#3f1718;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-admin-card-title>span{font-size:10px!important;font-weight:700;letter-spacing:.2px}
+.product-status-visible{color:#28734a!important}.product-status-hidden{color:#9a6a35!important}
+.product-admin-card-meta{display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:wrap;gap:7px!important;padding-top:9px;border-top:1px solid #f0e8df}
+.product-admin-card-meta button,.product-admin-card-meta input{width:auto!important;min-width:0;padding:6px 8px!important;border:1px solid #e5d8ca;border-radius:7px;background:#fff;color:#4b3529;font-size:12px;font-weight:700}
+.product-admin-card-meta .product-stock-label,.product-admin-card-meta>small{font-size:10px!important;color:#84766d!important}
+.product-admin-card-meta input{width:76px!important}
+.product-admin-card-actions{display:flex;align-items:center;gap:7px;margin-top:auto;padding-top:2px}
+.product-admin-card-actions button{min-height:32px;padding:6px 10px;border-radius:7px;font-size:10px;font-weight:800;letter-spacing:.3px}
+.product-admin-card-actions .product-edit-action{flex:1;background:#4b1720;color:#fff;border:1px solid #4b1720}
+.product-admin-card-actions .product-hide-button,.product-admin-card-actions .product-show-button{min-width:58px;padding:6px 9px}
+.product-admin-card-actions .product-delete-icon{width:32px;height:32px;min-width:32px;padding:0;display:grid;place-items:center;border:1px solid #efd4d0;background:#fff8f7;color:#a32a2a;border-radius:7px}
+.product-admin-card-actions .product-delete-icon svg{width:15px;height:15px}
+@media(max-width:900px){.records.product-card-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}.product-admin-card{padding:10px!important}.product-admin-card-actions button{min-height:34px}}
+@media(max-width:480px){.records.product-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-admin-card-head{align-items:flex-start;gap:8px}.product-admin-card-head>img{width:48px!important;height:48px!important;flex-basis:48px}.product-admin-card-actions{gap:5px}.product-admin-card-actions button{padding:6px 7px;font-size:9px}}
