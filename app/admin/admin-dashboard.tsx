@@ -482,49 +482,44 @@ export default function AdminDashboard() {
 
   if (!session)
     return (
-      <main className="admin-login">
-        <form onSubmit={login} autoComplete="off">
-          <a className="admin-back" href="/">← Return to store</a>
-          <div className="admin-login-brand">
-            <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
-            <span>SHREE GAURI</span>
-            <small>ADMINISTRATION</small>
-          </div>
-          <div className="admin-login-divider"><span>✦</span></div>
-          <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
-          <p>{loginMode === "admin" ? "Secure access for the main administrator." : "Use your invited work email and password to access your assigned tasks."}</p>
-          <div role="group" aria-label="Choose sign-in type" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 0 18px" }}>
-            <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "admin" ? "#3d2a20" : "#fff", color: loginMode === "admin" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Main Admin</button>
-            <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "staff" ? "#3d2a20" : "#fff", color: loginMode === "staff" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Staff Login</button>
-          </div>
-          <label>
-            Work email
-            <input
-              type="email"
-              name="sg-admin-email"
-              autoComplete="off"
-              placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="sg-admin-password"
-              autoComplete="new-password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && <b>{error}</b>}
-          <button>{loginMode === "admin" ? "SECURE ADMIN LOGIN" : "SECURE STAFF LOGIN"}</button>
-          <small className="admin-secure-note">{loginMode === "admin" ? "Main administrator access • Shree Gauri" : "Role-based staff access • Shree Gauri"}</small>
-        </form>
+      <main className="admin-login-premium">
+        <div className="admin-login-shell">
+          <section className="admin-login-art" aria-label="Shree Gauri administration">
+            <a className="admin-login-return" href="/">← Return to store</a>
+            <div className="admin-login-art-brand">
+              <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
+              <div><span>SHREE GAURI</span><small>ADMINISTRATION</small></div>
+            </div>
+            <div className="admin-login-art-copy">
+              <span className="admin-login-kicker">STORE CONTROL CENTRE</span>
+              <h2>Thoughtful care.<br />Seamless management.</h2>
+              <p>Everything you need to manage the Shree Gauri store, your catalogue and your team — in one place.</p>
+            </div>
+            <div className="admin-login-art-foot"><span>SHREE GAURI</span><i /> <small>PRIVATE ADMINISTRATOR PORTAL</small></div>
+          </section>
+          <section className="admin-login-panel">
+            <div className="admin-login-panel-top"><span>WELCOME BACK</span><small>Sign in to continue</small></div>
+            <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
+            <p className="admin-login-intro">{loginMode === "admin" ? "Sign in with your main administrator credentials." : "Use your invited work email to access your assigned tasks."}</p>
+            <div className="admin-login-mode" role="group" aria-label="Choose sign-in type">
+              <button type="button" className={loginMode === "admin" ? "active" : ""} aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }}>Main Admin</button>
+              <button type="button" className={loginMode === "staff" ? "active" : ""} aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }}>Staff Login</button>
+            </div>
+            <form className="admin-login-fields" onSubmit={login} autoComplete="off">
+              <label>
+                <span>Work email</span>
+                <input type="email" name="sg-admin-email" autoComplete="off" placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"} value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </label>
+              <label>
+                <span>Password</span>
+                <input type="password" name="sg-admin-password" autoComplete="new-password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </label>
+              {error && <b className="admin-login-error" role="alert">{error}</b>}
+              <button className="admin-login-submit" type="submit">{loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">→</span></button>
+            </form>
+            <div className="admin-login-panel-foot"><span className="admin-login-lock">◇</span><span>{loginMode === "admin" ? "Main administrator access" : "Role-based staff access"}</span><i /> <span>Shree Gauri</span></div>
+          </section>
+        </div>
       </main>
     );
   if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
