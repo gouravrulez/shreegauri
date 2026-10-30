@@ -896,8 +896,8 @@ export default function AdminDashboard() {
         )}
         {(tab === "products" || tab === "add-product") && (
           <div className="admin-product-workspace">
-            {tab === "add-product" && <div className="editor product-editor">
-              <h2>{prod.id ? "Edit Product" : "Add Product"}</h2>
+            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
+              <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
               <label>
                 Product Name
                 <input
@@ -1092,7 +1092,7 @@ export default function AdminDashboard() {
                         <small style={{ color: "#806f68" }}>· {p.image_urls?.length || 0} extra photos · {p.is_active ? "Visible" : "Hidden"}</small>
                       </div>
                     </div>
-                    <button onClick={() => setProd(p)}>Edit</button>
+                    <button onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
                     <button
                       className={p.is_active ? "product-hide-button" : "product-show-button"}
                       onClick={() => toggleProductVisibility(p)}
