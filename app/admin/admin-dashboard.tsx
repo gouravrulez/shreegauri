@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   LogOut,
@@ -451,10 +451,10 @@ export default function AdminDashboard() {
       <div className="catalog-page-buttons">
         <button type="button" disabled={currentProductPage === 1} onClick={() => setProductPage(currentProductPage - 1)}>Previous</button>
         {pageNumbers.map((page, index) => (
-          <React.Fragment key={page}>
+          <Fragment key={page}>
             {productPageCount > 7 && index > 0 && page - pageNumbers[index - 1] > 1 && <span className="catalog-page-ellipsis">…</span>}
             <button type="button" className={currentProductPage === page ? "current" : ""} aria-current={currentProductPage === page ? "page" : undefined} onClick={() => setProductPage(page)}>{page}</button>
-          </React.Fragment>
+          </Fragment>
         ))}
         <button type="button" disabled={currentProductPage === productPageCount} onClick={() => setProductPage(currentProductPage + 1)}>Next</button>
       </div>
@@ -1112,10 +1112,10 @@ export default function AdminDashboard() {
                 <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
               </div>
             </div>}
-            {tab === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
+            {tab === "products" && catalogView === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
               <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
-                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 220px", minWidth: 180 }} />
-                <select aria-label="Filter products" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
+                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 220px", minWidth: 180 }} />
+                <select aria-label="Filter products" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
                 <small style={{ color: "#806f68" }}>{filteredProducts.length} of {products.length} products</small>
               </div>
               {filteredProducts.length ? (
