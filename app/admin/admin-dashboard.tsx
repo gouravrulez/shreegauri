@@ -1163,7 +1163,7 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               )}
-              {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
+              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
             </div>}
           </div>
         )}
@@ -1200,7 +1200,6 @@ export default function AdminDashboard() {
               {!filteredProducts.length && <p style={{ padding: 24 }}>No products match these filters.</p>}
             </div>
             {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
-            </div>
           </div>
         )}
         {tab === "reviews" && (
