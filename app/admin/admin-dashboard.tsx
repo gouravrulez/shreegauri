@@ -137,7 +137,10 @@ export default function AdminDashboard() {
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
     [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
-    [newStaffPassword, setNewStaffPassword] = useState("");
+    [newStaffPassword, setNewStaffPassword] = useState(""),
+    [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
+    [productQuery, setProductQuery] = useState(""),
+    [productFilter, setProductFilter] = useState("all");
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -368,6 +371,18 @@ export default function AdminDashboard() {
     setProd(blankProd);
     await load();
   }
+  async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0 || (field === "stock_quantity" && !Number.isInteger(value))) {
+      setNotice(field === "price_inr" ? "Enter a valid price of ₹0 or more." : "Stock must be a whole number of 0 or more.");
+      setQuickEdit(null); return;
+    }
+    const { error } = await supabase.from("products").update({ [field]: value, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { setNotice("Could not update " + (field === "price_inr" ? "price: " : "stock: ") + error.message); return; }
+    setProducts((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+    setQuickEdit(null); setNotice(field === "price_inr" ? "Price updated." : "Stock quantity updated.");
+  }
+
   async function toggleProductVisibility(p: Prod) {
     const next = !p.is_active;
     const { error } = await supabase
@@ -1062,17 +1077,23 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="records">
-              {products.length ? (
-                products.map((p) => (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 16 }}>
+                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 220px", minWidth: 180 }} />
+                <select aria-label="Filter products" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
+                <small style={{ color: "#806f68" }}>{products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length} of {products.length} products</small>
+              </div>
+              {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length ? (
+                products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
                   <article key={p.id}>
                     <img src={p.primary_image_url} />
                     <div>
                       <b>{p.name}</b>
-                      <span>
-                        ₹{p.price_inr} · Stock {p.stock_quantity} ·{" "}
-                        {p.image_urls?.length || 0} extra photos ·{" "}
-                        {p.is_active ? "Visible" : "Hidden"}
-                      </span>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
+                        {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setQuickEdit(null); }} style={{ width: 112, padding: "6px 8px" }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "6px 9px", background: "#fffaf3", color: "#4b3529", fontWeight: 700, cursor: "pointer" }}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
+                        <span>· Stock</span>
+                        {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setQuickEdit(null); }} style={{ width: 76, padding: "6px 8px" }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "6px 9px", background: "#fff", color: "#4b3529", cursor: "pointer" }}>{p.stock_quantity} <small>✎</small></button>}
+                        <small style={{ color: "#806f68" }}>· {p.image_urls?.length || 0} extra photos · {p.is_active ? "Visible" : "Hidden"}</small>
+                      </div>
                     </div>
                     <button onClick={() => setProd(p)}>Edit</button>
                     <button
