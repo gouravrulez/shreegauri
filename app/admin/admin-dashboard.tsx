@@ -141,7 +141,9 @@ export default function AdminDashboard() {
     [newStaffPassword, setNewStaffPassword] = useState(""),
     [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
     [productQuery, setProductQuery] = useState(""),
-    [productFilter, setProductFilter] = useState("all");
+    [productFilter, setProductFilter] = useState("all"),
+    [productPage, setProductPage] = useState(1),
+    [productPageSize, setProductPageSize] = useState(24);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -426,6 +428,38 @@ export default function AdminDashboard() {
   const pendingOrders = orders.filter((o) => o.order_status === "pending").length;
   const pendingReviews = reviews.filter((r) => !r.is_approved).length;
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) &&
+    (productFilter === "all" || (productFilter === "active" && p.is_active) ||
+      (productFilter === "hidden" && !p.is_active) ||
+      (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))
+  );
+  const productPageCount = Math.max(1, Math.ceil(filteredProducts.length / productPageSize));
+  const currentProductPage = Math.min(productPage, productPageCount);
+  const paginatedProducts = filteredProducts.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize);
+  const pageNumbers = Array.from({ length: productPageCount }, (_, i) => i + 1)
+    .filter((page) => productPageCount <= 7 || page === 1 || page === productPageCount || Math.abs(page - currentProductPage) <= 1);
+  const paginationControls = (total: number) => (
+    <div className="catalog-pagination">
+      <label>Show
+        <select value={productPageSize} onChange={(e) => { setProductPageSize(Number(e.target.value)); setProductPage(1); }}>
+          <option value={12}>12</option><option value={24}>24</option><option value={48}>48</option><option value={96}>96</option>
+        </select>
+        per page
+      </label>
+      <span className="catalog-page-count">{total ? ((currentProductPage - 1) * productPageSize + 1) + "–" + Math.min(currentProductPage * productPageSize, total) + " of " + total : "0 products"}</span>
+      <div className="catalog-page-buttons">
+        <button type="button" disabled={currentProductPage === 1} onClick={() => setProductPage(currentProductPage - 1)}>Previous</button>
+        {pageNumbers.map((page, index) => (
+          <React.Fragment key={page}>
+            {productPageCount > 7 && index > 0 && page - pageNumbers[index - 1] > 1 && <span className="catalog-page-ellipsis">…</span>}
+            <button type="button" className={currentProductPage === page ? "current" : ""} aria-current={currentProductPage === page ? "page" : undefined} onClick={() => setProductPage(page)}>{page}</button>
+          </React.Fragment>
+        ))}
+        <button type="button" disabled={currentProductPage === productPageCount} onClick={() => setProductPage(currentProductPage + 1)}>Next</button>
+      </div>
+    </div>
+  );
   const paidRevenue = orders.filter((o) => ["paid", "success", "completed"].includes(String(o.payment_status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
   function openDashboard() {
     const now = Date.now();
@@ -579,6 +613,12 @@ export default function AdminDashboard() {
           </div>
           {notice && <p>{notice}</p>}
         </header>
+        {tab === "products" && (
+          <div className="catalog-view-switch" role="tablist" aria-label="Product catalogue views">
+            <button type="button" role="tab" aria-selected={catalogView === "products"} onClick={() => { setCatalogView("products"); setProductPage(1); }} className={catalogView === "products" ? "on" : ""}>Product List <span>{products.length}</span></button>
+            <button type="button" role="tab" aria-selected={catalogView === "inventory"} onClick={() => { setCatalogView("inventory"); setProductPage(1); }} className={catalogView === "inventory" ? "on" : ""}>Stock Overview <span>{lowStock} low</span></button>
+          </div>
+        )}
         {tab === "dashboard" && (
           <div className="sg-dashboard">
             <div className="dashboard-stats">
@@ -1076,10 +1116,10 @@ export default function AdminDashboard() {
               <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
                 <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} style={{ flex: "1 1 220px", minWidth: 180 }} />
                 <select aria-label="Filter products" value={productFilter} onChange={(e) => setProductFilter(e.target.value)} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option></select>
-                <small style={{ color: "#806f68" }}>{products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length} of {products.length} products</small>
+                <small style={{ color: "#806f68" }}>{filteredProducts.length} of {products.length} products</small>
               </div>
-              {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).length ? (
-                products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
+              {filteredProducts.length ? (
+                paginatedProducts.map((p) => (
                   <article key={p.id} className="product-admin-card">
                     <div className="product-admin-card-head">
                       <img src={p.primary_image_url || "/placeholder.png"} alt="" />
@@ -1111,13 +1151,8 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               )}
+              {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
             </div>}
-          </div>
-        )}
-        {tab === "products" && (
-          <div className="catalog-view-switch" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 16px", borderBottom: "1px solid #e8ddd2", paddingBottom: 12 }}>
-            <button type="button" onClick={() => setCatalogView("products")} className={catalogView === "products" ? "on" : ""} style={{ padding: "10px 16px", border: "1px solid #d8c5ae", borderRadius: 8, background: catalogView === "products" ? "#4b1720" : "#fff", color: catalogView === "products" ? "#fff" : "#4b3529" }}>Product List</button>
-            <button type="button" onClick={() => setCatalogView("inventory")} className={catalogView === "inventory" ? "on" : ""} style={{ padding: "10px 16px", border: "1px solid #d8c5ae", borderRadius: 8, background: catalogView === "inventory" ? "#4b1720" : "#fff", color: catalogView === "inventory" ? "#fff" : "#4b3529" }}>Stock Overview {lowStock > 0 ? "(" + lowStock + " low)" : ""}</button>
           </div>
         )}
         {tab === "products" && catalogView === "inventory" && (
@@ -1137,7 +1172,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
                 <thead><tr style={{ background: "#f8f2eb", textAlign: "left" }}><th style={{ padding: 13 }}>Product</th><th style={{ padding: 13 }}>Price</th><th style={{ padding: 13 }}>Available stock</th><th style={{ padding: 13 }}>Status</th><th style={{ padding: 13 }}>Action</th></tr></thead>
                 <tbody>
-                  {products.filter((p) => p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) && (productFilter === "all" || (productFilter === "active" && p.is_active) || (productFilter === "hidden" && !p.is_active) || (productFilter === "low-stock" && Number(p.stock_quantity) <= 3))).map((p) => (
+                  {paginatedProducts.map((p) => (
                     <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
                       <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
                       <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
@@ -1148,7 +1183,9 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
-              {!products.length && <p style={{ padding: 24 }}>No products found.</p>}
+              {!filteredProducts.length && <p style={{ padding: 24 }}>No products match these filters.</p>}
+            </div>
+            {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
             </div>
           </div>
         )}
