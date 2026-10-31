@@ -903,6 +903,7 @@ export default function Storefront() {
           <b>Help</b>
           <button onClick={() => go("about")}>About Us</button>
           <button onClick={() => go("contact")}>Contact Us</button>
+          <a href="/astrology">Astrology Consultation</a>
           <a href="/login">Customer Login</a>
         </div>
         <div className="footer-connect">
