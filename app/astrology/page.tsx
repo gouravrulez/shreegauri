@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent, CSSProperties } from "react";
 
 const BUSINESS_WHATSAPP = "917400617601";
 
@@ -47,7 +48,7 @@ export default function AstrologyConsultationPage() {
   );
 }
 
-const field: React.CSSProperties = {
+const field: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   border: "1px solid #d9cbb5",
