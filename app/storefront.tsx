@@ -360,6 +360,7 @@ export default function Storefront() {
     ["shop", "Categories"],
     ["new", "New Arrivals"],
     ["best", "Best Sellers"],
+    ["astrology", "Astrology"],
     ["about", "About Us"],
     ["contact", "Contact Us"],
   ];
@@ -506,6 +507,23 @@ export default function Storefront() {
             <span>✦</span>
           </section>
         </>
+      )}
+      {view === "astrology" && (
+        <section className="section astrology-page">
+          <small className="kicker">PERSONAL GUIDANCE</small>
+          <h1>Astrology Consultation</h1>
+          <h2>with Gourav Sharma</h2>
+          <p>Explore your questions and life decisions through a personal astrology consultation.</p>
+          <a className="primary-button" href={wa("Hello, I would like to book an astrology consultation with Gourav Sharma.")} target="_blank" rel="noreferrer">Book a consultation</a>
+        </section>
+      )}
+      {view === "home" && (
+        <section className="section astrology-promo">
+          <small className="kicker">ASTROLOGY CONSULTATION</small>
+          <h2>Personal guidance with Gourav Sharma</h2>
+          <p>Bring your questions and explore them through a personal astrology consultation.</p>
+          <button onClick={() => go("astrology")}>Explore astrology consultations <ChevronRight size={16} /></button>
+        </section>
       )}
       {(view === "home" || view === "shop") && (
         <>
