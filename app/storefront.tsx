@@ -535,7 +535,7 @@ export default function Storefront() {
       {view === "home" && (
         <section className="section" style={{margin:"32px auto",maxWidth:1120,padding:"clamp(24px,4vw,44px)",background:"linear-gradient(120deg,#281830,#6d3447)",color:"#ffffff",textAlign:"center",border:"1px solid #d6b36a"}}>
           <small style={{letterSpacing:".2em",color:"#ffe08a",fontWeight:700}}>PERSONALIZED VEDIC CONSULTATION</small>
-          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(22px,4.2vw,40px)",lineHeight:1.2,margin:"12px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
+          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(22px,4.2vw,40px)",fontWeight:800,lineHeight:1.2,margin:"12px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere",color:"#fffdf7",textShadow:"0 2px 8px rgba(0,0,0,.75)"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
           <p style={{maxWidth:640,margin:"0 auto 22px",lineHeight:1.7}}>Explore your birth chart or receive personalized gemstone guidance.</p>
           <button onClick={() => go("astrology")} style={{padding:"13px 24px",background:"#e7c985",color:"#281830",border:0,fontWeight:800,letterSpacing:".06em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
         </section>
