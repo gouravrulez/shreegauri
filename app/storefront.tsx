@@ -509,26 +509,37 @@ export default function Storefront() {
         </>
       )}
       {view === "astrology" && (
-        <section className="section" style={{padding:"clamp(28px,6vw,76px) 20px",background:"linear-gradient(135deg,#17101f 0%,#29152f 52%,#3b1b32 100%)",color:"#ffffff",position:"relative",overflow:"hidden"}}>
-          <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid rgba(255,220,130,.9)",padding:"clamp(24px,5vw,58px)",textAlign:"center",background:"linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.025))",boxShadow:"0 24px 70px rgba(0,0,0,.2)"}}>
-            <div style={{fontSize:12,letterSpacing:".24em",color:"#ffe08a",fontWeight:700}}>SHREE GAURI PRESENTS</div>
-            <div style={{fontSize:36,color:"#ffe08a",lineHeight:1.3,margin:"12px 0"}}>✦</div>
-            <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,58px)",lineHeight:1.08,margin:"0 auto 14px",maxWidth:760}}>PERSONALIZED VEDIC<br/>ASTROLOGY CONSULTATION</h1>
-            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.75,color:"#ffffff"}}>Thoughtful astrological insights to help you understand your birth chart and explore your next steps.</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 28px",maxWidth:800}}>
-              <article style={{border:"1px solid rgba(255,220,130,.85)",padding:24,background:"rgba(8,5,13,.78)"}}>
-                <div style={{color:"#ffe08a",fontSize:12,letterSpacing:".14em",fontWeight:700}}>01 · BIRTH CHART</div>
-                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0"}}>Kundali Analysis</h2>
-                <p style={{color:"#ffffff",lineHeight:1.7,margin:0}}>A detailed interpretation of your birth chart, planetary placements, and key life areas.</p>
+        <section className="section" style={{padding:"clamp(28px,6vw,76px) 20px",background:"#fbf7ef",color:"#332a27"}}>
+          <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid #d8c8a8",borderRadius:18,padding:"clamp(22px,5vw,54px)",textAlign:"center",background:"#fffdf8",boxShadow:"0 18px 50px rgba(67,44,31,.08)"}}>
+            <div style={{fontSize:12,letterSpacing:".2em",color:"#7b1420",fontWeight:800}}>SHREE GAURI · ASTROLOGY SERVICES</div>
+            <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,52px)",lineHeight:1.12,margin:"16px auto",maxWidth:760,color:"#4a2927"}}>Personalized Vedic Astrology Consultation</h1>
+            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.75,color:"#5b514b"}}>Thoughtful astrological guidance to help you understand your birth chart and explore your next steps.</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:800}}>
+              <article style={{border:"1px solid #d8c8a8",borderRadius:12,padding:24,background:"#fffaf0",color:"#332a27"}}>
+                <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>01 · BIRTH CHART</div>
+                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Kundali Analysis</h2>
+                <p style={{color:"#5b514b",lineHeight:1.7,margin:0}}>A detailed interpretation of your birth chart, planetary placements, and key life areas.</p>
               </article>
-              <article style={{border:"1px solid rgba(255,220,130,.85)",padding:24,background:"rgba(8,5,13,.78)"}}>
-                <div style={{color:"#ffe08a",fontSize:12,letterSpacing:".14em",fontWeight:700}}>02 · GEMSTONE GUIDANCE</div>
-                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0"}}>Gemstone Consultation</h2>
-                <p style={{color:"#ffffff",lineHeight:1.7,margin:0}}>Personalized gemstone recommendations informed by your birth chart and astrological considerations.</p>
+              <article style={{border:"1px solid #d8c8a8",borderRadius:12,padding:24,background:"#fffaf0",color:"#332a27"}}>
+                <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>02 · GEMSTONE GUIDANCE</div>
+                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Gemstone Consultation</h2>
+                <p style={{color:"#5b514b",lineHeight:1.7,margin:0}}>Personalized gemstone recommendations informed by your birth chart and astrological considerations.</p>
               </article>
             </div>
-            <a href={wa("Hello Shree Gauri, I would like to enquire about Kundali Analysis and Gemstone Consultation.")} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"15px 28px",background:"#ffdc73",color:"#1b1020",fontWeight:800,letterSpacing:".08em",textDecoration:"none"}}>ENQUIRE / BOOK ON WHATSAPP</a>
-            <div style={{fontSize:12,marginTop:18,color:"#ffffff"}}>Personalized consultation · Online booking</div>
+            <div style={{maxWidth:700,margin:"0 auto",textAlign:"left",padding:"clamp(20px,4vw,32px)",border:"1px solid #e3d7c4",borderRadius:14,background:"#ffffff"}}>
+              <h2 style={{fontFamily:"Georgia,serif",fontSize:27,color:"#4a2927",margin:"0 0 8px"}}>Request a consultation</h2>
+              <p style={{color:"#6b5d54",lineHeight:1.6,margin:"0 0 22px"}}>Share your details and our team will contact you to discuss the next steps.</p>
+              <form onSubmit={(e)=>{e.preventDefault();const f=new FormData(e.currentTarget);const message=["Astrology consultation enquiry",`Name: ${f.get("name")}`,`Phone: ${f.get("phone")}`,`Email: ${f.get("email")||"Not provided"}`,`Consultation: ${f.get("service")}`,`Preferred date/time: ${f.get("when")||"Flexible"}`,`Details: ${f.get("details")||"Not provided"}`].join("\\n");window.open(wa(message),"_blank","noopener,noreferrer");}} style={{display:"grid",gap:14}}>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full name<input name="name" required autoComplete="name" placeholder="Your name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font: "inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Phone / WhatsApp<input name="phone" required type="tel" autoComplete="tel" placeholder="Your contact number" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Email (optional)<input name="email" type="email" autoComplete="email" placeholder="you@example.com" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Consultation type<select name="service" required defaultValue="" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,background:"#fff",font:"inherit"}}><option value="" disabled>Select a service</option><option>Kundali Analysis</option><option>Gemstone Consultation</option><option>Both consultations</option></select></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Preferred date / time (optional)<input name="when" placeholder="Your preferred time" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>What would you like guidance on? (optional)<textarea name="details" rows={4} placeholder="Briefly share your question or details" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
+                <button type="submit" style={{padding:"15px 22px",border:0,borderRadius:8,background:"#7b1420",color:"#fffdf8",fontWeight:800,fontSize:15,cursor:"pointer"}}>Submit enquiry</button>
+                <small style={{color:"#75675e",lineHeight:1.5}}>Submitting opens WhatsApp with your enquiry details for our team. Please send the message to complete your request.</small>
+              </form>
+            </div>
           </div>
         </section>
       )}
