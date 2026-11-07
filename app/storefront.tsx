@@ -47,6 +47,11 @@ type P = {
   is_featured: boolean;
   badge: string | null;
 };
+type AstrologyService = { name: string; description: string; active: boolean };
+const defaultAstrologyServices: AstrologyService[] = [
+  { name: "Kundali Analysis", description: "A detailed interpretation of your birth chart, planetary placements, and key life areas.", active: true },
+  { name: "Gemstone Consultation", description: "Personalised gemstone recommendations informed by your birth chart.", active: true },
+];
 type R = {
   id: string;
   product_id: string;
@@ -103,6 +108,9 @@ export default function Storefront() {
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
     [s, setS] = useState(fallback),
+    [astrologyServices, setAstrologyServices] = useState<AstrologyService[]>(defaultAstrologyServices),
+    [astrologySubmitting, setAstrologySubmitting] = useState(false),
+    [astrologyMessage, setAstrologyMessage] = useState(""),
     [view, setView] = useState("home"),
     [q, setQ] = useState(""),
     [menu, setMenu] = useState(false),
@@ -164,8 +172,10 @@ export default function Storefront() {
             image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
           })) as P[],
         );
-      if (d.data)
+      if (d.data) {
         setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        if (Array.isArray((d.data as any).astrology_services)) setAstrologyServices((d.data as any).astrology_services);
+      }
       if (r.data) setReviews(r.data as R[]);
     });
   }, []);
@@ -514,30 +524,30 @@ export default function Storefront() {
             <div style={{fontSize:12,letterSpacing:".2em",color:"#7b1420",fontWeight:800}}>SHREE GAURI · ASTROLOGY SERVICES</div>
             <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,52px)",lineHeight:1.12,margin:"16px auto",maxWidth:760,color:"#4a2927"}}>Personalized Vedic Astrology Consultation</h1>
             <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.8,color:"#403632",fontWeight:500}}>Professional consultations for birth-chart analysis and personalised gemstone recommendations.</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:800}}>
-              <article style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
-                <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>01 · BIRTH CHART</div>
-                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Kundali Analysis</h2>
-                <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>A detailed interpretation of your birth chart, planetary placements, and key life areas.</p>
-              </article>
-              <article style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
-                <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>02 · GEMSTONE GUIDANCE</div>
-                <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Gemstone Consultation</h2>
-                <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>Personalized gemstone recommendations informed by your birth chart and astrological considerations.</p>
-              </article>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:900}}>
+              {astrologyServices.filter(service=>service.active).map((service,index)=>(
+                <article key={service.name} style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
+                  <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>{String(index+1).padStart(2,"0")} · SHREE GAURI SERVICE</div>
+                  <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>{service.name}</h2>
+                  <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>{service.description}</p>
+                </article>
+              ))}
             </div>
             <div style={{maxWidth:700,margin:"0 auto",textAlign:"left",padding:"clamp(20px,4vw,32px)",border:"1px solid #e3d7c4",borderRadius:14,background:"#ffffff"}}>
               <h2 style={{fontFamily:"Georgia,serif",fontSize:27,color:"#4a2927",margin:"0 0 8px"}}>Request a consultation</h2>
-              <p style={{color:"#6b5d54",lineHeight:1.6,margin:"0 0 22px"}}>Share your details and our team will contact you to discuss the next steps.</p>
-              <form onSubmit={(e)=>{e.preventDefault();const f=new FormData(e.currentTarget);const message=["Astrology consultation enquiry",`Name: ${f.get("name")}`,`Phone: ${f.get("phone")}`,`Email: ${f.get("email")||"Not provided"}`,`Consultation: ${f.get("service")}`,`Preferred date/time: ${f.get("when")||"Flexible"}`,`Details: ${f.get("details")||"Not provided"}`].join("\\n");window.open(wa(message),"_blank","noopener,noreferrer");}} style={{display:"grid",gap:14}}>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full name<input name="name" required autoComplete="name" placeholder="Your name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font: "inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Phone / WhatsApp<input name="phone" required type="tel" autoComplete="tel" placeholder="Your contact number" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Email (optional)<input name="email" type="email" autoComplete="email" placeholder="you@example.com" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Consultation type<select name="service" required defaultValue="" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,background:"#fff",font:"inherit"}}><option value="" disabled>Select a service</option><option>Kundali Analysis</option><option>Gemstone Consultation</option><option>Both consultations</option></select></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Preferred date / time (optional)<input name="when" placeholder="Your preferred time" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>What would you like guidance on? (optional)<textarea name="details" rows={4} placeholder="Briefly share your question or details" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
-                <button type="submit" style={{padding:"15px 22px",border:0,borderRadius:8,background:"#7b1420",color:"#fffdf8",fontWeight:800,fontSize:15,cursor:"pointer"}}>Submit enquiry</button>
-                <small style={{color:"#75675e",lineHeight:1.5}}>Submitting opens WhatsApp with your enquiry details for our team. Please send the message to complete your request.</small>
+              <p style={{color:"#6b5d54",lineHeight:1.6,margin:"0 0 22px"}}>Share your details and our team will contact you directly.</p>
+              <form onSubmit={async(e)=>{e.preventDefault();if(astrologySubmitting)return;setAstrologySubmitting(true);setAstrologyMessage("Submitting your enquiry…");const f=new FormData(e.currentTarget);const {data,error}=await supabase.functions.invoke("astrology-enquiry",{body:{full_name:String(f.get("name")||""),mobile:String(f.get("phone")||""),email:String(f.get("email")||""),address:String(f.get("address")||""),service:String(f.get("service")||""),preferred_time:String(f.get("when")||""),details:String(f.get("details")||""),website:String(f.get("website")||"")}});setAstrologySubmitting(false);if(error||!data?.ok){setAstrologyMessage(data?.error||error?.message||"Unable to submit right now. Please try again.");return;}setAstrologyMessage(data.message||"Your enquiry has been received. Our team will contact you.");e.currentTarget.reset();}} style={{display:"grid",gap:14}}>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full name<input name="name" required minLength={2} maxLength={120} autoComplete="name" placeholder="Your name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Mobile number<input name="phone" required type="tel" minLength={7} maxLength={25} autoComplete="tel" placeholder="Your contact number" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Email address<input name="email" required type="email" maxLength={254} autoComplete="email" placeholder="you@example.com" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full address<textarea name="address" required minLength={5} maxLength={500} rows={2} autoComplete="street-address" placeholder="House / street, city, state, PIN code" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Consultation type<select name="service" required defaultValue="" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,background:"#fff",font:"inherit"}}><option value="" disabled>Select a service</option>{astrologyServices.filter(service=>service.active).map(service=><option key={service.name} value={service.name}>{service.name}</option>)}{astrologyServices.filter(service=>service.active).length>1&&<option value="Both consultations">Both consultations</option>}</select></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Preferred date / time (optional)<input name="when" maxLength={160} placeholder="Your preferred time" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
+                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Additional details (optional)<textarea name="details" rows={4} maxLength={2000} placeholder="Briefly share your questions or details" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
+                <label style={{position:"absolute",left:"-10000px"}} aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
+                <button type="submit" disabled={astrologySubmitting} style={{padding:"15px 22px",border:0,borderRadius:8,background:"#7b1420",color:"#fffdf8",fontWeight:800,fontSize:15,cursor:astrologySubmitting?"wait":"pointer",opacity:astrologySubmitting?.7:1}}>{astrologySubmitting?"Submitting…":"Submit enquiry"}</button>
+                {astrologyMessage&&<p role="status" aria-live="polite" style={{margin:0,color:"#403632",lineHeight:1.6,fontWeight:600}}>{astrologyMessage}</p>}
+                <small style={{color:"#75675e",lineHeight:1.5}}>Your enquiry is securely recorded for our team. We will contact you using the details provided.</small>
               </form>
             </div>
           </div>
