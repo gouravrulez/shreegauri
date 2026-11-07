@@ -48,6 +48,27 @@ type P = {
   badge: string | null;
 };
 type AstrologyService = { name: string; description: string; active: boolean };
+
+const isUnwantedCategory = (category: C | undefined | null) => {
+  if (!category) return false;
+  const name = `${category.name} ${category.slug}`.toLowerCase().replace(/[-_]+/g, " ");
+  // Keep worship idols/statues even if an older category label also mentions gifts.
+  if (/(idol|statue|murti|pooja|puja)/.test(name)) return false;
+  return [
+    /crystal\s*trees?/,
+    /showpieces?/,
+    /frames?/,
+    /(?:agate\s*)?clocks?/,
+    /mobile\s*holders?/,
+    /decorative\s*pyramids?/,
+    /home\s*decor/,
+    /wall\s*art/,
+    /beauty\s*accessor/,
+    /gemstone\s*rings?/,
+    /pendants?/,
+    /^(?:gift|gifts|gifting|gift collections?)$/,
+  ].some((pattern) => pattern.test(name));
+};
 const defaultAstrologyServices: AstrologyService[] = [
   { name: "Kundali Analysis", description: "A detailed interpretation of your birth chart, planetary placements, and key life areas.", active: true },
   { name: "Gemstone Consultation", description: "Personalised gemstone recommendations informed by your birth chart.", active: true },
@@ -337,11 +358,13 @@ export default function Storefront() {
       );
     }
   }
+  const visibleCats = useMemo(() => cats.filter((c) => !isUnwantedCategory(c)), [cats]);
   const shown = useMemo(() => {
     const activeCategory = cats.find((c) => c.slug === view)?.id;
     const list = products.filter(
       (p) =>
         p.name.toLowerCase().includes(q.toLowerCase()) &&
+        !isUnwantedCategory(cats.find((c) => c.id === p.category_id)) &&
         (view === "home" ||
           view === "shop" ||
           view === "new" ||
@@ -570,7 +593,7 @@ export default function Storefront() {
               energy.
             </p>
             <div className="cat-grid">
-              {cats
+              {visibleCats
                 .filter((c) => !c.parent_id && c.collection_type === "category")
                 .map((c) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
@@ -593,7 +616,7 @@ export default function Storefront() {
               Find meaningful selections aligned with what matters most to you.
             </p>
             <div className="purpose-grid">
-              {cats
+              {visibleCats
                 .filter((c) => c.collection_type === "purpose")
                 .map((c) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
@@ -616,7 +639,7 @@ export default function Storefront() {
               Explore products traditionally connected with the Navagraha.
             </p>
             <div className="planet-grid">
-              {cats
+              {visibleCats
                 .filter((c) => c.collection_type === "planet")
                 .map((c) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
@@ -943,7 +966,7 @@ export default function Storefront() {
         </div>
         <div>
           <b>Explore</b>
-          {cats
+          {visibleCats
             .filter((c) => c.collection_type === "category" && !c.parent_id)
             .slice(0, 6)
             .map((c) => (
