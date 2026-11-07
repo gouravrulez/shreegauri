@@ -51,22 +51,37 @@ type AstrologyService = { name: string; description: string; active: boolean };
 
 const isUnwantedCategory = (category: C | undefined | null) => {
   if (!category) return false;
-  const name = `${category.name} ${category.slug}`.toLowerCase().replace(/[-_]+/g, " ");
-  // Keep worship idols/statues even if an older category label also mentions gifts.
-  if (/(idol|statue|murti|pooja|puja)/.test(name)) return false;
+  const slug = category.slug.toLowerCase().trim().replace(/[-_]+/g, " ");
+  const name = category.name.toLowerCase().trim();
+  // Worship idols/statues, pooja essentials, gemstone stock, malas and tumble stones stay visible.
+  if (/(idol|statue|murti|pooja|puja|gemstone|rudraksha|tumble|raw)/.test(`${name} ${slug}`)) return false;
   return [
-    /crystal\s*trees?/,
-    /showpieces?/,
-    /frames?/,
-    /(?:agate\s*)?clocks?/,
-    /mobile\s*holders?/,
-    /decorative\s*pyramids?/,
-    /home\s*decor/,
-    /wall\s*art/,
-    /beauty\s*accessor/,
-    /gemstone\s*rings?/,
-    /pendants?/,
-    /^(?:gift|gifts|gifting|gift collections?)$/,
+    "home decor", "crystals", "crystal towers shapes clusters", "crystal trees home decor",
+    "crystal sets gifts", "gifts", "clothing", "quick remedies", "unique products"
+  ].includes(slug) || [
+    "home décor", "crystals", "crystal towers, shapes & clusters", "crystal trees & home décor",
+    "crystal sets & gifts", "gifts", "clothing", "quick remedies", "unique products"
+  ].includes(name);
+};
+
+const isUnwantedProduct = (product: P) => {
+  const name = product.name.toLowerCase();
+  return [
+    /\b(?:gemstone\s*)?rings?\b/,
+    /\bpendants?\b/,
+    /\bcrystal\s*trees?\b/,
+    /\b(?:decorative\s*)?pyramids?\b/,
+    /\b(?:agate\s*)?clocks?\b/,
+    /\bwall\s*frames?\b/,
+    /\bwall\s*hangings?\b/,
+    /\bmobile\s*holders?\b/,
+    /\b(?:face\s*)?rollers?\b/,
+    /\bgua\s*sha\b/,
+    /\bdisplay\s*stands?\b/,
+    /\b(?:gift\s*box|gift\s*set|gift\s*collection)\b/,
+    /\bhome\s*decor\b/,
+    /\bdoor\s*toran\b/,
+    /\bdoor\s*hanging\b/
   ].some((pattern) => pattern.test(name));
 };
 const defaultAstrologyServices: AstrologyService[] = [
@@ -365,6 +380,7 @@ export default function Storefront() {
       (p) =>
         p.name.toLowerCase().includes(q.toLowerCase()) &&
         !isUnwantedCategory(cats.find((c) => c.id === p.category_id)) &&
+        !isUnwantedProduct(p) &&
         (view === "home" ||
           view === "shop" ||
           view === "new" ||
