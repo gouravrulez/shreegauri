@@ -200,27 +200,24 @@ export default function AdminDashboard() {
   async function loadAstrology(accessToken?: string) {
     const token = accessToken || (await supabase.auth.getSession()).data.session?.access_token;
     if (!token) return;
-    const response = await fetch("/api/admin/astrology", { headers: { Authorization: `Bearer ${token}` } });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) { setNotice(result.error || "Unable to load astrology enquiries."); return; }
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body: { action:"list" }, headers: { Authorization: `Bearer ${token}` } });
+    if (error || !result?.ok) { setNotice(result?.error || error?.message || "Unable to load astrology enquiries."); return; }
     setAstrologyEnquiries(result.enquiries || []);
     setAstrologyServices(result.services || []);
   }
   async function updateAstrologyStatus(id: string, status: string) {
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
-    const response = await fetch("/api/admin/astrology", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${current.access_token}` }, body:JSON.stringify({ action:"update_status", id, status }) });
-    const result = await response.json().catch(() => ({}));
-    setNotice(result.message || result.error || "Unable to update enquiry.");
-    if (response.ok) await loadAstrology(current.access_token);
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"update_status", id, status }, headers:{ Authorization:`Bearer ${current.access_token}` } });
+    setNotice(result?.message || result?.error || error?.message || "Unable to update enquiry.");
+    if (result?.ok) await loadAstrology(current.access_token);
   }
   async function saveAstrologyServices() {
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
-    const response = await fetch("/api/admin/astrology", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${current.access_token}` }, body:JSON.stringify({ action:"save_services", services:astrologyServices }) });
-    const result = await response.json().catch(() => ({}));
-    setNotice(result.message || result.error || "Unable to save services.");
-    if (response.ok) { setAstrologyServices(result.services || astrologyServices); await loadAstrology(current.access_token); }
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"save_services", services:astrologyServices }, headers:{ Authorization:`Bearer ${current.access_token}` } });
+    setNotice(result?.message || result?.error || error?.message || "Unable to save services.");
+    if (result?.ok) { setAstrologyServices(result.services || astrologyServices); await loadAstrology(current.access_token); }
   }
   async function login(e: FormEvent) {
     e.preventDefault();
