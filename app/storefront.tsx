@@ -513,17 +513,17 @@ export default function Storefront() {
           <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid #d8c8a8",borderRadius:18,padding:"clamp(22px,5vw,54px)",textAlign:"center",background:"#fffdf8",boxShadow:"0 18px 50px rgba(67,44,31,.08)"}}>
             <div style={{fontSize:12,letterSpacing:".2em",color:"#7b1420",fontWeight:800}}>SHREE GAURI · ASTROLOGY SERVICES</div>
             <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,52px)",lineHeight:1.12,margin:"16px auto",maxWidth:760,color:"#4a2927"}}>Personalized Vedic Astrology Consultation</h1>
-            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.75,color:"#5b514b"}}>Thoughtful astrological guidance to help you understand your birth chart and explore your next steps.</p>
+            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.8,color:"#403632",fontWeight:500}}>Professional consultations for birth-chart analysis and personalised gemstone recommendations.</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:800}}>
-              <article style={{border:"1px solid #d8c8a8",borderRadius:12,padding:24,background:"#fffaf0",color:"#332a27"}}>
+              <article style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
                 <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>01 · BIRTH CHART</div>
                 <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Kundali Analysis</h2>
-                <p style={{color:"#5b514b",lineHeight:1.7,margin:0}}>A detailed interpretation of your birth chart, planetary placements, and key life areas.</p>
+                <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>A detailed interpretation of your birth chart, planetary placements, and key life areas.</p>
               </article>
-              <article style={{border:"1px solid #d8c8a8",borderRadius:12,padding:24,background:"#fffaf0",color:"#332a27"}}>
+              <article style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
                 <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>02 · GEMSTONE GUIDANCE</div>
                 <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>Gemstone Consultation</h2>
-                <p style={{color:"#5b514b",lineHeight:1.7,margin:0}}>Personalized gemstone recommendations informed by your birth chart and astrological considerations.</p>
+                <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>Personalized gemstone recommendations informed by your birth chart and astrological considerations.</p>
               </article>
             </div>
             <div style={{maxWidth:700,margin:"0 auto",textAlign:"left",padding:"clamp(20px,4vw,32px)",border:"1px solid #e3d7c4",borderRadius:14,background:"#ffffff"}}>
@@ -544,11 +544,11 @@ export default function Storefront() {
         </section>
       )}
       {view === "home" && (
-        <section className="section" style={{margin:"32px auto",maxWidth:1120,padding:"clamp(24px,4vw,44px)",background:"linear-gradient(120deg,#281830,#6d3447)",color:"#ffffff",textAlign:"center",border:"1px solid #d6b36a"}}>
-          <small style={{letterSpacing:".2em",color:"#ffe08a",fontWeight:700}}>PERSONALIZED VEDIC CONSULTATION</small>
-          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(22px,4.2vw,40px)",fontWeight:800,lineHeight:1.2,margin:"12px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere",color:"#fffdf7",textShadow:"0 2px 8px rgba(0,0,0,.75)"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
-          <p style={{maxWidth:640,margin:"0 auto 22px",lineHeight:1.7}}>Explore your birth chart or receive personalized gemstone guidance.</p>
-          <button onClick={() => go("astrology")} style={{padding:"13px 24px",background:"#e7c985",color:"#281830",border:0,fontWeight:800,letterSpacing:".06em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
+        <section className="section" style={{margin:"32px auto",maxWidth:1120,padding:"clamp(26px,4vw,48px)",background:"linear-gradient(135deg,#fffdf8 0%,#fbf1df 100%)",color:"#321316",textAlign:"center",border:"1px solid #d8bd8c",borderRadius:16,boxShadow:"0 12px 34px rgba(67,35,22,.08)"}}>
+          <small style={{display:"block",letterSpacing:".16em",color:"#7b1420",fontWeight:800,fontSize:12}}>PERSONALIZED VEDIC CONSULTATION</small>
+          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(25px,4.2vw,42px)",fontWeight:700,lineHeight:1.2,margin:"14px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere",color:"#401016",textShadow:"none"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
+          <p style={{maxWidth:640,margin:"0 auto 24px",lineHeight:1.75,fontSize:"clamp(15px,2vw,17px)",fontWeight:500,color:"#493936"}}>Choose a detailed birth-chart analysis or a personalised gemstone consultation.</p>
+          <button onClick={() => go("astrology")} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 25px",background:"#741923",color:"#ffffff",border:"1px solid #741923",borderRadius:7,fontWeight:800,letterSpacing:".04em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
         </section>
       )}
       {(view === "home" || view === "shop") && (
