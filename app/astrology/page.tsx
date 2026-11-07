@@ -26,7 +26,7 @@ export default function AstrologyConsultationPage() {
     const f = new FormData(form);
     setBusy(true);
     setMessage("Submitting your enquiry…");
-    const {data,error} = await supabase.functions.invoke("astrology-enquiry", { body: {
+    const response = await fetch("/api/astrology/enquiry", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       full_name: String(f.get("name") || ""),
       mobile: String(f.get("mobile") || ""),
       email: String(f.get("email") || ""),
@@ -34,9 +34,10 @@ export default function AstrologyConsultationPage() {
       service: String(f.get("service") || ""),
       details: String(f.get("concern") || ""),
       website: String(f.get("website") || ""),
-    }});
+    }) });
+    const data = await response.json().catch(() => ({}));
     setBusy(false);
-    if (error || !data?.ok) { setMessage(data?.error || error?.message || "Unable to submit right now. Please try again."); return; }
+    if (!response.ok || !data?.ok) { setMessage(data?.error || "Unable to submit right now. Please try again."); return; }
     setMessage(data.message || "Your enquiry has been received. Our team will contact you.");
     form.reset();
   }
