@@ -22,9 +22,10 @@ if (!admin.includes("  Users,")) {
   );
 }
 
-addOnce(
-  `type Order = {`,
-  `type Customer = {
+if (!admin.includes("type Customer =")) {
+  addOnce(
+    `type Order = {`,
+    `type Customer = {
   id: string;
   auth_user_id: string | null;
   full_name: string | null;
@@ -40,8 +41,9 @@ addOnce(
   updated_at: string;
 };
 type Order = {`,
-  "customer type",
-);
+    "customer type",
+  );
+}
 
 addOnce(
   `    [orders, setOrders] = useState<Order[]>([]),
