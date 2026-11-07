@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       const services = Array.isArray(body.services) ? body.services : [];
       if (services.length > 20) return NextResponse.json({ error: "You can add up to 20 consultation services." }, { status: 400 });
       const clean = services.map((s: any) => ({ name: String(s.name || "").trim().slice(0, 100), description: String(s.description || "").trim().slice(0, 500), active: s.active !== false })).filter((s: any) => s.name.length >= 2);
+      if (!clean.some((s: any) => s.active)) return NextResponse.json({ error: "Keep at least one consultation service visible on the website." }, { status: 400 });
       const { error } = await auth.client.from("site_settings").update({ astrology_services: clean, updated_at: new Date().toISOString() }).eq("id", 1);
       if (error) throw error;
       return NextResponse.json({ ok: true, services: clean, message: "Consultation services saved." });
