@@ -177,10 +177,6 @@ export default function Storefront() {
       maximumFractionDigits: 0,
     }).format(n);
   const go = (v: string) => {
-    if (v === "astrology") {
-      window.location.assign("/astrology");
-      return;
-    }
     setView(v);
     setMenu(false);
     setItem(null);
@@ -189,6 +185,13 @@ export default function Storefront() {
         window.scrollTo({ top: v === "home" ? 0 : 560, behavior: "smooth" }),
       20,
     );
+  };
+  const navigate = (v: string) => {
+    if (v === "astrology") {
+      window.location.assign("/astrology");
+      return;
+    }
+    go(v);
   };
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
@@ -433,7 +436,7 @@ export default function Storefront() {
           <button
             key={v}
             className={view === v ? "sel" : ""}
-            onClick={() => go(v)}
+            onClick={() => navigate(v)}
           >
             {l}
           </button>
@@ -446,7 +449,7 @@ export default function Storefront() {
           </button>
           <h2>SHREE GAURI</h2>
           {nav.map(([v, l]) => (
-            <button key={v} onClick={() => go(v)}>
+            <button key={v} onClick={() => navigate(v)}>
               {l}
               <ChevronRight />
             </button>
@@ -518,7 +521,7 @@ export default function Storefront() {
           <small style={{display:"block",letterSpacing:".16em",color:"#7b1420",fontWeight:800,fontSize:12}}>PERSONALIZED VEDIC CONSULTATION</small>
           <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(25px,4.2vw,42px)",fontWeight:700,lineHeight:1.2,margin:"14px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere",color:"#401016",textShadow:"none"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
           <p style={{maxWidth:640,margin:"0 auto 24px",lineHeight:1.75,fontSize:"clamp(15px,2vw,17px)",fontWeight:500,color:"#493936"}}>Choose a detailed birth-chart analysis or a personalised gemstone consultation.</p>
-          <button onClick={() => go("astrology")} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 25px",background:"#741923",color:"#ffffff",border:"1px solid #741923",borderRadius:7,fontWeight:800,letterSpacing:".04em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
+          <button onClick={() => navigate("astrology")} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 25px",background:"#741923",color:"#ffffff",border:"1px solid #741923",borderRadius:7,fontWeight:800,letterSpacing:".04em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
         </section>
       )}
       {(view === "home" || view === "shop") && (
