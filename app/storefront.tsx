@@ -147,6 +147,7 @@ export default function Storefront() {
         .select(
           "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
         )
+        .eq("brand", "Shree Gauri")
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
       supabase.from("site_settings").select("*").eq("id", 1).single(),
