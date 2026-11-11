@@ -190,9 +190,9 @@ export default function AdminDashboard() {
     const categoryFields = "id,name,slug,description,image_url,parent_id,sort_order,is_active,collection_type";
     if (targetTab === "dashboard") {
       const [orderResult, reviewResult, productResult] = await Promise.all([
-        supabase.from("orders").select("id,order_number,customer_name,total_inr,payment_status,order_status,created_at").order("created_at", { ascending: false }).limit(30),
+        supabase.from("orders").select("id,order_number,customer_name,total_inr,payment_status,order_status,created_at").order("created_at", { ascending: false }),
         supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,body,is_approved,created_at").order("created_at", { ascending: false }).limit(30),
-        supabase.from("products").select("id,name,is_active,stock_quantity").limit(500),
+        supabase.from("products").select("id,name,is_active,stock_quantity"),
       ]);
       if (orderResult.data) setOrders(orderResult.data as Order[]);
       if (reviewResult.data) setReviews(reviewResult.data);
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
     }
     if (targetTab === "products" || targetTab === "inventory") {
       const [productResult, categoryResult] = await Promise.all([
-        supabase.from("products").select(productFields).order("created_at", { ascending: false }).limit(500),
+        supabase.from("products").select(productFields).order("created_at", { ascending: false }),
         supabase.from("categories").select(categoryFields).order("sort_order"),
       ]);
       if (productResult.data)
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
       return;
     }
     if (targetTab === "orders") {
-      const { data, error } = await supabase.from("orders").select("id,order_number,customer_name,email,phone,shipping_address,total_inr,payment_status,order_status,created_at,order_items(id,product_name,quantity,unit_price_inr,line_total_inr)").order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("orders").select("id,order_number,customer_name,email,phone,shipping_address,total_inr,payment_status,order_status,created_at,order_items(id,product_name,quantity,unit_price_inr,line_total_inr)").order("created_at", { ascending: false });
       if (data) setOrders(data as Order[]);
       if (error) setNotice("Orders could not be loaded: " + error.message);
       return;
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
       return;
     }
     if (targetTab === "reviews") {
-      const { data, error } = await supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,body,is_approved,created_at").order("created_at", { ascending: false }).limit(200);
+      const { data, error } = await supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,body,is_approved,created_at").order("created_at", { ascending: false });
       if (data) setReviews(data);
       if (error) setNotice("Reviews could not be loaded: " + error.message);
       return;
