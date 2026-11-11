@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import styles from "./admin-login.module.css";
 import {
   LogOut,
   Trash2,
@@ -420,49 +421,81 @@ export default function AdminDashboard() {
 
   if (!session)
     return (
-      <main className="admin-login">
-        <form onSubmit={login} autoComplete="off">
-          <a className="admin-back" href="/">← Return to store</a>
-          <div className="admin-login-brand">
-            <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
-            <span>SHREE GAURI</span>
-            <small>ADMINISTRATION</small>
+      <main className={styles.loginShell}>
+        <section className={styles.brandPanel} aria-label="Shree Gauri administration">
+          <a className={styles.backLink} href="/">← Back to Shree Gauri store</a>
+          <div className={styles.brandLockup}>
+            <div className={styles.logoFrame}><img src="/shree-gauri-logo.png" alt="Shree Gauri emblem" /></div>
+            <span className={styles.brandName}>SHREE GAURI</span>
+            <span className={styles.brandCaption}>PRIVATE ADMINISTRATION</span>
           </div>
-          <div className="admin-login-divider"><span>✦</span></div>
-          <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
-          <p>{loginMode === "admin" ? "Secure access for the main administrator." : "Use your invited work email and password to access your assigned tasks."}</p>
-          <div role="group" aria-label="Choose sign-in type" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 0 18px" }}>
-            <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "admin" ? "#3d2a20" : "#fff", color: loginMode === "admin" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Main Admin</button>
-            <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "staff" ? "#3d2a20" : "#fff", color: loginMode === "staff" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Staff Login</button>
+          <div className={styles.panelMessage}>
+            <span className={styles.eyebrow}>THE BUSINESS OFFICE</span>
+            <h2>Thoughtful service.<br /><em>Seamless operations.</em></h2>
+            <p>A considered workspace for managing the Shree Gauri store, customers and everyday operations.</p>
           </div>
-          <label>
-            Work email
-            <input
-              type="email"
-              name="sg-admin-email"
-              autoComplete="off"
-              placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="sg-admin-password"
-              autoComplete="new-password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && <b>{error}</b>}
-          <button>{loginMode === "admin" ? "SECURE ADMIN LOGIN" : "SECURE STAFF LOGIN"}</button>
-          <small className="admin-secure-note">{loginMode === "admin" ? "Main administrator access • Shree Gauri" : "Role-based staff access • Shree Gauri"}</small>
-        </form>
+          <div className={styles.panelFooter}>
+            <span><i /> Secure workspace</span>
+            <span>SHREEGAURI.IN</span>
+          </div>
+          <div className={styles.panelOrnament} aria-hidden="true">✦</div>
+        </section>
+
+        <section className={styles.loginPanel}>
+          <div className={styles.loginTopline}>
+            <span>WELCOME BACK</span>
+            <span><ShieldCheck size={15} /> ENCRYPTED ACCESS</span>
+          </div>
+          <div className={styles.loginCard}>
+            <div className={styles.mobileBrand}>
+              <img src="/shree-gauri-logo.png" alt="" />
+              <span>SHREE GAURI</span>
+            </div>
+            <div className={styles.cardIcon}><ShieldCheck size={22} /></div>
+            <span className={styles.cardEyebrow}>SECURE SIGN IN</span>
+            <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
+            <p className={styles.cardIntro}>{loginMode === "admin" ? "Sign in to your private business office." : "Sign in with the work email and password provided to you."}</p>
+
+            <div className={styles.loginModes} role="group" aria-label="Choose sign-in type">
+              <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} className={loginMode === "admin" ? styles.modeActive : ""}>Main Admin</button>
+              <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} className={loginMode === "staff" ? styles.modeActive : ""}>Staff Login</button>
+            </div>
+
+            <form className={styles.credentials} onSubmit={login} autoComplete="off">
+              <label>
+                <span>Work email</span>
+                <input
+                  type="email"
+                  name="sg-admin-email"
+                  autoComplete="off"
+                  placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                <span>Password</span>
+                <input
+                  type="password"
+                  name="sg-admin-password"
+                  autoComplete="new-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </label>
+              {error && <b className={styles.loginError} role="alert">{error}</b>}
+              <button className={styles.submitButton} type="submit">
+                {loginMode === "admin" ? "ENTER ADMIN OFFICE" : "ENTER STAFF WORKSPACE"}
+                <span>→</span>
+              </button>
+            </form>
+            <div className={styles.cardFootnote}><ShieldCheck size={14} /> {loginMode === "admin" ? "Primary administrator access" : "Role-based team access"} <span>•</span> Shree Gauri</div>
+          </div>
+          <div className={styles.copyright}>© {new Date().getFullYear()} SHREE GAURI <span>·</span> ALL RIGHTS RESERVED</div>
+        </section>
       </main>
     );
   if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
