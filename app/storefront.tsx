@@ -151,7 +151,9 @@ export default function Storefront() {
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
       supabase.from("site_settings").select("*").eq("id", 1).single(),
-    ]).then(([a, b, d]) => {
+      // Keep storefront rating badges accurate without downloading review text for every product.
+      supabase.from("product_reviews").select("product_id,rating").eq("is_approved", true),
+    ]).then(([a, b, d, r]) => {
       if (a.data) setCats(a.data as C[]);
       if (b.data)
         setProducts(
@@ -162,6 +164,7 @@ export default function Storefront() {
         );
       if (d.data)
         setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+      if (r.data) setReviews(r.data as R[]);
     });
   }, []);
   const money = (n: number) =>
