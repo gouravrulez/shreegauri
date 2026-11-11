@@ -313,7 +313,13 @@ export default function AdminDashboard() {
     const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
     const result = await response.json().catch(() => ({}));
     setNotice(result.message || result.error || (response.ok ? "Done." : "Action failed."));
-    if (response.ok) await loadTabData(tab);
+    if (response.ok) {
+      // Apply the confirmed change locally instead of reloading an entire admin section.
+      if (action === "delete_order") setOrders((current) => current.filter((row) => row.id !== payload.id));
+      if (action === "delete_customer") setCustomers((current) => current.filter((row) => row.id !== payload.id));
+      if (action === "invite_staff" && result.staffMember) setStaffRows((current) => [...current, result.staffMember]);
+      if (action === "remove_staff") setStaffRows((current) => current.filter((row) => row.user_id !== payload.user_id));
+    }
     return response.ok;
   }
   async function deleteAdminRecord(kind: "customer" | "order", id: string) {
