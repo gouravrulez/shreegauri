@@ -464,6 +464,7 @@ export default function Storefront() {
           </button>
         ))}
       </nav>
+      <a href="/gemstones" style={{fontSize:12,fontWeight:700,letterSpacing:".06em",color:"#741923",textDecoration:"none",padding:"0 12px"}}>GEMSTONE GUIDES</a>
       {menu && (
         <aside className="drawer">
           <button onClick={() => setMenu(false)}>
