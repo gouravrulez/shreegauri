@@ -186,7 +186,7 @@ export default function AdminDashboard() {
   }
 
   async function loadTabData(targetTab: string) {
-    const productFields = "id,name,slug,short_description,description,price_inr,compare_at_price_inr,stock_quantity,category_id,primary_image_url,image_urls,badge,is_active,is_featured,created_at";
+    const productFields = "id,name,slug,short_description,description,price_inr,compare_at_price_inr,stock_quantity,category_id,category_ids,primary_image_url,image_urls,badge,is_active,is_featured,created_at";
     const categoryFields = "id,name,slug,description,image_url,parent_id,sort_order,is_active,collection_type";
     if (targetTab === "dashboard") {
       const [orderResult, reviewResult, productResult] = await Promise.all([
@@ -206,7 +206,13 @@ export default function AdminDashboard() {
         supabase.from("products").select(productFields).order("created_at", { ascending: false }).limit(500),
         supabase.from("categories").select(categoryFields).order("sort_order"),
       ]);
-      if (productResult.data) setProducts(productResult.data.map((p: any) => ({ ...p, image_urls: Array.isArray(p.image_urls) ? p.image_urls : [] })));
+      if (productResult.data)
+        setProducts(
+          productResult.data.map((p: any) => ({
+            ...p,
+            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          })),
+        );
       if (categoryResult.data) setCats(categoryResult.data as Cat[]);
       const failure = productResult.error || categoryResult.error;
       if (failure) setNotice("Catalogue could not be fully refreshed: " + failure.message);
