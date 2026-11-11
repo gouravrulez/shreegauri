@@ -75,6 +75,8 @@ type Customer = {
   created_at: string;
   updated_at: string;
 };
+type AstrologyEnquiry = { id:string; full_name:string; mobile:string; email:string; address:string; service:string; preferred_time:string|null; details:string|null; status:string; email_status:string; created_at:string };
+type AstrologyService = { name:string; description:string; active:boolean };
 type Order = {
   id: string;
   order_number: string;
@@ -137,7 +139,9 @@ export default function AdminDashboard() {
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
     [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
-    [newStaffPassword, setNewStaffPassword] = useState("");
+    [newStaffPassword, setNewStaffPassword] = useState(""),
+    [astrologyEnquiries, setAstrologyEnquiries] = useState<AstrologyEnquiry[]>([]),
+    [astrologyServices, setAstrologyServices] = useState<AstrologyService[]>([]);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -159,6 +163,7 @@ export default function AdminDashboard() {
     setAdminServiceConfigured(roleData.service_configured !== false);
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
+    await loadAstrology(currentSession.access_token);
     const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
@@ -191,6 +196,28 @@ export default function AdminDashboard() {
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
     if (u.data) setCustomers(u.data as Customer[]);
+  }
+  async function loadAstrology(accessToken?: string) {
+    const token = accessToken || (await supabase.auth.getSession()).data.session?.access_token;
+    if (!token) return;
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body: { action:"list" }, headers: { Authorization: `Bearer ${token}` } });
+    if (error || !result?.ok) { setNotice(result?.error || error?.message || "Unable to load astrology enquiries."); return; }
+    setAstrologyEnquiries(result.enquiries || []);
+    setAstrologyServices(result.services || []);
+  }
+  async function updateAstrologyStatus(id: string, status: string) {
+    const current = (await supabase.auth.getSession()).data.session;
+    if (!current) { setNotice("Your session expired. Please sign in again."); return; }
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"update_status", id, status }, headers:{ Authorization:`Bearer ${current.access_token}` } });
+    setNotice(result?.message || result?.error || error?.message || "Unable to update enquiry.");
+    if (result?.ok) await loadAstrology(current.access_token);
+  }
+  async function saveAstrologyServices() {
+    const current = (await supabase.auth.getSession()).data.session;
+    if (!current) { setNotice("Your session expired. Please sign in again."); return; }
+    const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"save_services", services:astrologyServices }, headers:{ Authorization:`Bearer ${current.access_token}` } });
+    setNotice(result?.message || result?.error || error?.message || "Unable to save services.");
+    if (result?.ok) { setAstrologyServices(result.services || astrologyServices); await loadAstrology(current.access_token); }
   }
   async function login(e: FormEvent) {
     e.preventDefault();
@@ -537,6 +564,7 @@ export default function AdminDashboard() {
           Photos, Logo & Homepage
         </button>
         )}
+        {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
         <a href="/">View Store</a>
         <button onClick={() => supabase.auth.signOut()}>
@@ -553,6 +581,8 @@ export default function AdminDashboard() {
                 ? "Store Overview"
                 : tab === "orders"
                 ? "Customer Orders"
+                : tab === "astrology"
+                  ? "Astrology Enquiries"
                 : tab === "staff"
                   ? "Staff & Permissions"
                 : tab === "customers"
@@ -1141,6 +1171,46 @@ export default function AdminDashboard() {
                 <p>New reviews will appear here for your approval.</p>
               </div>
             )}
+          </div>
+        )}
+        {tab === "astrology" && ["admin", "manager", "support"].includes(staffRole) && (
+          <div className="astrology-admin" style={{display:"grid",gap:22}}>
+            <section style={{background:"#fff",border:"1px solid #eadfce",borderRadius:14,padding:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                <div><h2 style={{margin:"0 0 6px"}}>Consultation enquiries</h2><p style={{margin:0,color:"#75675e"}}>Customer requests submitted from the website appear here automatically.</p></div>
+                <button type="button" onClick={()=>loadAstrology()} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #d8c8a8",background:"#fffdf8",fontWeight:700}}>Refresh enquiries</button>
+              </div>
+              <div style={{display:"grid",gap:12,marginTop:18}}>
+                {astrologyEnquiries.length ? astrologyEnquiries.map(enquiry=>(
+                  <article key={enquiry.id} style={{border:"1px solid #e9dfd1",borderRadius:12,padding:16,background:"#fffdf8"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+                      <div><h3 style={{margin:"0 0 5px",color:"#401016"}}>{enquiry.full_name}</h3><small style={{color:"#75675e"}}>{new Date(enquiry.created_at).toLocaleString("en-IN")} · {enquiry.service}</small></div>
+                      <select aria-label={`Status for ${enquiry.full_name}`} value={enquiry.status} onChange={e=>updateAstrologyStatus(enquiry.id,e.target.value)} style={{padding:"8px 10px",border:"1px solid #d8c8a8",borderRadius:8,background:"#fff",color:"#35252a"}}>
+                        <option value="new">New</option><option value="contacted">Contacted</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="closed">Closed</option>
+                      </select>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8,marginTop:12,color:"#403632",fontSize:14}}>
+                      <div><b>Mobile:</b> {enquiry.mobile}</div><div><b>Email:</b> <a href={`mailto:${enquiry.email}`}>{enquiry.email}</a></div><div style={{gridColumn:"1 / -1"}}><b>Address:</b> {enquiry.address}</div>
+                      {enquiry.preferred_time&&<div><b>Preferred time:</b> {enquiry.preferred_time}</div>}
+                      {enquiry.details&&<div style={{gridColumn:"1 / -1"}}><b>Details:</b> {enquiry.details}</div>}
+                      <div><b>Email notification:</b> {enquiry.email_status==="sent"?"Sent":enquiry.email_status==="not_configured"?"Not configured":enquiry.email_status==="failed"?"Failed":"Pending"}</div>
+                    </div>
+                  </article>
+                )) : <div className="admin-empty"><Star /><h3>No astrology enquiries yet</h3><p>New customer enquiries will be listed here.</p></div>}
+              </div>
+            </section>
+            {isPrimaryAdmin && <section style={{background:"#fff",border:"1px solid #eadfce",borderRadius:14,padding:20}}>
+              <h2 style={{margin:"0 0 6px"}}>Consultation services</h2><p style={{margin:"0 0 16px",color:"#75675e"}}>Add, rename, describe or temporarily hide services displayed on the website enquiry page.</p>
+              <div style={{display:"grid",gap:12}}>
+                {astrologyServices.map((service,index)=><article key={index} style={{display:"grid",gridTemplateColumns:"minmax(180px,1fr) minmax(220px,2fr) auto auto",gap:10,alignItems:"center",padding:12,border:"1px solid #eee4d7",borderRadius:10}}>
+                  <input aria-label="Service name" value={service.name} onChange={e=>setAstrologyServices(old=>old.map((x,i)=>i===index?{...x,name:e.target.value}:x))} placeholder="Service name" style={{padding:10,border:"1px solid #d8c8a8",borderRadius:7,minWidth:0}}/>
+                  <input aria-label="Service description" value={service.description} onChange={e=>setAstrologyServices(old=>old.map((x,i)=>i===index?{...x,description:e.target.value}:x))} placeholder="Short description" style={{padding:10,border:"1px solid #d8c8a8",borderRadius:7,minWidth:0}}/>
+                  <label style={{display:"flex",gap:6,alignItems:"center",fontSize:13}}><input type="checkbox" checked={service.active} onChange={e=>setAstrologyServices(old=>old.map((x,i)=>i===index?{...x,active:e.target.checked}:x))}/> Visible</label>
+                  <button type="button" onClick={()=>setAstrologyServices(old=>old.filter((_,i)=>i!==index))} style={{border:0,background:"transparent",color:"#8b1c27",fontWeight:700}}>Remove</button>
+                </article>)}
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}><button type="button" disabled={astrologyServices.length>=20} onClick={()=>setAstrologyServices(old=>[...old,{name:"",description:"",active:true}])} style={{padding:"10px 14px",border:"1px solid #d8c8a8",borderRadius:8,background:"#fffdf8",fontWeight:700}}>+ Add service</button><button type="button" onClick={saveAstrologyServices} style={{padding:"10px 16px",border:0,borderRadius:8,background:"#741923",color:"#fff",fontWeight:800}}>Save consultation services</button></div>
+              </div>
+            </section>}
           </div>
         )}
         {tab === "staff" && isPrimaryAdmin && (
