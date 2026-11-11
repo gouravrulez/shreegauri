@@ -570,7 +570,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span>✦</span>
                       )}
@@ -593,7 +593,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span>
                           {(
@@ -771,6 +771,7 @@ export default function Storefront() {
                         e.stopPropagation();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
                         setItem(p);
+                        void loadProductReviews(p.id);
                         setDescriptionOpen(false);
                         setQty(1);
                       }}
@@ -895,6 +896,8 @@ export default function Storefront() {
         <img
           src={s.founder_image_url || "/gourav-sharma-founder.jpeg"}
           alt="Gourav Sharma, Founder of Shree Gauri"
+          loading="lazy"
+          decoding="async"
         />
         <div>
           <small className="kicker">A PERSONAL NOTE</small>
