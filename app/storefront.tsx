@@ -151,12 +151,7 @@ export default function Storefront() {
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
       supabase.from("site_settings").select("*").eq("id", 1).single(),
-      supabase
-        .from("product_reviews")
-        .select("id,product_id,reviewer_name,rating,title,body,created_at")
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false }),
-    ]).then(([a, b, d, r]) => {
+    ]).then(([a, b, d]) => {
       if (a.data) setCats(a.data as C[]);
       if (b.data)
         setProducts(
@@ -167,7 +162,6 @@ export default function Storefront() {
         );
       if (d.data)
         setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
-      if (r.data) setReviews(r.data as R[]);
     });
   }, []);
   const money = (n: number) =>
@@ -202,6 +196,19 @@ export default function Storefront() {
       average: rr.length ? rr.reduce((a, r) => a + r.rating, 0) / rr.length : 0,
     };
   };
+  async function loadProductReviews(productId: string) {
+    const { data } = await supabase
+      .from("product_reviews")
+      .select("id,product_id,reviewer_name,rating,title,body,created_at")
+      .eq("product_id", productId)
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setReviews((current) => [
+      ...current.filter((review) => review.product_id !== productId),
+      ...((data || []) as R[]),
+    ]);
+  }
   async function submitReview() {
     if (!item) return;
     setReviewMsg("Submitting...");
@@ -540,7 +547,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -730,7 +737,7 @@ export default function Storefront() {
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
                       setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);
+                      setItem(p);\n                      void loadProductReviews(p.id);
                       setDescriptionOpen(false);
                       setQty(1);
                     }}
@@ -738,7 +745,7 @@ export default function Storefront() {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
+                        setItem(p);\n                        void loadProductReviews(p.id);
                         setDescriptionOpen(false);
                         setQty(1);
                       }
@@ -856,7 +863,7 @@ export default function Storefront() {
           <h1>Your Cart</h1>
           {cart.map((p, i) => (
             <div className="cart" key={i}>
-              <img src={p.primary_image_url} />
+              <img src={p.primary_image_url} loading="lazy" decoding="async" alt={p.name} />
               <b>{p.name}</b>
               <span>{money(Number(p.price_inr))}</span>
               <button
@@ -1069,7 +1076,7 @@ export default function Storefront() {
               <div className="checkout-products-head"><b>Order Items</b><span>{cart.length} item(s)</span></div>
               {cart.map((p, i) => (
                 <div className="checkout-product-row" key={`${p.id}-${i}`}>
-                  <img src={p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"} alt={p.name} />
+                  <img src={p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"} alt={p.name} loading="lazy" decoding="async" />
                   <div><b>{p.name}</b><small>{money(Number(p.price_inr))}</small></div>
                   <button type="button" aria-label={`Remove ${p.name}`} onClick={() => setCart((items) => items.filter((_, index) => index !== i))}><X /> REMOVE</button>
                 </div>
