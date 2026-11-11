@@ -5,8 +5,12 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://shreegauri.in";
+  const gemstoneSlugs = ["blue-sapphire","yellow-sapphire","emerald","ruby","red-coral","pearl","hessonite","cats-eye","amethyst","rose-quartz","citrine","tiger-eye","pyrite","seven-chakra"];
   const pages: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
+    { url: base + "/gemstones", lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    ...gemstoneSlugs.map((slug) => ({ url: base + "/gemstones/" + slug, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.8 })),
+    { url: base + "/astrology", lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: base + "/contact", lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: base + "/privacy", lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
     { url: base + "/terms", lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
@@ -21,10 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data } = await supabase
     .from("products")
     .select("id,slug,created_at")
+    .eq("brand", "Shree Gauri")
     .eq("is_active", true);
 
   const products: MetadataRoute.Sitemap = (data || []).map((p: any) => ({
-    url: `${base}/?product=${encodeURIComponent(p.slug || p.id)}`,
+    url: `${base}/product/${encodeURIComponent(p.slug || p.id)}`,
     lastModified: p.created_at ? new Date(p.created_at) : new Date(),
     changeFrequency: "weekly",
     priority: 0.8,

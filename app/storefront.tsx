@@ -136,6 +136,18 @@ export default function Storefront() {
       pincode: "",
     });
   useEffect(() => {
+    const requestedProduct = new URLSearchParams(window.location.search).get("product");
+    if (!requestedProduct || !products.length) return;
+    const match = products.find((product) => product.slug === requestedProduct || product.id === requestedProduct);
+    if (!match) return;
+    setSelectedImage(match.primary_image_url || match.image_urls?.[0] || "");
+    setItem(match);
+    void loadProductReviews(match.id);
+    setDescriptionOpen(false);
+    setQty(1);
+  }, [products]);
+
+  useEffect(() => {
     Promise.all([
       supabase
         .from("categories")
@@ -452,6 +464,7 @@ export default function Storefront() {
           </button>
         ))}
       </nav>
+      <a href="/gemstones" style={{fontSize:12,fontWeight:700,letterSpacing:".06em",color:"#741923",textDecoration:"none",padding:"0 12px"}}>GEMSTONE GUIDES</a>
       {menu && (
         <aside className="drawer">
           <button onClick={() => setMenu(false)}>
