@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   LogOut,
@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserPlus,
   UserX,
+  Globe,
 } from "lucide-react";
 type Cat = {
   id: string;
@@ -110,7 +111,7 @@ const blankProd = {
   primary_image_url: "",
   image_urls: [] as string[],
   badge: "",
-  is_active: true,
+  is_active: false,
   is_featured: false,
 };
 export default function AdminDashboard() {
@@ -120,6 +121,7 @@ export default function AdminDashboard() {
     [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
     [tab, setTab] = useState("dashboard"),
+    [catalogView, setCatalogView] = useState<"products" | "inventory">("products"),
     [cats, setCats] = useState<Cat[]>([]),
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
@@ -137,7 +139,13 @@ export default function AdminDashboard() {
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
     [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
-    [newStaffPassword, setNewStaffPassword] = useState("");
+    [newStaffPassword, setNewStaffPassword] = useState(""),
+    [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
+    [productQuery, setProductQuery] = useState(""),
+    [productFilter, setProductFilter] = useState("all"),
+    [productSort, setProductSort] = useState("newest"),
+    [productPage, setProductPage] = useState(1),
+    [productPageSize, setProductPageSize] = useState(24);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -316,13 +324,14 @@ export default function AdminDashboard() {
   async function saveCat() {
     const data = {
       ...cat,
+      collection_type: cat.collection_type || "category",
+      parent_id: cat.parent_id || null,
       slug:
         cat.slug ||
         cat.name
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
-      parent_id: cat.parent_id || null,
       sort_order: Number(cat.sort_order),
     };
     const r = cat.id
@@ -368,6 +377,18 @@ export default function AdminDashboard() {
     setProd(blankProd);
     await load();
   }
+  async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0 || (field === "stock_quantity" && !Number.isInteger(value))) {
+      setNotice(field === "price_inr" ? "Enter a valid price of ₹0 or more." : "Stock must be a whole number of 0 or more.");
+      setQuickEdit(null); return;
+    }
+    const { error } = await supabase.from("products").update({ [field]: value, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { setNotice("Could not update " + (field === "price_inr" ? "price: " : "stock: ") + error.message); return; }
+    setProducts((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
+    setQuickEdit(null); setNotice(field === "price_inr" ? "Price updated." : "Stock quantity updated.");
+  }
+
   async function toggleProductVisibility(p: Prod) {
     const next = !p.is_active;
     const { error } = await supabase
@@ -410,6 +431,47 @@ export default function AdminDashboard() {
   const pendingOrders = orders.filter((o) => o.order_status === "pending").length;
   const pendingReviews = reviews.filter((r) => !r.is_approved).length;
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) &&
+    (productFilter === "all" || (productFilter === "active" && p.is_active) ||
+      (productFilter === "hidden" && !p.is_active) ||
+      (productFilter === "low-stock" && Number(p.stock_quantity) > 0 && Number(p.stock_quantity) <= 3) ||
+      (productFilter === "out-of-stock" && Number(p.stock_quantity) <= 0))
+  );
+  const sortedProducts = [...filteredProducts].sort((left, right) => {
+    if (productSort === "name-asc") return left.name.localeCompare(right.name);
+    if (productSort === "price-low") return Number(left.price_inr) - Number(right.price_inr);
+    if (productSort === "price-high") return Number(right.price_inr) - Number(left.price_inr);
+    if (productSort === "stock-low") return Number(left.stock_quantity) - Number(right.stock_quantity);
+    if (productSort === "stock-high") return Number(right.stock_quantity) - Number(left.stock_quantity);
+    return 0;
+  });
+  const productPageCount = Math.max(1, Math.ceil(sortedProducts.length / productPageSize));
+  const currentProductPage = Math.min(productPage, productPageCount);
+  const paginatedProducts = sortedProducts.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize);
+  const pageNumbers = Array.from({ length: productPageCount }, (_, i) => i + 1)
+    .filter((page) => productPageCount <= 7 || page === 1 || page === productPageCount || Math.abs(page - currentProductPage) <= 1);
+  const paginationControls = (total: number) => (
+    <div className="catalog-pagination">
+      <label>Show
+        <select value={productPageSize} onChange={(e) => { setProductPageSize(Number(e.target.value)); setProductPage(1); }}>
+          <option value={12}>12</option><option value={24}>24</option><option value={48}>48</option><option value={96}>96</option><option value={200}>200</option>
+        </select>
+        per page
+      </label>
+      <span className="catalog-page-count">{total ? ((currentProductPage - 1) * productPageSize + 1) + "–" + Math.min(currentProductPage * productPageSize, total) + " of " + total : "0 products"}</span>
+      <div className="catalog-page-buttons">
+        <button type="button" disabled={currentProductPage === 1} onClick={() => setProductPage(currentProductPage - 1)}>Previous</button>
+        {pageNumbers.map((page, index) => (
+          <Fragment key={page}>
+            {productPageCount > 7 && index > 0 && page - pageNumbers[index - 1] > 1 && <span className="catalog-page-ellipsis">…</span>}
+            <button type="button" className={currentProductPage === page ? "current" : ""} aria-current={currentProductPage === page ? "page" : undefined} onClick={() => setProductPage(page)}>{page}</button>
+          </Fragment>
+        ))}
+        <button type="button" disabled={currentProductPage === productPageCount} onClick={() => setProductPage(currentProductPage + 1)}>Next</button>
+      </div>
+    </div>
+  );
   const paidRevenue = orders.filter((o) => ["paid", "success", "completed"].includes(String(o.payment_status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
   function openDashboard() {
     const now = Date.now();
@@ -420,49 +482,44 @@ export default function AdminDashboard() {
 
   if (!session)
     return (
-      <main className="admin-login">
-        <form onSubmit={login} autoComplete="off">
-          <a className="admin-back" href="/">← Return to store</a>
-          <div className="admin-login-brand">
-            <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
-            <span>SHREE GAURI</span>
-            <small>ADMINISTRATION</small>
-          </div>
-          <div className="admin-login-divider"><span>✦</span></div>
-          <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
-          <p>{loginMode === "admin" ? "Secure access for the main administrator." : "Use your invited work email and password to access your assigned tasks."}</p>
-          <div role="group" aria-label="Choose sign-in type" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "0 0 18px" }}>
-            <button type="button" aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "admin" ? "#3d2a20" : "#fff", color: loginMode === "admin" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Main Admin</button>
-            <button type="button" aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }} style={{ width: "auto", padding: "11px 8px", borderRadius: 8, border: "1px solid #b69b67", background: loginMode === "staff" ? "#3d2a20" : "#fff", color: loginMode === "staff" ? "#fff" : "#3d2a20", cursor: "pointer" }}>Staff Login</button>
-          </div>
-          <label>
-            Work email
-            <input
-              type="email"
-              name="sg-admin-email"
-              autoComplete="off"
-              placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="sg-admin-password"
-              autoComplete="new-password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && <b>{error}</b>}
-          <button>{loginMode === "admin" ? "SECURE ADMIN LOGIN" : "SECURE STAFF LOGIN"}</button>
-          <small className="admin-secure-note">{loginMode === "admin" ? "Main administrator access • Shree Gauri" : "Role-based staff access • Shree Gauri"}</small>
-        </form>
+      <main className="admin-login-premium">
+        <div className="admin-login-shell">
+          <section className="admin-login-art" aria-label="Shree Gauri administration">
+            <a className="admin-login-return" href="/">← Return to store</a>
+            <div className="admin-login-art-brand">
+              <img src="/shree-gauri-logo.png" alt="Shree Gauri" />
+              <div><span>SHREE GAURI</span><small>ADMINISTRATION</small></div>
+            </div>
+            <div className="admin-login-art-copy">
+              <span className="admin-login-kicker">STORE CONTROL CENTRE</span>
+              <h2>Thoughtful care.<br />Seamless management.</h2>
+              <p>Everything you need to manage the Shree Gauri store, your catalogue and your team — in one place.</p>
+            </div>
+            <div className="admin-login-art-foot"><span>SHREE GAURI</span><i /> <small>PRIVATE ADMINISTRATOR PORTAL</small></div>
+          </section>
+          <section className="admin-login-panel">
+            <div className="admin-login-panel-top"><span>WELCOME BACK</span><small>Sign in to continue</small></div>
+            <h1>{loginMode === "admin" ? "Main Admin Login" : "Staff Login"}</h1>
+            <p className="admin-login-intro">{loginMode === "admin" ? "Sign in with your main administrator credentials." : "Use your invited work email to access your assigned tasks."}</p>
+            <div className="admin-login-mode" role="group" aria-label="Choose sign-in type">
+              <button type="button" className={loginMode === "admin" ? "active" : ""} aria-pressed={loginMode === "admin"} onClick={() => { setLoginMode("admin"); setError(""); }}>Main Admin</button>
+              <button type="button" className={loginMode === "staff" ? "active" : ""} aria-pressed={loginMode === "staff"} onClick={() => { setLoginMode("staff"); setError(""); }}>Staff Login</button>
+            </div>
+            <form className="admin-login-fields" onSubmit={login} autoComplete="off">
+              <label>
+                <span>Work email</span>
+                <input type="email" name="sg-admin-email" autoComplete="off" placeholder={loginMode === "admin" ? "Enter main admin email" : "Enter your invited work email"} value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </label>
+              <label>
+                <span>Password</span>
+                <input type="password" name="sg-admin-password" autoComplete="new-password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </label>
+              {error && <b className="admin-login-error" role="alert">{error}</b>}
+              <button className="admin-login-submit" type="submit">{loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">→</span></button>
+            </form>
+            <div className="admin-login-panel-foot"><span className="admin-login-lock">◇</span><span>{loginMode === "admin" ? "Main administrator access" : "Role-based staff access"}</span><i /> <span>Shree Gauri</span></div>
+          </section>
+        </div>
       </main>
     );
   if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
@@ -510,17 +567,13 @@ export default function AdminDashboard() {
           onClick={() => setTab("categories")}
         >
           <Layers />
-          Categories & Subcategories
+          Product Categories
         </button>
         )}
-        {["admin", "manager", "catalog"].includes(staffRole) && (<button
-          className={tab === "products" ? "on" : ""}
-          onClick={() => setTab("products")}
-        >
-          <Package />
-          Products & Inventory
-        </button>
-        )}
+        {["admin", "manager", "catalog"].includes(staffRole) && (<>
+          <button className={tab === "products" || tab === "inventory" ? "on" : ""} onClick={() => { setCatalogView("products"); setTab("products"); }}><Package /> Products & Inventory {lowStock > 0 && <b className="order-count">{lowStock}</b>}</button>
+          <button className={tab === "add-product" ? "on" : ""} onClick={() => { setProd(blankProd); setTab("add-product"); }}><Package /> Add New Product</button>
+        </>)}
         {["admin", "manager"].includes(staffRole) && (<button
           className={tab === "reviews" ? "on" : ""}
           onClick={() => setTab("reviews")}
@@ -537,12 +590,12 @@ export default function AdminDashboard() {
           Photos, Logo & Homepage
         </button>
         )}
-        {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
-        <a href="/">View Store</a>
-        <button onClick={() => supabase.auth.signOut()}>
-          <LogOut />
-          Log Out
-        </button>
+        {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
+        <footer className="admin-utility-actions" aria-label="Account and store actions">
+          {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
+          <a href="/"><Store /> View Store</a>
+          <button className="admin-logout-action" onClick={() => supabase.auth.signOut()}><LogOut /> Log Out</button>
+        </footer>
       </aside>
       <section>
         <header>
@@ -558,16 +611,24 @@ export default function AdminDashboard() {
                 : tab === "customers"
                   ? "Customer Accounts"
                 : tab === "categories"
-                  ? "Categories & Subcategories"
+                  ? "Product Categories"
                   : tab === "products"
                     ? "Products & Inventory"
                     : tab === "reviews"
                       ? "Customer Review Approval"
-                      : "Photos, Logo & Homepage"}
+                      : tab === "currency"
+                        ? "Global Currency Rates"
+                        : "Photos, Logo & Homepage"}
             </h1>
           </div>
           {notice && <p>{notice}</p>}
         </header>
+        {tab === "products" && (
+          <div className="catalog-view-switch" role="tablist" aria-label="Product catalogue views">
+            <button type="button" role="tab" aria-selected={catalogView === "products"} onClick={() => { setCatalogView("products"); setProductPage(1); }} className={catalogView === "products" ? "on" : ""}>Product List <span>{products.length}</span></button>
+            <button type="button" role="tab" aria-selected={catalogView === "inventory"} onClick={() => { setCatalogView("inventory"); setProductPage(1); }} className={catalogView === "inventory" ? "on" : ""}>Stock Overview <span>{lowStock} low</span></button>
+          </div>
+        )}
         {tab === "dashboard" && (
           <div className="sg-dashboard">
             <div className="dashboard-stats">
@@ -882,10 +943,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        {tab === "products" && (
-          <div className="admin-grid">
-            <div className="editor">
-              <h2>{prod.id ? "Edit Product" : "Add Product"}</h2>
+        {(tab === "products" && catalogView === "products" || tab === "add-product") && (
+          <div className="admin-product-workspace">
+            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
+              <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
               <label>
                 Product Name
                 <input
@@ -969,15 +1030,15 @@ export default function AdminDashboard() {
                 </label>
               </div>
               <label>
-                Category
+                Product Category
                 <select
                   value={prod.category_id || ""}
                   onChange={(e) =>
-                    setProd({ ...prod, category_id: e.target.value })
+                    setProd({ ...prod, category_id: e.target.value, category_ids: e.target.value ? [e.target.value] : [] })
                   }
                 >
                   <option value="">Select</option>
-                  {cats.map((c) => (
+                  {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -1060,33 +1121,36 @@ export default function AdminDashboard() {
                 <span>{prod.image_urls?.length || 0} additional image(s) attached</span>
                 <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
               </div>
-            </div>
-            <div className="records">
-              {products.length ? (
-                products.map((p) => (
-                  <article key={p.id}>
-                    <img src={p.primary_image_url} />
-                    <div>
-                      <b>{p.name}</b>
-                      <span>
-                        ₹{p.price_inr} · Stock {p.stock_quantity} ·{" "}
-                        {p.image_urls?.length || 0} extra photos ·{" "}
-                        {p.is_active ? "Visible" : "Hidden"}
-                      </span>
+            </div>}
+            {tab === "products" && catalogView === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
+              <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
+                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 220px", minWidth: 180 }} />
+                <select aria-label="Filter products" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
+                <select aria-label="Sort products" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
+                <small style={{ color: "#806f68" }}>{sortedProducts.length} of {products.length} products</small>
+              </div>
+              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+              {sortedProducts.length ? (
+                paginatedProducts.map((p) => (
+                  <article key={p.id} className="product-admin-card">
+                    <div className="product-admin-card-head">
+                      <img src={p.primary_image_url || "/placeholder.png"} alt="" />
+                      <div className="product-admin-card-title">
+                        <b title={p.name}>{p.name}</b>
+                        <span className={p.is_active ? "product-status-visible" : "product-status-hidden"}>{p.is_active ? "Visible on store" : "Hidden from store"}</span>
+                      </div>
                     </div>
-                    <button onClick={() => setProd(p)}>Edit</button>
-                    <button
-                      className={p.is_active ? "product-hide-button" : "product-show-button"}
-                      onClick={() => toggleProductVisibility(p)}
-                    >
-                      {p.is_active ? "HIDE" : "SHOW"}
-                    </button>
-                    <button
-                      className="delete"
-                      onClick={() => remove("products", p.id)}
-                    >
-                      <Trash2 />
-                    </button>
+                    <div className="product-admin-card-meta">
+                      {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
+                      <span className="product-stock-label">Stock</span>
+                      {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })}>{p.stock_quantity} <small>✎</small></button>}
+                      <small>{p.image_urls?.length || 0} extra photos</small>
+                    </div>
+                    <div className="product-admin-card-actions">
+                      <button className="product-edit-action" onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
+                      <button className={p.is_active ? "product-hide-button" : "product-show-button"} onClick={() => toggleProductVisibility(p)}>{p.is_active ? "Hide" : "Show"}</button>
+                      <button className="product-delete-icon" aria-label={"Delete " + p.name} title="Delete product" onClick={() => remove("products", p.id)}><Trash2 /></button>
+                    </div>
                   </article>
                 ))
               ) : (
@@ -1099,7 +1163,43 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               )}
+              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+            </div>}
+          </div>
+        )}
+        {tab === "products" && catalogView === "inventory" && (
+          <div className="inventory-admin">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 18 }}>
+              <div><h2 style={{ margin: 0, font: "28px Georgia,serif", color: "#421015" }}>Inventory Overview</h2><small style={{ color: "#806f68" }}>Update stock directly here. Changes save to your product inventory.</small></div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ background: "#fff", border: "1px solid #e2d7cc", padding: "9px 12px", borderRadius: 8 }}>{products.length} total products</span>
+                <span style={{ background: "#fff4e5", border: "1px solid #efd4a9", padding: "9px 12px", borderRadius: 8 }}>{lowStock} low stock (3 or less)</span>
+              </div>
             </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
+              <select aria-label="Filter inventory" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
+              <select aria-label="Sort inventory" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
+            </div>
+            {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+            <div style={{ background: "#fff", border: "1px solid #e2d7cc", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+                <thead><tr style={{ background: "#f8f2eb", textAlign: "left" }}><th style={{ padding: 13 }}>Product</th><th style={{ padding: 13 }}>Price</th><th style={{ padding: 13 }}>Available stock</th><th style={{ padding: 13 }}>Status</th><th style={{ padding: 13 }}>Action</th></tr></thead>
+                <tbody>
+                  {paginatedProducts.map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
+                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
+                      <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
+                      <td style={{ padding: 10 }}>{quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 90, padding: 8, border: "1px solid #d8c5ae" }} /> : <button type="button" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "8px 12px", background: Number(p.stock_quantity) <= 3 ? "#fff4e5" : "#fff", color: "#4b3529", fontWeight: 700 }}>{p.stock_quantity} ✎</button>}</td>
+                      <td style={{ padding: 10 }}><span style={{ color: !p.is_active ? "#806f68" : Number(p.stock_quantity) <= 3 ? "#a45b00" : "#267347", fontWeight: 700 }}>{!p.is_active ? "Hidden" : Number(p.stock_quantity) <= 3 ? "Low stock" : "In stock"}</span></td>
+                      <td style={{ padding: 10 }}><button onClick={() => { setProd(p); setTab("add-product"); }} style={{ border: "1px solid #d8c5ae", padding: "8px 11px", background: "#fff" }}>Edit product</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!filteredProducts.length && <p style={{ padding: 24 }}>No products match these filters.</p>}
+            </div>
+            {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
           </div>
         )}
         {tab === "reviews" && (
@@ -1301,6 +1401,22 @@ export default function AdminDashboard() {
               <Save />
               SAVE ALL WEBSITE SETTINGS
             </button>
+          </div>
+        )}
+        {tab === "currency" && isPrimaryAdmin && settings && (
+          <div className="editor settings currency-settings">
+            <h2>Global Currency Conversion Rates</h2>
+            <p>INR is the base price. Set how much one Indian rupee equals in each currency. Storefront display conversions use these rates; order records and accounting remain in INR.</p>
+            <div className="currency-rate-grid">
+              {["INR","USD","EUR","GBP","AED","CAD","AUD","SGD","JPY","CHF","NZD","SAR","QAR","KWD","BHD","OMR","MYR","THB","IDR","PHP","VND","ZAR","MUR","NPR","LKR","BDT","KRW","SEK","NOK","DKK","PLN","HKD"].map((code) => {
+                const defaults: Record<string, number> = {INR:1,USD:.012,EUR:.010,GBP:.009,AED:.044,CAD:.016,AUD:.018,SGD:.015,JPY:1.75,CHF:.0095,NZD:.020,SAR:.045,QAR:.044,KWD:.0037,BHD:.0045,OMR:.0046,MYR:.051,THB:.38,IDR:190,PHP:.68,VND:315,ZAR:.21,MUR:.55,NPR:1.60,LKR:3.65,BDT:1.46,KRW:16.5,SEK:.112,NOK:.118,DKK:.069,PLN:.043,HKD:.093};
+                const rates = { ...defaults, ...(settings.currency_rates || {}) };
+                return <label key={code}>{code}{code === "INR" ? " (Base)" : ""}
+                  <input type="number" min="0" step="0.000001" disabled={code === "INR"} value={rates[code] ?? ""} onChange={(e) => setSettings({ ...settings, currency_rates: { ...rates, [code]: Number(e.target.value) } })} />
+                </label>;
+              })}
+            </div>
+            <button className="save-settings" onClick={saveSettings}><Save /> SAVE CURRENCY RATES</button>
           </div>
         )}
       </section>
