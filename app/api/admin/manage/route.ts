@@ -73,7 +73,8 @@ export async function GET(request: Request) {
     if ("error" in auth) return auth.error;
     const needsPasswordSetup = auth.user.user_metadata?.staff_password_setup === true;
     const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
-    const staff = isPrimaryAdmin ? await listStaff(auth.admin) : [];
+    const includeStaff = new URL(request.url).searchParams.get("include") === "staff";
+    const staff = isPrimaryAdmin && includeStaff ? await listStaff(auth.admin) : [];
     return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup, service_configured: true });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Admin request failed." }, { status: 500 });
