@@ -136,6 +136,18 @@ export default function Storefront() {
       pincode: "",
     });
   useEffect(() => {
+    const requestedProduct = new URLSearchParams(window.location.search).get("product");
+    if (!requestedProduct || !products.length) return;
+    const match = products.find((product) => product.slug === requestedProduct || product.id === requestedProduct);
+    if (!match) return;
+    setSelectedImage(match.primary_image_url || match.image_urls?.[0] || "");
+    setItem(match);
+    void loadProductReviews(match.id);
+    setDescriptionOpen(false);
+    setQty(1);
+  }, [products]);
+
+  useEffect(() => {
     Promise.all([
       supabase
         .from("categories")
