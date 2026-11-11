@@ -191,7 +191,7 @@ export default function AdminDashboard() {
     if (targetTab === "dashboard") {
       const [orderResult, reviewResult, productResult] = await Promise.all([
         supabase.from("orders").select("id,order_number,customer_name,total_inr,payment_status,order_status,created_at").order("created_at", { ascending: false }).limit(30),
-        supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,is_approved,created_at").order("created_at", { ascending: false }).limit(30),
+        supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,body,is_approved,created_at").order("created_at", { ascending: false }).limit(30),
         supabase.from("products").select("id,name,is_active,stock_quantity").limit(500),
       ]);
       if (orderResult.data) setOrders(orderResult.data as Order[]);
