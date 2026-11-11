@@ -39,8 +39,9 @@ patch(
 /* ADMIN: normalize old + new products */
 patch(
   admin,
-  `          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-        })),`,
+  `            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          })),
+        );`,
   `          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
           category_ids:
             Array.isArray(p.category_ids) && p.category_ids.length
