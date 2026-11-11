@@ -73,7 +73,8 @@ export async function GET(request: Request) {
     if ("error" in auth) return auth.error;
     const needsPasswordSetup = auth.user.user_metadata?.staff_password_setup === true;
     const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
-    const staff = isPrimaryAdmin ? await listStaff(auth.admin) : [];
+    const includeStaff = new URL(request.url).searchParams.get("include") === "staff";
+    const staff = isPrimaryAdmin && includeStaff ? await listStaff(auth.admin) : [];
     return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup, service_configured: true });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Admin request failed." }, { status: 500 });
@@ -132,7 +133,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Invitation was not completed because the staff role could not be saved." }, { status: 500 });
       }
       await audit(auth.admin, auth.user, "staff_invited", "staff", data.user.id, { role });
-      return NextResponse.json({ ok: true, message: `Invitation sent to ${email}.` });
+      return NextResponse.json({
+        ok: true,
+        message: `Invitation sent to ${email}.`,
+        staffMember: { user_id: data.user.id, email, role, is_primary_admin: false, created_at: new Date().toISOString() }
+      });
     }
 
     if (action === "remove_staff") {
@@ -145,7 +150,7 @@ export async function POST(request: Request) {
       await audit(auth.admin, auth.user, "staff_access_revoked", "staff", userId, { previous_role: staffRow.role });
       const { error } = await auth.admin.from("admin_users").delete().eq("user_id", userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      return NextResponse.json({ ok: true, message: "Staff access revoked. The account itself was not deleted." });
+      return NextResponse.json({ ok: true, user_id: userId, message: "Staff access revoked. The account itself was not deleted." });
     }
 
     if (action === "delete_order") {

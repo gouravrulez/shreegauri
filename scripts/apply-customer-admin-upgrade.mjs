@@ -54,42 +54,44 @@ addOnce(
   "customer state",
 );
 
-addOnce(
-  `    const [a, b, c, d, o] = await Promise.all([`,
-  `    const [a, b, c, d, o, u] = await Promise.all([`,
-  "load tuple",
-);
-
-const ordersQueryEnd = `      supabase
-        .from("orders")
-        .select("*,order_items(*)")
-        .order("created_at", { ascending: false }),
-    ]);`;
-
-const ordersQueryReplacement = `      supabase
-        .from("orders")
-        .select("*,order_items(*)")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("customers")
-        .select("*")
-        .order("created_at", { ascending: false }),
-    ]);`;
-
-if (!admin.includes(ordersQueryReplacement)) {
-  if (!admin.includes(ordersQueryEnd)) throw new Error("Customer admin patch failed: load customers query");
-  admin = admin.replace(ordersQueryEnd, ordersQueryReplacement);
+if (!admin.includes("async function loadTabData(targetTab: string)")) {
+  addOnce(
+    `    const [a, b, c, d, o] = await Promise.all([`,
+    `    const [a, b, c, d, o, u] = await Promise.all([`,
+    "load tuple",
+  );
+  
+  const ordersQueryEnd = `      supabase
+          .from("orders")
+          .select("*,order_items(*)")
+          .order("created_at", { ascending: false }),
+      ]);`;
+  
+  const ordersQueryReplacement = `      supabase
+          .from("orders")
+          .select("*,order_items(*)")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("customers")
+          .select("*")
+          .order("created_at", { ascending: false }),
+      ]);`;
+  
+  if (!admin.includes(ordersQueryReplacement)) {
+    if (!admin.includes(ordersQueryEnd)) throw new Error("Customer admin patch failed: load customers query");
+    admin = admin.replace(ordersQueryEnd, ordersQueryReplacement);
+  }
+  
+  addOnce(
+    `    if (o.data) setOrders(o.data as Order[]);
+    }`,
+    `    if (o.data) setOrders(o.data as Order[]);
+      if (u.data) setCustomers(u.data as Customer[]);
+    }`,
+    "set customers",
+  );
+  
 }
-
-addOnce(
-  `    if (o.data) setOrders(o.data as Order[]);
-  }`,
-  `    if (o.data) setOrders(o.data as Order[]);
-    if (u.data) setCustomers(u.data as Customer[]);
-  }`,
-  "set customers",
-);
-
 const orderButtonEnd = `        </button>
         <button
           className={tab === "categories" ? "on" : ""}`;
