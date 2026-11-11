@@ -737,7 +737,8 @@ export default function Storefront() {
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
                       setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);\n                      void loadProductReviews(p.id);
+                      setItem(p);
+                      void loadProductReviews(p.id);
                       setDescriptionOpen(false);
                       setQty(1);
                     }}
@@ -745,7 +746,8 @@ export default function Storefront() {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);\n                        void loadProductReviews(p.id);
+                        setItem(p);
+                        void loadProductReviews(p.id);
                         setDescriptionOpen(false);
                         setQty(1);
                       }
