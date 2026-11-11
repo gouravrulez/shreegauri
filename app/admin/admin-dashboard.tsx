@@ -158,52 +158,102 @@ export default function AdminDashboard() {
     return () => subscription.unsubscribe();
   }, []);
   useEffect(() => {
-    if (session) load();
+    if (session) void load();
   }, [session]);
+  useEffect(() => {
+    if (session && staffRole !== "loading" && staffRole !== "unauthorized") {
+      void loadTabData(tab);
+    }
+  }, [tab, session, staffRole]);
+
   async function load() {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) return;
-    const roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${currentSession.access_token}` } });
+    const roleResponse = await fetch("/api/admin/manage", {
+      headers: { Authorization: `Bearer ${currentSession.access_token}` },
+      cache: "no-store",
+    });
     const roleData = await roleResponse.json().catch(() => ({}));
-    if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
+    if (!roleResponse.ok) {
+      setStaffRole("unauthorized");
+      setNotice(roleData.error || "Admin access could not be verified.");
+      return;
+    }
     setStaffRole(roleData.role);
     setIsPrimaryAdmin(Boolean(roleData.is_primary_admin));
     setAdminServiceConfigured(roleData.service_configured !== false);
-    setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
-    await loadAstrology(currentSession.access_token);
-    const [a, b, c, d, o, u] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order"),
-      supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase.from("site_settings").select("*").eq("id", 1).single(),
-      supabase
-        .from("product_reviews")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("orders")
-        .select("*,order_items(*)")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("customers")
-        .select("*")
-        .order("created_at", { ascending: false }),
-    ]);
-    if (a.data) setCats(a.data);
-    if (b.data)
-      setProducts(
-        b.data.map((p: any) => ({
-          ...p,
-          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-        })),
-      );
-    if (c.data) setSettings(c.data);
-    if (d.data) setReviews(d.data);
-    if (o.data) setOrders(o.data as Order[]);
-    if (u.data) setCustomers(u.data as Customer[]);
+  }
+
+  async function loadTabData(targetTab: string) {
+    const productFields = "id,name,slug,short_description,description,price_inr,compare_at_price_inr,stock_quantity,category_id,primary_image_url,image_urls,badge,is_active,is_featured,created_at";
+    const categoryFields = "id,name,slug,description,image_url,parent_id,sort_order,is_active,collection_type";
+    if (targetTab === "dashboard") {
+      const [orderResult, reviewResult, productResult] = await Promise.all([
+        supabase.from("orders").select("id,order_number,customer_name,total_inr,payment_status,order_status,created_at").order("created_at", { ascending: false }).limit(30),
+        supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,is_approved,created_at").order("created_at", { ascending: false }).limit(30),
+        supabase.from("products").select("id,name,is_active,stock_quantity").limit(500),
+      ]);
+      if (orderResult.data) setOrders(orderResult.data as Order[]);
+      if (reviewResult.data) setReviews(reviewResult.data);
+      if (productResult.data) setProducts(productResult.data as Prod[]);
+      const failure = orderResult.error || reviewResult.error || productResult.error;
+      if (failure) setNotice("Some dashboard information could not be refreshed: " + failure.message);
+      return;
+    }
+    if (targetTab === "products" || targetTab === "inventory") {
+      const [productResult, categoryResult] = await Promise.all([
+        supabase.from("products").select(productFields).order("created_at", { ascending: false }).limit(500),
+        supabase.from("categories").select(categoryFields).order("sort_order"),
+      ]);
+      if (productResult.data) setProducts(productResult.data.map((p: any) => ({ ...p, image_urls: Array.isArray(p.image_urls) ? p.image_urls : [] })));
+      if (categoryResult.data) setCats(categoryResult.data as Cat[]);
+      const failure = productResult.error || categoryResult.error;
+      if (failure) setNotice("Catalogue could not be fully refreshed: " + failure.message);
+      return;
+    }
+    if (targetTab === "categories" || targetTab === "add-product") {
+      const { data, error } = await supabase.from("categories").select(categoryFields).order("sort_order");
+      if (data) setCats(data as Cat[]);
+      if (error) setNotice("Categories could not be loaded: " + error.message);
+      return;
+    }
+    if (targetTab === "orders") {
+      const { data, error } = await supabase.from("orders").select("id,order_number,customer_name,email,phone,shipping_address,total_inr,payment_status,order_status,created_at,order_items(id,product_name,quantity,unit_price_inr,line_total_inr)").order("created_at", { ascending: false }).limit(100);
+      if (data) setOrders(data as Order[]);
+      if (error) setNotice("Orders could not be loaded: " + error.message);
+      return;
+    }
+    if (targetTab === "customers") {
+      const { data, error } = await supabase.from("customers").select("id,auth_user_id,full_name,email,phone,date_of_birth,address_line1,address_line2,city,state,pincode,created_at,updated_at").order("created_at", { ascending: false }).limit(100);
+      if (data) setCustomers(data as Customer[]);
+      if (error) setNotice("Customers could not be loaded: " + error.message);
+      return;
+    }
+    if (targetTab === "reviews") {
+      const { data, error } = await supabase.from("product_reviews").select("id,product_id,reviewer_name,rating,title,body,is_approved,created_at").order("created_at", { ascending: false }).limit(200);
+      if (data) setReviews(data);
+      if (error) setNotice("Reviews could not be loaded: " + error.message);
+      return;
+    }
+    if (targetTab === "astrology") {
+      await loadAstrology();
+      return;
+    }
+    if (targetTab === "staff") {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) return;
+      const response = await fetch("/api/admin/manage?include=staff", { headers: { Authorization: `Bearer ${currentSession.access_token}` }, cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) setStaffRows(result.staff || []);
+      else setNotice(result.error || "Staff access list could not be loaded.");
+      return;
+    }
+    if (targetTab === "settings" || targetTab === "currency") {
+      const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).single();
+      if (data) setSettings(data);
+      if (error) setNotice("Website settings could not be loaded: " + error.message);
+    }
   }
   async function loadAstrology(accessToken?: string) {
     const token = accessToken || (await supabase.auth.getSession()).data.session?.access_token;
@@ -218,14 +268,14 @@ export default function AdminDashboard() {
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"update_status", id, status }, headers:{ Authorization:`Bearer ${current.access_token}` } });
     setNotice(result?.message || result?.error || error?.message || "Unable to update enquiry.");
-    if (result?.ok) await loadAstrology(current.access_token);
+    if (result?.ok) setAstrologyEnquiries((currentRows) => currentRows.map((row) => row.id === id ? { ...row, status } : row));
   }
   async function saveAstrologyServices() {
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"save_services", services:astrologyServices }, headers:{ Authorization:`Bearer ${current.access_token}` } });
     setNotice(result?.message || result?.error || error?.message || "Unable to save services.");
-    if (result?.ok) { setAstrologyServices(result.services || astrologyServices); await loadAstrology(current.access_token); }
+    if (result?.ok) setAstrologyServices(result.services || astrologyServices);
   }
   async function login(e: FormEvent) {
     e.preventDefault();
@@ -257,7 +307,7 @@ export default function AdminDashboard() {
     const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
     const result = await response.json().catch(() => ({}));
     setNotice(result.message || result.error || (response.ok ? "Done." : "Action failed."));
-    if (response.ok) await load();
+    if (response.ok) await loadTabData(tab);
     return response.ok;
   }
   async function deleteAdminRecord(kind: "customer" | "order", id: string) {
@@ -322,14 +372,15 @@ export default function AdminDashboard() {
     setNotice(`${urls.length} additional image(s) ready. Save the product below.`);
   }
   async function moderateReview(id: string, is_approved: boolean) {
-    const { error } = await supabase
-      .from("product_reviews")
-      .update({ is_approved })
-      .eq("id", id);
-    setNotice(
-      error?.message || (is_approved ? "Review approved." : "Review hidden."),
-    );
-    load();
+    const previous = reviews.find((review) => review.id === id)?.is_approved;
+    setReviews((current) => current.map((review) => review.id === id ? { ...review, is_approved } : review));
+    const { error } = await supabase.from("product_reviews").update({ is_approved }).eq("id", id);
+    if (error) {
+      setReviews((current) => current.map((review) => review.id === id ? { ...review, is_approved: Boolean(previous) } : review));
+      setNotice("Review could not be updated: " + error.message);
+      return;
+    }
+    setNotice(is_approved ? "Review approved." : "Review hidden.");
   }
   async function uploadSetting(
     file: File,
@@ -368,7 +419,7 @@ export default function AdminDashboard() {
     else {
       setNotice("Category saved.");
       setCat(blankCat);
-      load();
+      await loadTabData("categories");
     }
   }
   async function saveProd() {
@@ -402,7 +453,7 @@ export default function AdminDashboard() {
     }
     setNotice("Product saved successfully.");
     setProd(blankProd);
-    await load();
+    await loadTabData("products");
   }
   async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
     const value = Number(rawValue);
@@ -418,20 +469,28 @@ export default function AdminDashboard() {
 
   async function toggleProductVisibility(p: Prod) {
     const next = !p.is_active;
-    const { error } = await supabase
-      .from("products")
-      .update({ is_active: next })
-      .eq("id", p.id);
-    setNotice(error?.message || (next ? "Product is now visible on the website." : "Product hidden from the website."));
-    if (!error && prod.id === p.id) setProd({ ...prod, is_active: next });
-    load();
+    // Update the interface immediately; roll back only if the database rejects it.
+    setProducts((current) => current.map((item) => item.id === p.id ? { ...item, is_active: next } : item));
+    if (prod.id === p.id) setProd((current: any) => ({ ...current, is_active: next }));
+    setNotice(next ? "Making product visible..." : "Hiding product...");
+    const { error } = await supabase.from("products").update({ is_active: next }).eq("id", p.id);
+    if (error) {
+      setProducts((current) => current.map((item) => item.id === p.id ? { ...item, is_active: !next } : item));
+      if (prod.id === p.id) setProd((current: any) => ({ ...current, is_active: !next }));
+      setNotice("Product visibility was not changed: " + error.message);
+      return;
+    }
+    setNotice(next ? "Product is now visible on the website." : "Product hidden from the website.");
   }
 
   async function remove(table: string, id: string) {
     if (!confirm("Delete this permanently?")) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
-    setNotice(error?.message || "Deleted.");
-    load();
+    if (error) { setNotice("Could not delete this record: " + error.message); return; }
+    if (table === "products") setProducts((current) => current.filter((item) => item.id !== id));
+    if (table === "categories") setCats((current) => current.filter((item) => item.id !== id));
+    if (table === "product_reviews") setReviews((current) => current.filter((item) => item.id !== id));
+    setNotice("Deleted successfully.");
   }
   async function saveSettings() {
     const { error } = await supabase
@@ -448,7 +507,7 @@ export default function AdminDashboard() {
     const response = await fetch("https://hhtqnpxarrbagyvswqrj.supabase.co/functions/v1/order-status-email", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status }) });
     const data = await response.json().catch(() => ({}));
     setNotice(data?.error || (data?.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`));
-    if (response.ok && !data?.error) load();
+    if (response.ok && !data?.error) await loadTabData("orders");
   }
   const activity = [
     ...orders.slice(0, 12).map((o) => ({ id: `order-${o.id}`, time: new Date(o.created_at).getTime(), title: `New order ${o.order_number}`, detail: `${o.customer_name} · ₹${Number(o.total_inr).toLocaleString("en-IN")} · ${o.payment_status || o.order_status}`, kind: "order" })),
