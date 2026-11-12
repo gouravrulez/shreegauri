@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
     { url: base + "/gemstones", lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: base + "/collections", lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     ...gemstoneSlugs.map((slug) => ({ url: base + "/gemstones/" + slug, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.8 })),
     { url: base + "/astrology", lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: base + "/contact", lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
@@ -28,6 +29,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .eq("brand", "Shree Gauri")
     .eq("is_active", true);
 
+  const { data: categoryData } = await supabase
+    .from("categories")
+    .select("slug,updated_at")
+    .eq("collection_type", "category")
+    .eq("is_active", true);
+
+  const categoryPages: MetadataRoute.Sitemap = (categoryData || []).map((c: any) => ({
+    url: `${base}/collections/${encodeURIComponent(c.slug)}`,
+    lastModified: c.updated_at ? new Date(c.updated_at) : new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
   const products: MetadataRoute.Sitemap = (data || []).map((p: any) => ({
     url: `${base}/product/${encodeURIComponent(p.slug || p.id)}`,
     lastModified: p.created_at ? new Date(p.created_at) : new Date(),
@@ -35,5 +49,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...pages, ...products];
+  return [...pages, ...categoryPages, ...products];
 }
