@@ -8,8 +8,11 @@ type Product={id:string;name:string;slug:string;short_description:string|null;de
 async function findProduct(slug:string){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!url||!key)return null;
  const db=createClient(url,key,{auth:{persistSession:false}});
- const {data}=await db.from("products").select("id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,brand").eq("brand","Shree Gauri").eq("is_active",true).or(`slug.eq.${slug},id.eq.${slug}`).maybeSingle();
- return data as Product|null;
+ const select="id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,brand";
+ const bySlug=await db.from("products").select(select).eq("brand","Shree Gauri").eq("is_active",true).eq("slug",slug).maybeSingle();
+ if(bySlug.data)return bySlug.data as Product;
+ const byId=await db.from("products").select(select).eq("brand","Shree Gauri").eq("is_active",true).eq("id",slug).maybeSingle();
+ return (byId.data||null) as Product|null;
 }
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params,p=await findProduct(slug);if(!p)return {};
