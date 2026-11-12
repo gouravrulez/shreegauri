@@ -24,9 +24,9 @@ async function getCollection(slug: string) {
   return { category, children: (children || []) as Category[], products: (products || []) as Product[] };
 }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params, category = await getCategory(slug); if (!category) return {};
+  const { slug } = await params, { category, products } = await getCollection(slug); if (!category) return {};
   const desc = (category.description || "Explore " + category.name + " at Shree Gauri. Browse available products, images, prices and product details online.").replace(/\s+/g, " ").slice(0, 155);
-  return { title: category.name + " Online in India | Products & Prices | Shree Gauri", description: desc, alternates: { canonical: "https://shreegauri.in/collections/" + category.slug }, openGraph: { title: category.name + " | Shree Gauri", description: desc, url: "https://shreegauri.in/collections/" + category.slug, images: category.image_url ? [category.image_url] : [], type: "website" } };
+  return { title: category.name + " Online in India | Products & Prices | Shree Gauri", description: desc, alternates: { canonical: "https://shreegauri.in/collections/" + category.slug }, robots: { index: products.length > 0, follow: true }, openGraph: { title: category.name + " | Shree Gauri", description: desc, url: "https://shreegauri.in/collections/" + category.slug, images: category.image_url ? [category.image_url] : [], type: "website" } };
 }
 export default async function CategoryCollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params, { category, children, products } = await getCollection(slug);
