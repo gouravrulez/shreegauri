@@ -31,13 +31,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: categoryData } = await supabase
     .from("categories")
-    .select("slug,updated_at")
+    .select("slug")
     .eq("collection_type", "category")
     .eq("is_active", true);
 
   const categoryPages: MetadataRoute.Sitemap = (categoryData || []).map((c: any) => ({
     url: `${base}/collections/${encodeURIComponent(c.slug)}`,
-    lastModified: c.updated_at ? new Date(c.updated_at) : new Date(),
+    lastModified: new Date(),
     changeFrequency: "weekly",
     priority: 0.8,
   }));
