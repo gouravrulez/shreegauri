@@ -127,6 +127,8 @@ export default function AdminDashboard() {
     [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
+    [categoryFilter, setCategoryFilter] = useState<"category" | "purpose" | "planet">("category"),
+    [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
     [lastSeenActivity, setLastSeenActivity] = useState(0),
@@ -331,7 +333,7 @@ export default function AdminDashboard() {
     if (r.error) setNotice(r.error.message);
     else {
       setNotice("Category saved.");
-      setCat(blankCat);
+      setCat({ ...blankCat, collection_type: categoryFilter });
       load();
     }
   }
@@ -739,146 +741,87 @@ export default function AdminDashboard() {
           </div>
         )}
         {tab === "categories" && (
-          <div className="admin-grid">
-            <div className="editor">
-              <h2>
-                {cat.id ? "Edit Item" : "Add Category, Purpose or Planet"}
-              </h2>
-              <label>
-                Homepage Section
-                <select
-                  value={cat.collection_type || "category"}
-                  onChange={(e) =>
-                    setCat({
-                      ...cat,
-                      collection_type: e.target.value,
-                      parent_id: "",
-                    })
-                  }
-                >
-                  <option value="category">Shop by Category</option>
-                  <option value="purpose">Shop by Purpose</option>
-                  <option value="planet">Shop by Planet</option>
-                </select>
-              </label>
-              <label>
-                Name
-                <input
-                  value={cat.name}
-                  onChange={(e) => setCat({ ...cat, name: e.target.value })}
-                />
-              </label>
-              <label>
-                URL Slug
-                <input
-                  value={cat.slug}
-                  placeholder="created automatically"
-                  onChange={(e) => setCat({ ...cat, slug: e.target.value })}
-                />
-              </label>
-              <label>
-                Description
-                <textarea
-                  value={cat.description}
-                  onChange={(e) =>
-                    setCat({ ...cat, description: e.target.value })
-                  }
-                />
-              </label>
-              {cat.collection_type === "category" && (
+          <div style={{ display: "grid", gap: 22 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                <small style={{ color: "#9a8057", letterSpacing: 2, fontWeight: 700 }}>CATALOGUE ORGANISATION</small>
+                <h2 style={{ margin: "6px 0 4px", fontFamily: "Georgia,serif", fontSize: 28, color: "#35251f" }}>Category Management</h2>
+                <p style={{ margin: 0, color: "#81766d", fontSize: 13 }}>Manage each homepage collection independently. Your existing categories and product links remain unchanged.</p>
+              </div>
+              <button onClick={() => setCat({ ...blankCat, collection_type: categoryFilter })} style={{ border: 0, borderRadius: 9, padding: "12px 18px", background: "#4a3025", color: "#fff", fontWeight: 700, cursor: "pointer" }}>＋ Add {categoryFilter === "category" ? "Category" : categoryFilter === "purpose" ? "Purpose" : "Planet"}</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 12 }}>
+              {([
+                { key: "category", title: "Shop by Category", hint: "Main categories & subcategories" },
+                { key: "purpose", title: "Shop by Purpose", hint: "Customer goals & intentions" },
+                { key: "planet", title: "Shop by Planet", hint: "Planetary collections" },
+              ] as const).map((item) => {
+                const count = cats.filter((c) => (c.collection_type || "category") === item.key).length;
+                const activeCount = cats.filter((c) => (c.collection_type || "category") === item.key && c.is_active).length;
+                const selected = categoryFilter === item.key;
+                return (
+                  <button key={item.key} onClick={() => { setCategoryFilter(item.key); setCat({ ...blankCat, collection_type: item.key }); setCategorySearch(""); }}
+                    style={{ textAlign: "left", border: selected ? "1px solid #a88955" : "1px solid #e8dfd3", background: selected ? "#f7f0e4" : "#fff", borderRadius: 12, padding: "17px 18px", cursor: "pointer", boxShadow: selected ? "0 5px 18px #6b4d2414" : "none", color: "#35251f" }}>
+                    <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <b style={{ fontSize: 13 }}>{item.title}</b>
+                      <strong style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#8b6b3f" }}>{count}</strong>
+                    </span>
+                    <span style={{ display: "block", fontSize: 11, color: "#82766b", marginTop: 5 }}>{item.hint}</span>
+                    <span style={{ display: "block", fontSize: 10, color: "#8b6b3f", marginTop: 10, fontWeight: 700 }}>{activeCount} VISIBLE · {count - activeCount} HIDDEN</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.45fr) minmax(300px,0.85fr)", gap: 18, alignItems: "start" }}>
+              <div style={{ background: "#fff", border: "1px solid #e9e1d7", borderRadius: 14, overflow: "hidden" }}>
+                <div style={{ padding: 18, borderBottom: "1px solid #eee7df", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: "#35251f", fontSize: 17 }}>{categoryFilter === "category" ? "Shop by Category" : categoryFilter === "purpose" ? "Shop by Purpose" : "Shop by Planet"}</h3>
+                    <p style={{ margin: "4px 0 0", color: "#8b8178", fontSize: 11 }}>Only this collection is shown below</p>
+                  </div>
+                  <input value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} placeholder="Search this collection…" style={{ maxWidth: 240, padding: "10px 12px", borderRadius: 8, border: "1px solid #e4dbd0", fontSize: 12 }} />
+                </div>
+                <div style={{ padding: 12, display: "grid", gap: 8 }}>
+                  {cats.filter((c) => (c.collection_type || "category") === categoryFilter && (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()) || (c.slug || "").toLowerCase().includes(categorySearch.toLowerCase()))).sort((a,b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((c) => {
+                    const parent = cats.find((p) => p.id === c.parent_id);
+                    return (
+                      <article key={c.id} style={{ display: "grid", gridTemplateColumns: "52px minmax(0,1fr) auto auto", gap: 12, alignItems: "center", padding: 12, border: cat.id === c.id ? "1px solid #b99b68" : "1px solid #f0ebe4", borderRadius: 10, background: cat.id === c.id ? "#fbf7ef" : "#fff" }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 9, overflow: "hidden", display: "grid", placeItems: "center", background: "#f5f0e8", color: "#a58a5e", fontSize: 20 }}>{c.image_url ? <img src={c.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "✦"}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <b style={{ display: "block", color: "#382c25", fontSize: 13 }}>{c.name}</b>
+                          <span style={{ display: "block", color: "#92877d", fontSize: 10, marginTop: 4 }}>{categoryFilter === "category" ? (parent ? "↳ Subcategory of " + parent.name : "Main category") : categoryFilter === "purpose" ? "Purpose collection" : "Planet collection"} · {c.is_active ? "Visible on website" : "Hidden"}</span>
+                          <span style={{ display: "block", color: "#a39a91", fontSize: 10, marginTop: 3 }}>{c.slug}</span>
+                        </div>
+                        <button onClick={() => { setCat(c); setCategoryFilter(c.collection_type || "category"); }} style={{ border: "1px solid #d9c8ad", borderRadius: 7, background: "#fff", color: "#654d32", padding: "8px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Edit</button>
+                        <button aria-label={"Delete " + c.name} onClick={() => remove("categories", c.id)} style={{ border: "1px solid #f0d8d4", borderRadius: 7, background: "#fffafa", color: "#a34b42", padding: 8, cursor: "pointer" }}><Trash2 size={15} /></button>
+                      </article>
+                    );
+                  })}
+                  {cats.filter((c) => (c.collection_type || "category") === categoryFilter && (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()) || (c.slug || "").toLowerCase().includes(categorySearch.toLowerCase()))).length === 0 && (
+                    <div style={{ textAlign: "center", padding: "38px 16px", color: "#8b8178" }}><b style={{ display: "block", color: "#51443a", marginBottom: 6 }}>No matching items</b><span style={{ fontSize: 12 }}>Add a new item or change your search.</span></div>
+                  )}
+                </div>
+              </div>
+              <div className="editor" style={{ position: "sticky", top: 18 }}>
+                <h2 style={{ marginTop: 0 }}>{cat.id ? "Edit " + (cat.collection_type === "purpose" ? "Purpose" : cat.collection_type === "planet" ? "Planet" : "Category") : "Create New " + (categoryFilter === "purpose" ? "Purpose" : categoryFilter === "planet" ? "Planet" : "Category")}</h2>
                 <label>
-                  Parent Category
-                  <select
-                    value={cat.parent_id || ""}
-                    onChange={(e) =>
-                      setCat({ ...cat, parent_id: e.target.value })
-                    }
-                  >
-                    <option value="">None — Main Category</option>
-                    {cats
-                      .filter(
-                        (c) =>
-                          c.id !== cat.id &&
-                          !c.parent_id &&
-                          c.collection_type === "category",
-                      )
-                      .map((c) => (
-                        <option value={c.id} key={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                  Collection Type
+                  <select value={cat.collection_type || categoryFilter} onChange={(e) => { const next = e.target.value as "category" | "purpose" | "planet"; setCategoryFilter(next); setCat({ ...cat, collection_type: next, parent_id: "" }); }}>
+                    <option value="category">Shop by Category</option>
+                    <option value="purpose">Shop by Purpose</option>
+                    <option value="planet">Shop by Planet</option>
                   </select>
                 </label>
-              )}
-              <label>
-                Display Order
-                <input
-                  type="number"
-                  value={cat.sort_order}
-                  onChange={(e) =>
-                    setCat({ ...cat, sort_order: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Icon / Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] && upload(e.target.files[0], "cat")
-                  }
-                />
-              </label>
-              {cat.image_url && (
-                <img className="admin-preview" src={cat.image_url} />
-              )}
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={cat.is_active}
-                  onChange={(e) =>
-                    setCat({ ...cat, is_active: e.target.checked })
-                  }
-                />{" "}
-                Visible on website
-              </label>
-              <div className="editor-actions">
-                <button onClick={saveCat}>
-                  <Save />
-                  Save Item
-                </button>
-                <button onClick={() => setCat(blankCat)}>Clear</button>
+                <label>Name<input value={cat.name} onChange={(e) => setCat({ ...cat, name: e.target.value })} placeholder="Enter a clear name" /></label>
+                <label>URL Slug<input value={cat.slug} placeholder="Created automatically if blank" onChange={(e) => setCat({ ...cat, slug: e.target.value })} /></label>
+                <label>Description<textarea value={cat.description} onChange={(e) => setCat({ ...cat, description: e.target.value })} /></label>
+                {cat.collection_type === "category" && <label>Parent Category<select value={cat.parent_id || ""} onChange={(e) => setCat({ ...cat, parent_id: e.target.value })}><option value="">None — Main Category</option>{cats.filter((c) => c.id !== cat.id && !c.parent_id && c.collection_type === "category").map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label>}
+                <label>Display Order<input type="number" value={cat.sort_order} onChange={(e) => setCat({ ...cat, sort_order: e.target.value })} /></label>
+                <label>Icon / Photo<input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], "cat")} /></label>
+                {cat.image_url && <img className="admin-preview" src={cat.image_url} alt="Category preview" />}
+                <label className="check"><input type="checkbox" checked={cat.is_active} onChange={(e) => setCat({ ...cat, is_active: e.target.checked })} /> Visible on website</label>
+                <div className="editor-actions"><button onClick={saveCat}><Save /> Save {cat.collection_type === "purpose" ? "Purpose" : cat.collection_type === "planet" ? "Planet" : "Category"}</button><button onClick={() => setCat({ ...blankCat, collection_type: categoryFilter })}>Clear</button></div>
               </div>
-            </div>
-            <div className="records">
-              {cats.map((c) => (
-                <article key={c.id}>
-                  <div className="record-icon">
-                    {c.image_url ? <img src={c.image_url} /> : <span>✦</span>}
-                  </div>
-                  <div>
-                    <b>{c.name}</b>
-                    <span>
-                      {c.collection_type === "purpose"
-                        ? "Shop by Purpose"
-                        : c.collection_type === "planet"
-                          ? "Shop by Planet"
-                          : c.parent_id
-                            ? "Subcategory"
-                            : "Main category"}{" "}
-                      · {c.is_active ? "Visible" : "Hidden"}
-                    </span>
-                  </div>
-                  <button onClick={() => setCat(c)}>Edit</button>
-                  <button
-                    className="delete"
-                    onClick={() => remove("categories", c.id)}
-                  >
-                    <Trash2 />
-                  </button>
-                </article>
-              ))}
             </div>
           </div>
         )}
