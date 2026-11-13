@@ -708,9 +708,6 @@ export default function Storefront() {
                     "COLLECTION"}
           </h2>
           <div className="catalog-toolbar">
-            <span>
-              {shown.length} {shown.length === 1 ? "PRODUCT" : "PRODUCTS"}
-            </span>
             <button
               className="filter-toggle"
               onClick={() => setFiltersOpen(!filtersOpen)}
