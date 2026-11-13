@@ -487,9 +487,6 @@ body {
 .filter-toggle{position:relative;border:1px solid #d9c9b9;border-radius:7px;padding:10px 14px;background:#fff;color:#482326;cursor:pointer}
 .filter-toggle:hover{border-color:#9b6a32;background:#fbf7f0}
 .filter-count{font-style:normal;font-size:10px;line-height:18px;min-width:18px;height:18px;text-align:center;border-radius:50%;background:#6a151b;color:#fff;margin-left:2px}
-.price-range-filter{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.price-range-filter label{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center;font-size:11px;color:#79675d}
-.price-range-filter label input{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box;border:1px solid #ded1c5;border-radius:5px;padding:10px;background:#fff;color:#392526}
 .apply-filters{display:none}
 .filter-backdrop{display:none}
 @media(max-width:900px){
@@ -506,7 +503,6 @@ body {
   .filters fieldset{padding:17px 0}
   .filters fieldset>label{font-size:14px;padding:3px 0}
   .filters input[type=radio],.filters input[type=checkbox]{width:17px;height:17px}
-  .price-range-filter{gap:12px}
   .apply-filters{display:block;position:sticky;bottom:0;width:100%;margin-top:18px;padding:15px;border:0;border-radius:7px;background:#64171c;color:#fff;font-weight:800;letter-spacing:.5px}
   .clear-filters{padding:18px 0}
 }
