@@ -131,6 +131,8 @@ export default function AdminDashboard() {
     [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
+    [categoryFilter, setCategoryFilter] = useState<"category" | "purpose" | "planet">("category"),
+    [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
     [lastSeenActivity, setLastSeenActivity] = useState(0),
@@ -367,7 +369,7 @@ export default function AdminDashboard() {
     if (r.error) setNotice(r.error.message);
     else {
       setNotice("Category saved.");
-      setCat(blankCat);
+      setCat({ ...blankCat, collection_type: categoryFilter });
       load();
     }
   }
@@ -823,411 +825,91 @@ export default function AdminDashboard() {
             ) : (
               <div className="admin-empty">
                 <ClipboardList />
-                <h3>No orders yet</h3>
-                <p>New website orders will appear here automatically.</p>
+                <h3>No        {tab === "categories" && (
+          <div style={{ display: "grid", gap: 22 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                <small style={{ color: "#9a8057", letterSpacing: 2, fontWeight: 700 }}>CATALOGUE ORGANISATION</small>
+                <h2 style={{ margin: "6px 0 4px", fontFamily: "Georgia,serif", fontSize: 28, color: "#35251f" }}>Category Management</h2>
+                <p style={{ margin: 0, color: "#81766d", fontSize: 13 }}>Manage each homepage collection independently. Your existing categories and product links remain unchanged.</p>
               </div>
-            )}
-          </div>
-        )}
-        {tab === "categories" && (
-          <div className="admin-grid">
-            <div className="editor">
-              <h2>
-                {cat.id ? "Edit Item" : "Add Category, Purpose or Planet"}
-              </h2>
-              <label>
-                Homepage Section
-                <select
-                  value={cat.collection_type || "category"}
-                  onChange={(e) =>
-                    setCat({
-                      ...cat,
-                      collection_type: e.target.value,
-                      parent_id: "",
-                    })
-                  }
-                >
-                  <option value="category">Shop by Category</option>
-                  <option value="purpose">Shop by Purpose</option>
-                  <option value="planet">Shop by Planet</option>
-                </select>
-              </label>
-              <label>
-                Name
-                <input
-                  value={cat.name}
-                  onChange={(e) => setCat({ ...cat, name: e.target.value })}
-                />
-              </label>
-              <label>
-                URL Slug
-                <input
-                  value={cat.slug}
-                  placeholder="created automatically"
-                  onChange={(e) => setCat({ ...cat, slug: e.target.value })}
-                />
-              </label>
-              <label>
-                Description
-                <textarea
-                  value={cat.description}
-                  onChange={(e) =>
-                    setCat({ ...cat, description: e.target.value })
-                  }
-                />
-              </label>
-              {cat.collection_type === "category" && (
-                <label>
-                  Parent Category
-                  <select
-                    value={cat.parent_id || ""}
-                    onChange={(e) =>
-                      setCat({ ...cat, parent_id: e.target.value })
-                    }
-                  >
-                    <option value="">None — Main Category</option>
-                    {cats
-                      .filter(
-                        (c) =>
-                          c.id !== cat.id &&
-                          !c.parent_id &&
-                          c.collection_type === "category",
-                      )
-                      .map((c) => (
-                        <option value={c.id} key={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              )}
-              <label>
-                Display Order
-                <input
-                  type="number"
-                  value={cat.sort_order}
-                  onChange={(e) =>
-                    setCat({ ...cat, sort_order: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Icon / Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] && upload(e.target.files[0], "cat")
-                  }
-                />
-              </label>
-              {cat.image_url && (
-                <img className="admin-preview" src={cat.image_url} />
-              )}
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={cat.is_active}
-                  onChange={(e) =>
-                    setCat({ ...cat, is_active: e.target.checked })
-                  }
-                />{" "}
-                Visible on website
-              </label>
-              <div className="editor-actions">
-                <button onClick={saveCat}>
-                  <Save />
-                  Save Item
-                </button>
-                <button onClick={() => setCat(blankCat)}>Clear</button>
-              </div>
+              <button onClick={() => setCat({ ...blankCat, collection_type: categoryFilter })} style={{ border: 0, borderRadius: 9, padding: "12px 18px", background: "#4a3025", color: "#fff", fontWeight: 700, cursor: "pointer" }}>＋ Add {categoryFilter === "category" ? "Category" : categoryFilter === "purpose" ? "Purpose" : "Planet"}</button>
             </div>
-            <div className="records">
-              {cats.map((c) => (
-                <article key={c.id}>
-                  <div className="record-icon">
-                    {c.image_url ? <img src={c.image_url} /> : <span>✦</span>}
-                  </div>
-                  <div>
-                    <b>{c.name}</b>
-                    <span>
-                      {c.collection_type === "purpose"
-                        ? "Shop by Purpose"
-                        : c.collection_type === "planet"
-                          ? "Shop by Planet"
-                          : c.parent_id
-                            ? "Subcategory"
-                            : "Main category"}{" "}
-                      · {c.is_active ? "Visible" : "Hidden"}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 12 }}>
+              {([
+                { key: "category", title: "Shop by Category", hint: "Main categories & subcategories" },
+                { key: "purpose", title: "Shop by Purpose", hint: "Customer goals & intentions" },
+                { key: "planet", title: "Shop by Planet", hint: "Planetary collections" },
+              ] as const).map((item) => {
+                const count = cats.filter((c) => (c.collection_type || "category") === item.key).length;
+                const activeCount = cats.filter((c) => (c.collection_type || "category") === item.key && c.is_active).length;
+                const selected = categoryFilter === item.key;
+                return (
+                  <button key={item.key} onClick={() => { setCategoryFilter(item.key); setCat({ ...blankCat, collection_type: item.key }); setCategorySearch(""); }}
+                    style={{ textAlign: "left", border: selected ? "1px solid #a88955" : "1px solid #e8dfd3", background: selected ? "#f7f0e4" : "#fff", borderRadius: 12, padding: "17px 18px", cursor: "pointer", boxShadow: selected ? "0 5px 18px #6b4d2414" : "none", color: "#35251f" }}>
+                    <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <b style={{ fontSize: 13 }}>{item.title}</b>
+                      <strong style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#8b6b3f" }}>{count}</strong>
                     </span>
-                  </div>
-                  <button onClick={() => setCat(c)}>Edit</button>
-                  <button
-                    className="delete"
-                    onClick={() => remove("categories", c.id)}
-                  >
-                    <Trash2 />
+                    <span style={{ display: "block", fontSize: 11, color: "#82766b", marginTop: 5 }}>{item.hint}</span>
+                    <span style={{ display: "block", fontSize: 10, color: "#8b6b3f", marginTop: 10, fontWeight: 700 }}>{activeCount} VISIBLE · {count - activeCount} HIDDEN</span>
                   </button>
-                </article>
-              ))}
+                );
+              })}
             </div>
-          </div>
-        )}
-        {(tab === "products" && catalogView === "products" || tab === "add-product") && (
-          <div className="admin-product-workspace">
-            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
-              <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
-              <label>
-                Product Name
-                <input
-                  value={prod.name}
-                  onChange={(e) => setProd({ ...prod, name: e.target.value })}
-                />
-              </label>
-              <label>
-                URL Slug
-                <input
-                  value={prod.slug}
-                  placeholder="created automatically"
-                  onChange={(e) => setProd({ ...prod, slug: e.target.value })}
-                />
-              </label>
-              <label>
-                Short Description
-                <input
-                  value={prod.short_description || ""}
-                  onChange={(e) =>
-                    setProd({ ...prod, short_description: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Full Description
-                <textarea
-                  value={prod.description || ""}
-                  onChange={(e) =>
-                    setProd({ ...prod, description: e.target.value })
-                  }
-                />
-              </label>
-              <div className="two">
-                <label>
-                  Selling Price ₹
-                  <input
-                    type="number"
-                    value={prod.price_inr}
-                    onChange={(e) =>
-                      setProd({ ...prod, price_inr: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  MRP ₹
-                  <input
-                    type="number"
-                    value={prod.compare_at_price_inr || ""}
-                    onChange={(e) =>
-                      setProd({ ...prod, compare_at_price_inr: e.target.value })
-                    }
-                  />
-                </label>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.45fr) minmax(300px,0.85fr)", gap: 18, alignItems: "start" }}>
+              <div style={{ background: "#fff", border: "1px solid #e9e1d7", borderRadius: 14, overflow: "hidden" }}>
+                <div style={{ padding: 18, borderBottom: "1px solid #eee7df", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: "#35251f", fontSize: 17 }}>{categoryFilter === "category" ? "Shop by Category" : categoryFilter === "purpose" ? "Shop by Purpose" : "Shop by Planet"}</h3>
+                    <p style={{ margin: "4px 0 0", color: "#8b8178", fontSize: 11 }}>Only this collection is shown below</p>
+                  </div>
+                  <input value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} placeholder="Search this collection…" style={{ maxWidth: 240, padding: "10px 12px", borderRadius: 8, border: "1px solid #e4dbd0", fontSize: 12 }} />
+                </div>
+                <div style={{ padding: 12, display: "grid", gap: 8 }}>
+                  {cats.filter((c) => (c.collection_type || "category") === categoryFilter && (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()) || (c.slug || "").toLowerCase().includes(categorySearch.toLowerCase()))).sort((a,b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((c) => {
+                    const parent = cats.find((p) => p.id === c.parent_id);
+                    return (
+                      <article key={c.id} style={{ display: "grid", gridTemplateColumns: "52px minmax(0,1fr) auto auto", gap: 12, alignItems: "center", padding: 12, border: cat.id === c.id ? "1px solid #b99b68" : "1px solid #f0ebe4", borderRadius: 10, background: cat.id === c.id ? "#fbf7ef" : "#fff" }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 9, overflow: "hidden", display: "grid", placeItems: "center", background: "#f5f0e8", color: "#a58a5e", fontSize: 20 }}>{c.image_url ? <img src={c.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "✦"}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <b style={{ display: "block", color: "#382c25", fontSize: 13 }}>{c.name}</b>
+                          <span style={{ display: "block", color: "#92877d", fontSize: 10, marginTop: 4 }}>{categoryFilter === "category" ? (parent ? "↳ Subcategory of " + parent.name : "Main category") : categoryFilter === "purpose" ? "Purpose collection" : "Planet collection"} · {c.is_active ? "Visible on website" : "Hidden"}</span>
+                          <span style={{ display: "block", color: "#a39a91", fontSize: 10, marginTop: 3 }}>{c.slug}</span>
+                        </div>
+                        <button onClick={() => { setCat(c); setCategoryFilter(c.collection_type || "category"); }} style={{ border: "1px solid #d9c8ad", borderRadius: 7, background: "#fff", color: "#654d32", padding: "8px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Edit</button>
+                        <button aria-label={"Delete " + c.name} onClick={() => remove("categories", c.id)} style={{ border: "1px solid #f0d8d4", borderRadius: 7, background: "#fffafa", color: "#a34b42", padding: 8, cursor: "pointer" }}><Trash2 size={15} /></button>
+                      </article>
+                    );
+                  })}
+                  {cats.filter((c) => (c.collection_type || "category") === categoryFilter && (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()) || (c.slug || "").toLowerCase().includes(categorySearch.toLowerCase()))).length === 0 && (
+                    <div style={{ textAlign: "center", padding: "38px 16px", color: "#8b8178" }}><b style={{ display: "block", color: "#51443a", marginBottom: 6 }}>No matching items</b><span style={{ fontSize: 12 }}>Add a new item or change your search.</span></div>
+                  )}
+                </div>
               </div>
-              <div className="two">
+              <div className="editor" style={{ position: "sticky", top: 18 }}>
+                <h2 style={{ marginTop: 0 }}>{cat.id ? "Edit " + (cat.collection_type === "purpose" ? "Purpose" : cat.collection_type === "planet" ? "Planet" : "Category") : "Create New " + (categoryFilter === "purpose" ? "Purpose" : categoryFilter === "planet" ? "Planet" : "Category")}</h2>
                 <label>
-                  Stock Quantity
-                  <input
-                    type="number"
-                    value={prod.stock_quantity}
-                    onChange={(e) =>
-                      setProd({ ...prod, stock_quantity: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Badge
-                  <select
-                    value={prod.badge || ""}
-                    onChange={(e) =>
-                      setProd({ ...prod, badge: e.target.value })
-                    }
-                  >
-                    <option value="">None</option>
-                    <option value="new">New Arrival</option>
-                    <option value="bestseller">Best Seller</option>
-                    <option value="one-of-one">One of One</option>
-                    <option value="gift">Unique Gift</option>
+                  Collection Type
+                  <select value={cat.collection_type || categoryFilter} onChange={(e) => { const next = e.target.value as "category" | "purpose" | "planet"; setCategoryFilter(next); setCat({ ...cat, collection_type: next, parent_id: "" }); }}>
+                    <option value="category">Shop by Category</option>
+                    <option value="purpose">Shop by Purpose</option>
+                    <option value="planet">Shop by Planet</option>
                   </select>
                 </label>
+                <label>Name<input value={cat.name} onChange={(e) => setCat({ ...cat, name: e.target.value })} placeholder="Enter a clear name" /></label>
+                <label>URL Slug<input value={cat.slug} placeholder="Created automatically if blank" onChange={(e) => setCat({ ...cat, slug: e.target.value })} /></label>
+                <label>Description<textarea value={cat.description} onChange={(e) => setCat({ ...cat, description: e.target.value })} /></label>
+                {cat.collection_type === "category" && <label>Parent Category<select value={cat.parent_id || ""} onChange={(e) => setCat({ ...cat, parent_id: e.target.value })}><option value="">None — Main Category</option>{cats.filter((c) => c.id !== cat.id && !c.parent_id && c.collection_type === "category").map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label>}
+                <label>Display Order<input type="number" value={cat.sort_order} onChange={(e) => setCat({ ...cat, sort_order: e.target.value })} /></label>
+                <label>Icon / Photo<input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], "cat")} /></label>
+                {cat.image_url && <img className="admin-preview" src={cat.image_url} alt="Category preview" />}
+                <label className="check"><input type="checkbox" checked={cat.is_active} onChange={(e) => setCat({ ...cat, is_active: e.target.checked })} /> Visible on website</label>
+                <div className="editor-actions"><button onClick={saveCat}><Save /> Save {cat.collection_type === "purpose" ? "Purpose" : cat.collection_type === "planet" ? "Planet" : "Category"}</button><button onClick={() => setCat({ ...blankCat, collection_type: categoryFilter })}>Clear</button></div>
               </div>
-              <label>
-                Product Category
-                <select
-                  value={prod.category_id || ""}
-                  onChange={(e) =>
-                    setProd({ ...prod, category_id: e.target.value, category_ids: e.target.value ? [e.target.value] : [] })
-                  }
-                >
-                  <option value="">Select</option>
-                  {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Main Product Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] && upload(e.target.files[0], "prod")
-                  }
-                />
-              </label>
-              {prod.primary_image_url && (
-                <img className="admin-preview" src={prod.primary_image_url} />
-              )}
-              <label>
-                Additional Product Images (select many)
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) =>
-                    e.target.files && uploadGallery(e.target.files)
-                  }
-                />
-              </label>
-              {prod.image_urls?.length > 0 && (
-                <div className="admin-gallery admin-gallery-compact">
-                  {prod.image_urls.map((url: string, i: number) => (
-                    <div key={url}>
-                      <img src={url} />
-                      <button
-                        onClick={() =>
-                          setProd({
-                            ...prod,
-                            image_urls: prod.image_urls.filter(
-                              (_: string, x: number) => x !== i,
-                            ),
-                          })
-                        }
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={prod.is_featured}
-                  onChange={(e) =>
-                    setProd({ ...prod, is_featured: e.target.checked })
-                  }
-                />{" "}
-                Top Pick / Featured
-              </label>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={prod.is_active}
-                  onChange={(e) =>
-                    setProd({ ...prod, is_active: e.target.checked })
-                  }
-                />{" "}
-                Visible on website
-              </label>
-              <div className="editor-actions product-save-actions">
-                <button onClick={saveProd}>
-                  <Save />
-                  Save Product
-                </button>
-                <button onClick={() => setProd(blankProd)}>Clear</button>
-              </div>
-              <div className="bottom-save-product">
-                <span>{prod.image_urls?.length || 0} additional image(s) attached</span>
-                <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
-              </div>
-            </div>}
-            {tab === "products" && catalogView === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
-              <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
-                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 220px", minWidth: 180 }} />
-                <select aria-label="Filter products" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
-                <select aria-label="Sort products" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
-                <small style={{ color: "#806f68" }}>{sortedProducts.length} of {products.length} products</small>
-              </div>
-              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
-              {sortedProducts.length ? (
-                paginatedProducts.map((p) => (
-                  <article key={p.id} className="product-admin-card">
-                    <div className="product-admin-card-head">
-                      <img src={p.primary_image_url || "/placeholder.png"} alt="" />
-                      <div className="product-admin-card-title">
-                        <b title={p.name}>{p.name}</b>
-                        <span className={p.is_active ? "product-status-visible" : "product-status-hidden"}>{p.is_active ? "Visible on store" : "Hidden from store"}</span>
-                      </div>
-                    </div>
-                    <div className="product-admin-card-meta">
-                      {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
-                      <span className="product-stock-label">Stock</span>
-                      {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })}>{p.stock_quantity} <small>✎</small></button>}
-                      <small>{p.image_urls?.length || 0} extra photos</small>
-                    </div>
-                    <div className="product-admin-card-actions">
-                      <button className="product-edit-action" onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
-                      <button className={p.is_active ? "product-hide-button" : "product-show-button"} onClick={() => toggleProductVisibility(p)}>{p.is_active ? "Hide" : "Show"}</button>
-                      <button className="product-delete-icon" aria-label={"Delete " + p.name} title="Delete product" onClick={() => remove("products", p.id)}><Trash2 /></button>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div className="admin-empty">
-                  <Package />
-                  <h3>No products yet</h3>
-                  <p>
-                    Add your first product using the form. Nothing is
-                    pre-listed.
-                  </p>
-                </div>
-              )}
-              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
-            </div>}
+            </div>
           </div>
-        )}
-        {tab === "products" && catalogView === "inventory" && (
-          <div className="inventory-admin">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 18 }}>
-              <div><h2 style={{ margin: 0, font: "28px Georgia,serif", color: "#421015" }}>Inventory Overview</h2><small style={{ color: "#806f68" }}>Update stock directly here. Changes save to your product inventory.</small></div>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ background: "#fff", border: "1px solid #e2d7cc", padding: "9px 12px", borderRadius: 8 }}>{products.length} total products</span>
-                <span style={{ background: "#fff4e5", border: "1px solid #efd4a9", padding: "9px 12px", borderRadius: 8 }}>{lowStock} low stock (3 or less)</span>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
-              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
-              <select aria-label="Filter inventory" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
-              <select aria-label="Sort inventory" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
-            </div>
-            {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
-            <div style={{ background: "#fff", border: "1px solid #e2d7cc", overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
-                <thead><tr style={{ background: "#f8f2eb", textAlign: "left" }}><th style={{ padding: 13 }}>Product</th><th style={{ padding: 13 }}>Price</th><th style={{ padding: 13 }}>Available stock</th><th style={{ padding: 13 }}>Status</th><th style={{ padding: 13 }}>Action</th></tr></thead>
-                <tbody>
-                  {paginatedProducts.map((p) => (
-                    <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
-                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
-                      <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
-                      <td style={{ padding: 10 }}>{quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 90, padding: 8, border: "1px solid #d8c5ae" }} /> : <button type="button" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "8px 12px", background: Number(p.stock_quantity) <= 3 ? "#fff4e5" : "#fff", color: "#4b3529", fontWeight: 700 }}>{p.stock_quantity} ✎</button>}</td>
-                      <td style={{ padding: 10 }}><span style={{ color: !p.is_active ? "#806f68" : Number(p.stock_quantity) <= 3 ? "#a45b00" : "#267347", fontWeight: 700 }}>{!p.is_active ? "Hidden" : Number(p.stock_quantity) <= 3 ? "Low stock" : "In stock"}</span></td>
-                      <td style={{ padding: 10 }}><button onClick={() => { setProd(p); setTab("add-product"); }} style={{ border: "1px solid #d8c5ae", padding: "8px 11px", background: "#fff" }}>Edit product</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!filteredProducts.length && <p style={{ padding: 24 }}>No products match these filters.</p>}
+        )}these filters.</p>}
             </div>
             {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
           </div>
