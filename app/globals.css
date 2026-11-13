@@ -514,3 +514,105 @@ body {
   .catalog-layout .product-grid{gap:10px}
   .catalog{padding-left:12px;padding-right:12px}
 }
+
+
+/* Mobile storefront quality pass — scoped to customer-facing pages. */
+@media (max-width: 900px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  header { min-width: 0; }
+  .brand { min-width: 0; gap: 7px; }
+  .brand b { white-space: nowrap; }
+  .head-actions { min-width: 0; }
+  .head-actions a, .head-actions button {
+    min-width: 38px;
+    min-height: 42px;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+  }
+  .search input { min-width: 0; font-size: 16px; }
+  .hero-v2 { min-height: 0; }
+  .hero-art { width: 100%; }
+  .hero-copy-v2 { min-width: 0; }
+  .hero-copy-v2 h1 { overflow-wrap: anywhere; }
+  .hero-buttons { width: 100%; }
+  .hero-buttons button { flex: 1 1 145px; min-width: 0; }
+  .catalog-toolbar { min-width: 0; }
+  .catalog-toolbar label { min-width: 0; }
+  .catalog-toolbar select { min-width: 0; }
+  .catalog-layout, .catalog-layout .product-grid,
+  .product-card-clickable, .info { min-width: 0; }
+  .info h3 { overflow-wrap: anywhere; }
+  .product-detail { min-width: 0; }
+  .product-copy { min-width: 0; overflow-wrap: anywhere; }
+  .backdrop:has(.checkout-modal) {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  }
+  .checkout-modal {
+    width: 100%;
+    max-width: 680px;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
+    margin: 0 auto;
+    border-radius: 12px;
+    overscroll-behavior: contain;
+  }
+  .checkout-modal input, .checkout-modal select, .checkout-modal textarea {
+    min-width: 0;
+    font-size: 16px;
+  }
+  .checkout-products, .checkout-nav-actions, .checkout-summary,
+  .checkout-modal > .place-order { min-width: 0; }
+  .wa { bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 600px) {
+  .hero-v2 { min-height: 0; }
+  .hero-v2 .hero-art { height: clamp(250px, 78vw, 360px); min-height: 0; }
+  .hero-v2 .hero-copy-v2 {
+    margin-top: -28px;
+    padding: 52px 18px 34px;
+  }
+  .hero-copy-v2 h1 { font-size: clamp(34px, 9vw, 44px); }
+  .hero-copy-v2 h2 { line-height: 1.3; }
+  .hero-copy-v2 p { line-height: 1.65; }
+  .hero-buttons button { min-height: 46px; padding: 12px 10px; font-size: 11px; }
+  .catalog-toolbar { gap: 8px; }
+  .catalog-toolbar label { font-size: 10px; }
+  .catalog-toolbar select { max-width: 52vw; }
+  .catalog-layout .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-card-clickable { overflow: hidden; }
+  .photo { width: 100%; aspect-ratio: 1 / 1; height: auto; }
+  .info { padding: 10px; }
+  .info h3 { font-size: 15px; line-height: 1.3; min-height: 2.6em; }
+  .info > div { gap: 7px; }
+  .info div button { min-width: 0; padding: 10px 6px; font-size: 10px; }
+  .cart {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    align-items: center;
+  }
+  .cart img { width: 56px; height: 56px; grid-row: span 2; }
+  .cart b { min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+  .cart span { grid-column: 2; font-size: 13px; }
+  .cart button { grid-column: 3; grid-row: 1 / span 2; min-width: 36px; min-height: 40px; }
+  .checkout-modal { padding-left: 14px !important; padding-right: 14px !important; }
+  .checkout-modal > h2 { font-size: 28px !important; }
+  .checkout-product-row div b { overflow-wrap: anywhere; }
+  footer { min-width: 0; }
+  footer a, footer button { overflow-wrap: anywhere; }
+  .wa { right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 380px) {
+  header { padding-left: 9px; padding-right: 9px; grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .brand b { font-size: 15px; letter-spacing: .4px; }
+  .head-actions { gap: 0; }
+  .head-actions a, .head-actions button { padding: 4px; min-width: 34px; }
+  .catalog-toolbar .filter-toggle { min-width: 86px; }
+  .catalog-toolbar select { max-width: 48vw; }
+  .info h3 { font-size: 14px; }
+}
