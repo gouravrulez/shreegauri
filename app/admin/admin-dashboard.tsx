@@ -350,6 +350,18 @@ export default function AdminDashboard() {
     setSettings({ ...settings, [field]: data.publicUrl });
     setNotice("Image ready. Click Save All Website Settings.");
   }
+  async function toggleCategoryVisibility(item: Cat) {
+    const nextVisible = !item.is_active;
+    setNotice((nextVisible ? "Making " : "Hiding ") + item.name + "...");
+    const { error } = await supabase.from("categories").update({ is_active: nextVisible }).eq("id", item.id);
+    if (error) {
+      setNotice("Visibility could not be updated: " + error.message);
+      return;
+    }
+    setCats((current) => current.map((c) => c.id === item.id ? { ...c, is_active: nextVisible } : c));
+    if (cat.id === item.id) setCat((current: any) => ({ ...current, is_active: nextVisible }));
+    setNotice(item.name + (nextVisible ? " is now visible on the website." : " is now hidden from the website."));
+  }
   async function saveCat() {
     const data = {
       ...cat,
@@ -876,13 +888,14 @@ export default function AdminDashboard() {
                   {cats.filter((c) => (c.collection_type || "category") === categoryFilter && (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()) || (c.slug || "").toLowerCase().includes(categorySearch.toLowerCase()))).sort((a,b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((c) => {
                     const parent = cats.find((p) => p.id === c.parent_id);
                     return (
-                      <article key={c.id} style={{ display: "grid", gridTemplateColumns: "52px minmax(0,1fr) auto auto", gap: 12, alignItems: "center", padding: 12, border: cat.id === c.id ? "1px solid #b99b68" : "1px solid #f0ebe4", borderRadius: 10, background: cat.id === c.id ? "#fbf7ef" : "#fff" }}>
+                      <article key={c.id} style={{ display: "grid", gridTemplateColumns: "52px minmax(0,1fr) auto auto auto", gap: 12, alignItems: "center", padding: 12, border: cat.id === c.id ? "1px solid #b99b68" : "1px solid #f0ebe4", borderRadius: 10, background: cat.id === c.id ? "#fbf7ef" : "#fff" }}>
                         <div style={{ width: 48, height: 48, borderRadius: 9, overflow: "hidden", display: "grid", placeItems: "center", background: "#f5f0e8", color: "#a58a5e", fontSize: 20 }}>{c.image_url ? <img src={c.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "✦"}</div>
                         <div style={{ minWidth: 0 }}>
                           <b style={{ display: "block", color: "#382c25", fontSize: 13 }}>{c.name}</b>
                           <span style={{ display: "block", color: "#92877d", fontSize: 10, marginTop: 4 }}>{categoryFilter === "category" ? (parent ? "↳ Subcategory of " + parent.name : "Main category") : categoryFilter === "purpose" ? "Purpose collection" : "Planet collection"} · {c.is_active ? "Visible on website" : "Hidden"}</span>
                           <span style={{ display: "block", color: "#a39a91", fontSize: 10, marginTop: 3 }}>{c.slug}</span>
                         </div>
+                        <button onClick={() => toggleCategoryVisibility(c)} disabled={staffRole !== "admin" && staffRole !== "manager" && !isPrimaryAdmin} style={{ minWidth: 94, border: c.is_active ? "1px solid #e6c8c3" : "1px solid #c9ddcf", borderRadius: 7, background: c.is_active ? "#fff7f5" : "#f2faf4", color: c.is_active ? "#a34b42" : "#32734a", padding: "8px 10px", fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{c.is_active ? "● Visible · Hide" : "○ Hidden · Show"}</button>
                         <button onClick={() => { setCat(c); setCategoryFilter(c.collection_type || "category"); }} style={{ border: "1px solid #d9c8ad", borderRadius: 7, background: "#fff", color: "#654d32", padding: "8px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Edit</button>
                         <button aria-label={"Delete " + c.name} onClick={() => remove("categories", c.id)} style={{ border: "1px solid #f0d8d4", borderRadius: 7, background: "#fffafa", color: "#a34b42", padding: 8, cursor: "pointer" }}><Trash2 size={15} /></button>
                       </article>
