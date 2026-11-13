@@ -125,8 +125,6 @@ export default function Storefront() {
     [sort, setSort] = useState("featured"),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
-    [maxPrice, setMaxPrice] = useState(""),
-    [minPrice, setMinPrice] = useState(""),
     [filtersOpen, setFiltersOpen] = useState(false),
     [rating, setRating] = useState(5),
     [reviewTitle, setReviewTitle] = useState(""),
@@ -352,8 +350,6 @@ export default function Storefront() {
         (view !== "best" || p.is_featured) &&
         (categoryFilter === "all" || p.category_id === categoryFilter) &&
         (!stockOnly || p.stock_quantity > 0) &&
-        (!minPrice || Number(p.price_inr) >= Number(minPrice)) &&
-        (!maxPrice || Number(p.price_inr) <= Number(maxPrice)),
     );
     return [...list].sort((a, b) =>
       sort === "price-low"
@@ -368,7 +364,7 @@ export default function Storefront() {
                 ? new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
                 : 0,
     );
-  }, [products, q, view, cats, categoryFilter, stockOnly, minPrice, maxPrice, sort]);
+  }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -712,7 +708,7 @@ export default function Storefront() {
               className="filter-toggle"
               onClick={() => setFiltersOpen(!filtersOpen)}
             >
-              <SlidersHorizontal /> FILTER{(categoryFilter !== "all" || stockOnly || minPrice || maxPrice) ? <em className="filter-count">{Number(categoryFilter !== "all") + Number(stockOnly) + Number(Boolean(minPrice)) + Number(Boolean(maxPrice))}</em> : null}
+              <SlidersHorizontal /> FILTER{(categoryFilter !== "all" || stockOnly) ? <em className="filter-count">{Number(categoryFilter !== "all") + Number(stockOnly)}</em> : null}
             </button>
             <label>
               SORT BY{" "}
@@ -759,13 +755,6 @@ export default function Storefront() {
                   ))}
               </fieldset>
               <fieldset>
-                <legend>Price range</legend>
-                <div className="price-range-filter">
-                  <label>Minimum price <span>₹</span><input type="number" min="0" inputMode="numeric" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} /></label>
-                  <label>Maximum price <span>₹</span><input type="number" min="0" inputMode="numeric" placeholder="No limit" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} /></label>
-                </div>
-              </fieldset>
-              <fieldset>
                 <legend>Availability</legend>
                 <label>
                   <input
@@ -781,8 +770,6 @@ export default function Storefront() {
                 onClick={() => {
                   setCategoryFilter("all");
                   setStockOnly(false);
-                  setMinPrice("");
-                  setMaxPrice("");
                   setQ("");
                 }}
               >
