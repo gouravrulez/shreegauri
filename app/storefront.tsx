@@ -46,6 +46,7 @@ type P = {
   stock_quantity: number;
   is_featured: boolean;
   badge: string | null;
+  created_at?: string;
 };
 type AstrologyService = { name: string; description: string; active: boolean };
 const defaultAstrologyServices: AstrologyService[] = [
@@ -125,6 +126,7 @@ export default function Storefront() {
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [maxPrice, setMaxPrice] = useState(""),
+    [minPrice, setMinPrice] = useState(""),
     [filtersOpen, setFiltersOpen] = useState(false),
     [rating, setRating] = useState(5),
     [reviewTitle, setReviewTitle] = useState(""),
@@ -350,6 +352,7 @@ export default function Storefront() {
         (view !== "best" || p.is_featured) &&
         (categoryFilter === "all" || p.category_id === categoryFilter) &&
         (!stockOnly || p.stock_quantity > 0) &&
+        (!minPrice || Number(p.price_inr) >= Number(minPrice)) &&
         (!maxPrice || Number(p.price_inr) <= Number(maxPrice)),
     );
     return [...list].sort((a, b) =>
@@ -361,9 +364,11 @@ export default function Storefront() {
             ? a.name.localeCompare(b.name)
             : sort === "featured"
               ? Number(b.is_featured) - Number(a.is_featured)
-              : 0,
+              : sort === "newest"
+                ? new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+                : 0,
     );
-  }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
+  }, [products, q, view, cats, categoryFilter, stockOnly, minPrice, maxPrice, sort]);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -710,7 +715,7 @@ export default function Storefront() {
               className="filter-toggle"
               onClick={() => setFiltersOpen(!filtersOpen)}
             >
-              <SlidersHorizontal /> FILTER
+              <SlidersHorizontal /> FILTER{(categoryFilter !== "all" || stockOnly || minPrice || maxPrice) ? <em className="filter-count">{Number(categoryFilter !== "all") + Number(stockOnly) + Number(Boolean(minPrice)) + Number(Boolean(maxPrice))}</em> : null}
             </button>
             <label>
               SORT BY{" "}
@@ -757,17 +762,11 @@ export default function Storefront() {
                   ))}
               </fieldset>
               <fieldset>
-                <legend>Price</legend>
-                <label className="price-filter">
-                  Up to ₹
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Any price"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                  />
-                </label>
+                <legend>Price range</legend>
+                <div className="price-range-filter">
+                  <label>Minimum price <span>₹</span><input type="number" min="0" inputMode="numeric" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} /></label>
+                  <label>Maximum price <span>₹</span><input type="number" min="0" inputMode="numeric" placeholder="No limit" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} /></label>
+                </div>
               </fieldset>
               <fieldset>
                 <legend>Availability</legend>
@@ -785,13 +784,16 @@ export default function Storefront() {
                 onClick={() => {
                   setCategoryFilter("all");
                   setStockOnly(false);
+                  setMinPrice("");
                   setMaxPrice("");
                   setQ("");
                 }}
               >
                 CLEAR ALL
               </button>
+              <button className="apply-filters" onClick={() => setFiltersOpen(false)}>SHOW {shown.length} PRODUCTS</button>
             </aside>
+            {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="product-grid">
               {shown.length ? (
                 shown.map((p) => (
