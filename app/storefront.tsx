@@ -560,63 +560,7 @@ export default function Storefront() {
           <button onClick={() => go("astrology")} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 25px",background:"#741923",color:"#ffffff",border:"1px solid #741923",borderRadius:7,fontWeight:800,letterSpacing:".04em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
         </section>
       )}
-      {view === "home" && (
-        <>
-          <section className="hero-v2 hero-loaded">
-            <div
-              className="hero-art"
-              style={{
-                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-hero-fast.webp)`,
-              }}
-            />
-            <div className="hero-copy-v2">
-              <small>WELCOME TO</small>
-              <h1>SHREE GAURI</h1>
-              <div className="gold-rule" />
-              <h2>{s.hero_title}</h2>
-              <p>{s.hero_text}</p>
-              <blockquote>“Where devotion meets timeless beauty.”</blockquote>
-              <div className="hero-buttons">
-                <button onClick={() => go("shop")}>SHOP NOW</button>
-                <button className="ghost" onClick={() => go("shop")}>
-                  EXPLORE COLLECTIONS
-                </button>
-              </div>
-            </div>
-            <span className="sacred-mark">श्रीं</span>
-          </section>
-          <section className="trust">
-            <div>
-              <ShieldCheck />
-              <b>100% Authentic</b>
-              <small>Carefully selected</small>
-            </div>
-            <div>
-              <Gem />
-              <b>Premium Quality</b>
-              <small>Genuine craftsmanship</small>
-            </div>
-            <div>
-              <PackageCheck />
-              <b>Secure Packaging</b>
-              <small>Delivered with care</small>
-            </div>
-            <div>
-              <Sparkles />
-              <b>Open 24/7</b>
-              <small>Including Sundays</small>
-            </div>
-          </section>
-          <section className="devotion-note">
-            <span>✦</span>
-            <p>
-              Chosen with reverence, presented with honesty, and delivered with
-              care.
-            </p>
-            <span>✦</span>
-          </section>
-        </>
-      )}
+
       {view === "astrology" && (
         <section className="section" style={{padding:"clamp(28px,6vw,76px) 20px",background:"#fbf7ef",color:"#332a27"}}>
           <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid #d8c8a8",borderRadius:18,padding:"clamp(22px,5vw,54px)",textAlign:"center",background:"#fffdf8",boxShadow:"0 18px 50px rgba(67,44,31,.08)"}}>
