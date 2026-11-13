@@ -479,3 +479,38 @@ body {
  .admin-login-art-copy h2{font-size:27px}
  .admin-login-art-foot{font-size:8px;letter-spacing:1px}
 }
+
+
+/* Refined marketplace-style catalogue filters */
+.catalog-toolbar{position:sticky;top:0;z-index:35;background:rgba(255,253,249,.97);backdrop-filter:blur(12px);padding:0 14px;box-shadow:0 5px 18px rgba(58,35,25,.055)}
+.catalog-layout .filters{position:sticky;top:78px;max-height:calc(100vh - 96px);overflow:auto;border-radius:8px;box-shadow:0 8px 24px rgba(58,35,25,.045)}
+.filter-toggle{position:relative;border:1px solid #d9c9b9;border-radius:7px;padding:10px 14px;background:#fff;color:#482326;cursor:pointer}
+.filter-toggle:hover{border-color:#9b6a32;background:#fbf7f0}
+.filter-count{font-style:normal;font-size:10px;line-height:18px;min-width:18px;height:18px;text-align:center;border-radius:50%;background:#6a151b;color:#fff;margin-left:2px}
+.apply-filters{display:none}
+.filter-backdrop{display:none}
+@media(max-width:900px){
+  .catalog-toolbar{top:0;min-height:58px;padding:0 4px;gap:10px}
+  .catalog-toolbar .filter-toggle{display:flex;align-items:center;justify-content:center;min-width:104px;padding:10px 12px}
+  .catalog-toolbar label{margin-left:auto}
+  .catalog-toolbar select{max-width:170px;border-radius:6px}
+  .catalog-layout .filters{position:fixed;inset:0 auto 0 0;width:min(390px,88vw);max-height:none;z-index:102;margin:0;padding:22px 20px 28px;border:0;border-radius:0 14px 14px 0;overflow-y:auto;overscroll-behavior:contain;box-shadow:12px 0 40px rgba(25,15,10,.2);background:#fffdf9;display:none}
+  .catalog-layout .filters.open{display:block}
+  .filter-backdrop{display:block;position:fixed;inset:0;z-index:101;border:0;background:rgba(24,16,13,.48);backdrop-filter:blur(2px)}
+  .filters .filter-title{position:sticky;top:-22px;z-index:2;background:#fffdf9;padding:12px 0 16px}
+  .filters .filter-title button{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#f3ece4}
+  .filters .filter-title button svg{width:19px}
+  .filters fieldset{padding:17px 0}
+  .filters fieldset>label{font-size:14px;padding:3px 0}
+  .filters input[type=radio],.filters input[type=checkbox]{width:17px;height:17px}
+  .apply-filters{display:block;position:sticky;bottom:0;width:100%;margin-top:18px;padding:15px;border:0;border-radius:7px;background:#64171c;color:#fff;font-weight:800;letter-spacing:.5px}
+  .clear-filters{padding:18px 0}
+}
+@media(max-width:480px){
+  .catalog-toolbar{gap:7px;min-height:56px}
+  .catalog-toolbar .filter-toggle{min-width:94px;padding:9px 10px;font-size:11px}
+  .catalog-toolbar label{gap:5px}
+  .catalog-toolbar select{max-width:145px;padding:9px 7px;font-size:10px}
+  .catalog-layout .product-grid{gap:10px}
+  .catalog{padding-left:12px;padding-right:12px}
+}
