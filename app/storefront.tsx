@@ -349,7 +349,7 @@ export default function Storefront() {
           activeCategory === p.category_id) &&
         (view !== "best" || p.is_featured) &&
         (categoryFilter === "all" || p.category_id === categoryFilter) &&
-        (!stockOnly || p.stock_quantity > 0) &&
+        (!stockOnly || p.stock_quantity > 0)
     );
     return [...list].sort((a, b) =>
       sort === "price-low"
