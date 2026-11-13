@@ -149,6 +149,7 @@ export default function AdminDashboard() {
     [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
     [productQuery, setProductQuery] = useState(""),
     [productFilter, setProductFilter] = useState("all"),
+    [selectedProductCategory, setSelectedProductCategory] = useState("all"),
     [productSort, setProductSort] = useState("newest"),
     [productPage, setProductPage] = useState(1),
     [productPageSize, setProductPageSize] = useState(24);
@@ -474,6 +475,7 @@ export default function AdminDashboard() {
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) &&
+    (selectedProductCategory === "all" || p.category_id === selectedProductCategory) &&
     (productFilter === "all" || (productFilter === "active" && p.is_active) ||
       (productFilter === "hidden" && !p.is_active) ||
       (productFilter === "low-stock" && Number(p.stock_quantity) > 0 && Number(p.stock_quantity) <= 3) ||
@@ -1110,6 +1112,7 @@ export default function AdminDashboard() {
             </div>}
             {tab === "products" && catalogView === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
               <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
+                <select aria-label="Filter products by category" value={selectedProductCategory} onChange={(e) => { setSelectedProductCategory(e.target.value); setProductPage(1); }} style={{ flex: "0 1 210px", minWidth: 160 }}><option value="all">All Categories · All Products</option>{cats.filter((c) => c.collection_type === "category").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                 <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 220px", minWidth: 180 }} />
                 <select aria-label="Filter products" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
                 <select aria-label="Sort products" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
@@ -1163,6 +1166,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+              <select aria-label="Filter stock by category" value={selectedProductCategory} onChange={(e) => { setSelectedProductCategory(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff", minWidth: 190 }}><option value="all">All Categories · All Stock</option>{cats.filter((c) => c.collection_type === "category").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
               <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
               <select aria-label="Filter inventory" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
               <select aria-label="Sort inventory" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
