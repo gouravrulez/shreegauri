@@ -825,7 +825,13 @@ export default function AdminDashboard() {
             ) : (
               <div className="admin-empty">
                 <ClipboardList />
-                <h3>No        {tab === "categories" && (
+                <h3>No orders yet</h3>
+                <p>New website orders will appear here automatically.</p>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === "categories" && (
           <div style={{ display: "grid", gap: 22 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
               <div>
@@ -909,7 +915,262 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        )}these filters.</p>}
+        )}
+        {(tab === "products" && catalogView === "products" || tab === "add-product") && (
+          <div className="admin-product-workspace">
+            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
+              <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
+              <label>
+                Product Name
+                <input
+                  value={prod.name}
+                  onChange={(e) => setProd({ ...prod, name: e.target.value })}
+                />
+              </label>
+              <label>
+                URL Slug
+                <input
+                  value={prod.slug}
+                  placeholder="created automatically"
+                  onChange={(e) => setProd({ ...prod, slug: e.target.value })}
+                />
+              </label>
+              <label>
+                Short Description
+                <input
+                  value={prod.short_description || ""}
+                  onChange={(e) =>
+                    setProd({ ...prod, short_description: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Full Description
+                <textarea
+                  value={prod.description || ""}
+                  onChange={(e) =>
+                    setProd({ ...prod, description: e.target.value })
+                  }
+                />
+              </label>
+              <div className="two">
+                <label>
+                  Selling Price ₹
+                  <input
+                    type="number"
+                    value={prod.price_inr}
+                    onChange={(e) =>
+                      setProd({ ...prod, price_inr: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  MRP ₹
+                  <input
+                    type="number"
+                    value={prod.compare_at_price_inr || ""}
+                    onChange={(e) =>
+                      setProd({ ...prod, compare_at_price_inr: e.target.value })
+                    }
+                  />
+                </label>
+              </div>
+              <div className="two">
+                <label>
+                  Stock Quantity
+                  <input
+                    type="number"
+                    value={prod.stock_quantity}
+                    onChange={(e) =>
+                      setProd({ ...prod, stock_quantity: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Badge
+                  <select
+                    value={prod.badge || ""}
+                    onChange={(e) =>
+                      setProd({ ...prod, badge: e.target.value })
+                    }
+                  >
+                    <option value="">None</option>
+                    <option value="new">New Arrival</option>
+                    <option value="bestseller">Best Seller</option>
+                    <option value="one-of-one">One of One</option>
+                    <option value="gift">Unique Gift</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                Product Category
+                <select
+                  value={prod.category_id || ""}
+                  onChange={(e) =>
+                    setProd({ ...prod, category_id: e.target.value, category_ids: e.target.value ? [e.target.value] : [] })
+                  }
+                >
+                  <option value="">Select</option>
+                  {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Main Product Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    e.target.files?.[0] && upload(e.target.files[0], "prod")
+                  }
+                />
+              </label>
+              {prod.primary_image_url && (
+                <img className="admin-preview" src={prod.primary_image_url} />
+              )}
+              <label>
+                Additional Product Images (select many)
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) =>
+                    e.target.files && uploadGallery(e.target.files)
+                  }
+                />
+              </label>
+              {prod.image_urls?.length > 0 && (
+                <div className="admin-gallery admin-gallery-compact">
+                  {prod.image_urls.map((url: string, i: number) => (
+                    <div key={url}>
+                      <img src={url} />
+                      <button
+                        onClick={() =>
+                          setProd({
+                            ...prod,
+                            image_urls: prod.image_urls.filter(
+                              (_: string, x: number) => x !== i,
+                            ),
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={prod.is_featured}
+                  onChange={(e) =>
+                    setProd({ ...prod, is_featured: e.target.checked })
+                  }
+                />{" "}
+                Top Pick / Featured
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={prod.is_active}
+                  onChange={(e) =>
+                    setProd({ ...prod, is_active: e.target.checked })
+                  }
+                />{" "}
+                Visible on website
+              </label>
+              <div className="editor-actions product-save-actions">
+                <button onClick={saveProd}>
+                  <Save />
+                  Save Product
+                </button>
+                <button onClick={() => setProd(blankProd)}>Clear</button>
+              </div>
+              <div className="bottom-save-product">
+                <span>{prod.image_urls?.length || 0} additional image(s) attached</span>
+                <button onClick={saveProd}><Save /> SAVE PRODUCT</button>
+              </div>
+            </div>}
+            {tab === "products" && catalogView === "products" && <div className="records product-card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", alignItems: "stretch", gap: 14 }}>
+              <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
+                <input aria-label="Search products" placeholder="Search products by name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 220px", minWidth: 180 }} />
+                <select aria-label="Filter products" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
+                <select aria-label="Sort products" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ flex: "0 1 170px" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
+                <small style={{ color: "#806f68" }}>{sortedProducts.length} of {products.length} products</small>
+              </div>
+              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+              {sortedProducts.length ? (
+                paginatedProducts.map((p) => (
+                  <article key={p.id} className="product-admin-card">
+                    <div className="product-admin-card-head">
+                      <img src={p.primary_image_url || "/placeholder.png"} alt="" />
+                      <div className="product-admin-card-title">
+                        <b title={p.name}>{p.name}</b>
+                        <span className={p.is_active ? "product-status-visible" : "product-status-hidden"}>{p.is_active ? "Visible on store" : "Hidden from store"}</span>
+                      </div>
+                    </div>
+                    <div className="product-admin-card-meta">
+                      {quickEdit?.id === p.id && quickEdit.field === "price_inr" ? <input autoFocus aria-label={"Edit price for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "price_inr", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit price" onClick={() => setQuickEdit({ id: p.id, field: "price_inr", value: String(p.price_inr) })}>₹{Number(p.price_inr).toLocaleString("en-IN")} <small>✎</small></button>}
+                      <span className="product-stock-label">Stock</span>
+                      {quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} /> : <button type="button" title="Click to edit stock" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })}>{p.stock_quantity} <small>✎</small></button>}
+                      <small>{p.image_urls?.length || 0} extra photos</small>
+                    </div>
+                    <div className="product-admin-card-actions">
+                      <button className="product-edit-action" onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
+                      <button className={p.is_active ? "product-hide-button" : "product-show-button"} onClick={() => toggleProductVisibility(p)}>{p.is_active ? "Hide" : "Show"}</button>
+                      <button className="product-delete-icon" aria-label={"Delete " + p.name} title="Delete product" onClick={() => remove("products", p.id)}><Trash2 /></button>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="admin-empty">
+                  <Package />
+                  <h3>No products yet</h3>
+                  <p>
+                    Add your first product using the form. Nothing is
+                    pre-listed.
+                  </p>
+                </div>
+              )}
+              {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+            </div>}
+          </div>
+        )}
+        {tab === "products" && catalogView === "inventory" && (
+          <div className="inventory-admin">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 18 }}>
+              <div><h2 style={{ margin: 0, font: "28px Georgia,serif", color: "#421015" }}>Inventory Overview</h2><small style={{ color: "#806f68" }}>Update stock directly here. Changes save to your product inventory.</small></div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ background: "#fff", border: "1px solid #e2d7cc", padding: "9px 12px", borderRadius: 8 }}>{products.length} total products</span>
+                <span style={{ background: "#fff4e5", border: "1px solid #efd4a9", padding: "9px 12px", borderRadius: 8 }}>{lowStock} low stock (3 or less)</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+              <input aria-label="Search inventory" placeholder="Search inventory by product name…" value={productQuery} onChange={(e) => { setProductQuery(e.target.value); setProductPage(1); }} style={{ flex: "1 1 260px", minWidth: 180, padding: 12, border: "1px solid #d8cbc0", background: "#fff" }} />
+              <select aria-label="Filter inventory" value={productFilter} onChange={(e) => { setProductFilter(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="all">All products</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="low-stock">Low stock (3 or less)</option><option value="out-of-stock">Out of stock</option></select>
+              <select aria-label="Sort inventory" value={productSort} onChange={(e) => { setProductSort(e.target.value); setProductPage(1); }} style={{ padding: 12, border: "1px solid #d8cbc0", background: "#fff" }}><option value="newest">Newest first</option><option value="name-asc">Name A–Z</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="stock-low">Stock: low to high</option><option value="stock-high">Stock: high to low</option></select>
+            </div>
+            {sortedProducts.length > 0 && paginationControls(sortedProducts.length)}
+            <div style={{ background: "#fff", border: "1px solid #e2d7cc", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+                <thead><tr style={{ background: "#f8f2eb", textAlign: "left" }}><th style={{ padding: 13 }}>Product</th><th style={{ padding: 13 }}>Price</th><th style={{ padding: 13 }}>Available stock</th><th style={{ padding: 13 }}>Status</th><th style={{ padding: 13 }}>Action</th></tr></thead>
+                <tbody>
+                  {paginatedProducts.map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
+                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
+                      <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
+                      <td style={{ padding: 10 }}>{quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 90, padding: 8, border: "1px solid #d8c5ae" }} /> : <button type="button" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "8px 12px", background: Number(p.stock_quantity) <= 3 ? "#fff4e5" : "#fff", color: "#4b3529", fontWeight: 700 }}>{p.stock_quantity} ✎</button>}</td>
+                      <td style={{ padding: 10 }}><span style={{ color: !p.is_active ? "#806f68" : Number(p.stock_quantity) <= 3 ? "#a45b00" : "#267347", fontWeight: 700 }}>{!p.is_active ? "Hidden" : Number(p.stock_quantity) <= 3 ? "Low stock" : "In stock"}</span></td>
+                      <td style={{ padding: 10 }}><button onClick={() => { setProd(p); setTab("add-product"); }} style={{ border: "1px solid #d8c5ae", padding: "8px 11px", background: "#fff" }}>Edit product</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!filteredProducts.length && <p style={{ padding: 24 }}>No products match these filters.</p>}
             </div>
             {filteredProducts.length > 0 && paginationControls(filteredProducts.length)}
           </div>
