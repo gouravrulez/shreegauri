@@ -135,7 +135,8 @@ export default function AdminDashboard() {
     [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
-    [lastSeenActivity, setLastSeenActivity] = useState(0),
+    [readActivityIds, setReadActivityIds] = useState<string[]>([]),
+    [legacyLastSeen, setLegacyLastSeen] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
     [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false),
     [adminServiceConfigured, setAdminServiceConfigured] = useState(true),
@@ -163,6 +164,18 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (session) load();
   }, [session]);
+  useEffect(() => {
+    if (!session?.user?.id || typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem(`sg-admin-read-activity:${session.user.id}`);
+      const parsed = stored ? JSON.parse(stored) : [];
+      setReadActivityIds(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []);
+      setLegacyLastSeen(Number(localStorage.getItem("sg-admin-last-seen") || "0"));
+    } catch {
+      setReadActivityIds([]);
+      setLegacyLastSeen(0);
+    }
+  }, [session?.user?.id]);
   async function load() {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) return;
@@ -469,7 +482,8 @@ export default function AdminDashboard() {
     ...orders.slice(0, 12).map((o) => ({ id: `order-${o.id}`, time: new Date(o.created_at).getTime(), title: `New order ${o.order_number}`, detail: `${o.customer_name} · ₹${Number(o.total_inr).toLocaleString("en-IN")} · ${o.payment_status || o.order_status}`, kind: "order" })),
     ...reviews.slice(0, 12).map((r) => ({ id: `review-${r.id}`, time: new Date(r.created_at).getTime(), title: "New customer review", detail: `${r.reviewer_name} · ${r.rating}/5 · ${r.title || "Review received"}`, kind: "review" })),
   ].sort((a, b) => b.time - a.time).slice(0, 15);
-  const newActivityCount = activity.filter((a) => a.time > lastSeenActivity).length;
+  const isActivityRead = (id: string, time: number) => readActivityIds.includes(id) || time <= legacyLastSeen;
+  const newActivityCount = activity.filter((a) => !isActivityRead(a.id, a.time)).length;
   const pendingOrders = orders.filter((o) => o.order_status === "pending").length;
   const pendingReviews = reviews.filter((r) => !r.is_approved).length;
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
@@ -516,10 +530,14 @@ export default function AdminDashboard() {
     </div>
   );
   const paidRevenue = orders.filter((o) => ["paid", "success", "completed"].includes(String(o.payment_status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+  function markActivityRead(id: string) {
+    const next = Array.from(new Set([...readActivityIds, id]));
+    setReadActivityIds(next);
+    if (typeof window !== "undefined" && session?.user?.id) {
+      localStorage.setItem(`sg-admin-read-activity:${session.user.id}`, JSON.stringify(next));
+    }
+  }
   function openDashboard() {
-    const now = Date.now();
-    setLastSeenActivity(now);
-    if (typeof window !== "undefined") localStorage.setItem("sg-admin-last-seen", String(now));
     setTab("dashboard");
   }
 
@@ -688,9 +706,9 @@ export default function AdminDashboard() {
               <section className="activity-panel">
                 <div className="dashboard-panel-head"><div><small>LIVE ACTIVITY</small><h2>Notifications</h2></div>{newActivityCount > 0 && <b>{newActivityCount} NEW</b>}</div>
                 {activity.length ? activity.map((a) => (
-                  <button key={a.id} className="activity-row" onClick={() => setTab(a.kind === "order" ? "orders" : "reviews")}>
+                  <button key={a.id} className={`activity-row ${isActivityRead(a.id, a.time) ? "is-read" : "is-unread"}`} aria-label={`${a.title}, ${isActivityRead(a.id, a.time) ? "viewed" : "unread"}`} onClick={() => { markActivityRead(a.id); setTab(a.kind === "order" ? "orders" : "reviews"); }}>
                     <span className={a.kind}>{a.kind === "order" ? "O" : "★"}</span>
-                    <div><b>{a.title}</b><small>{a.detail}</small><em>{new Date(a.time).toLocaleString("en-IN")}</em></div>
+                    <div><b>{a.title}</b><small>{a.detail}</small><em>{new Date(a.time).toLocaleString("en-IN")}</em><small className="activity-read-state">{isActivityRead(a.id, a.time) ? "VIEWED" : "NEW"}</small></div>
                   </button>
                 )) : <p className="dashboard-empty">New orders and reviews will appear here automatically.</p>}
               </section>
