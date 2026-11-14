@@ -166,6 +166,11 @@ export default function AdminDashboard() {
   }, [session]);
   useEffect(() => {
     if (!session?.user?.id || typeof window === "undefined") return;
+    const refreshId = window.setInterval(() => { void load(); }, 30000);
+    return () => window.clearInterval(refreshId);
+  }, [session?.user?.id]);
+  useEffect(() => {
+    if (!session?.user?.id || typeof window === "undefined") return;
     try {
       const stored = localStorage.getItem(`sg-admin-read-activity:${session.user.id}`);
       const parsed = stored ? JSON.parse(stored) : [];
