@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, Fragment, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ShippingPromoManager from "./shipping-promo-manager";
 import {
   LogOut,
   Trash2,
@@ -38,11 +39,35 @@ type Prod = {
   compare_at_price_inr: number | null;
   stock_quantity: number;
   category_id: string | null;
+  category_ids: string[];
+  sku: string | null;
+  product_type: string | null;
+  material: string | null;
+  gemstone_name: string | null;
+  natural_lab_status: string | null;
+  origin: string | null;
+  treatment: string | null;
+  certification: string | null;
+  shape: string | null;
+  color: string | null;
+  weight_grams: number | null;
+  carat_weight: number | null;
+  chakras: string[];
+  zodiac_signs: string[];
+  seo_title: string | null;
+  seo_description: string | null;
   primary_image_url: string;
   image_urls: string[];
   badge: string | null;
   is_active: boolean;
   is_featured: boolean;
+  certificate_available?: boolean;
+  certificate_price_inr?: number;
+  abhimantrit_available?: boolean;
+  has_size_options?: boolean;
+  custom_shipping_enabled?: boolean;
+  custom_shipping_charge_inr?: number;
+  variant_rows?: any[];
 };
 type Review = {
   id: string;
@@ -86,8 +111,20 @@ type Order = {
   phone: string;
   shipping_address: Record<string, string>;
   total_inr: number;
+  shipping_inr?: number;
   payment_status: string;
   order_status: string;
+  courier_name: string | null;
+  courier_company_id?: string | null;
+  courier_charge_inr?: number;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  dispatch_date?: string | null;
+  expected_delivery_date?: string | null;
+  tracking_updated_at?: string | null;
+  coupon_code?: string | null;
+  coupon_discount_inr?: number;
+  refund_status: string;
   created_at: string;
   order_items: OrderItem[];
 };
@@ -110,12 +147,39 @@ const blankProd = {
   compare_at_price_inr: null,
   stock_quantity: 0,
   category_id: "",
+  category_ids: [] as string[],
+  sku: "",
+  product_type: "",
+  material: "",
+  gemstone_name: "",
+  natural_lab_status: "",
+  origin: "",
+  treatment: "",
+  certification: "",
+  shape: "",
+  color: "",
+  weight_grams: "",
+  carat_weight: "",
+  chakras: [] as string[],
+  zodiac_signs: [] as string[],
+  seo_title: "",
+  seo_description: "",
   primary_image_url: "",
   image_urls: [] as string[],
   badge: "",
   is_active: false,
   is_featured: false,
+  certificate_available: false,
+  certificate_price_inr: 0,
+  has_size_options: false,
+  abhimantrit_available: false,
+  custom_shipping_enabled: false,
+  custom_shipping_charge_inr: 0,
+  variant_rows: [] as any[],
 };
+const chakraOptions = ["Root", "Sacral", "Solar Plexus", "Heart", "Throat", "Third Eye", "Crown"];
+const zodiacOptions = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
     [email, setEmail] = useState(""),
@@ -128,6 +192,7 @@ export default function AdminDashboard() {
     [products, setProducts] = useState<Prod[]>([]),
     [reviews, setReviews] = useState<Review[]>([]),
     [orders, setOrders] = useState<Order[]>([]),
+    [shippingCompanies, setShippingCompanies] = useState<any[]>([]),
     [customers, setCustomers] = useState<Customer[]>([]),
     [settings, setSettings] = useState<any>(null),
     [cat, setCat] = useState<any>(blankCat),
@@ -135,6 +200,7 @@ export default function AdminDashboard() {
     [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
+    [shipmentDrafts, setShipmentDrafts] = useState<Record<string, any>>({}),
     [readActivityIds, setReadActivityIds] = useState<string[]>([]),
     [legacyLastSeen, setLegacyLastSeen] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
@@ -193,7 +259,7 @@ export default function AdminDashboard() {
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
     await loadAstrology(currentSession.access_token);
-    const [a, b, c, d, o, u] = await Promise.all([
+    const [a, b, c, d, o, u, sc] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
         .from("products")
@@ -212,6 +278,7 @@ export default function AdminDashboard() {
         .from("customers")
         .select("*")
         .order("created_at", { ascending: false }),
+      supabase.from("shipping_companies").select("id,name,default_charge_inr,is_active").order("name"),
     ]);
     if (a.data) setCats(a.data);
     if (b.data)
@@ -219,12 +286,19 @@ export default function AdminDashboard() {
         b.data.map((p: any) => ({
           ...p,
           image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          category_ids:
+            Array.isArray(p.category_ids) && p.category_ids.length
+              ? p.category_ids
+              : p.category_id
+                ? [p.category_id]
+                : [],
         })),
       );
     if (c.data) setSettings(c.data);
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
     if (u.data) setCustomers(u.data as Customer[]);
+    if (sc.data) setShippingCompanies(sc.data);
   }
   async function loadAstrology(accessToken?: string) {
     const token = accessToken || (await supabase.auth.getSession()).data.session?.access_token;
@@ -405,6 +479,10 @@ export default function AdminDashboard() {
     }
   }
   async function saveProd() {
+    if (prod.has_size_options && !(prod.variant_rows || []).some((v: any) => String(v.label || "").trim() && v.is_active !== false)) {
+      setNotice("Add at least one active size / weight option before saving this product.");
+      return;
+    }
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
     if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
@@ -419,23 +497,63 @@ export default function AdminDashboard() {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
-      category_id: prod.category_id || null,
+      category_ids: Array.isArray(prod.category_ids) ? prod.category_ids : [],
+      category_id:
+        (Array.isArray(prod.category_ids) && prod.category_ids[0]) ||
+        prod.category_id ||
+        null,
+      sku: prod.sku?.trim() || null,
+      weight_grams: prod.weight_grams ? Number(prod.weight_grams) : null,
+      carat_weight: prod.carat_weight ? Number(prod.carat_weight) : null,
+      chakras: Array.isArray(prod.chakras) ? prod.chakras : [],
+      zodiac_signs: Array.isArray(prod.zodiac_signs) ? prod.zodiac_signs : [],
+      seo_title: prod.seo_title?.trim() || null,
+      seo_description: prod.seo_description?.trim() || null,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
         : null,
       stock_quantity: Number(prod.stock_quantity),
+      certificate_available: Boolean(prod.certificate_available),
+      certificate_price_inr: Number(prod.certificate_price_inr || 0),
+      has_size_options: Boolean(prod.has_size_options),
+      abhimantrit_available: Boolean(prod.abhimantrit_available),
+      custom_shipping_enabled: Boolean(prod.custom_shipping_enabled),
+      custom_shipping_charge_inr: Number(prod.custom_shipping_charge_inr || 0),
     };
     const r = prod.id
-      ? await supabase.from("products").update(data).eq("id", prod.id)
-      : await supabase.from("products").insert(data);
-    if (r.error) {
-      setNotice(`Product could not be saved: ${r.error.message}`);
+      ? await supabase.from("products").update(data).eq("id", prod.id).select("id").single()
+      : await supabase.from("products").insert(data).select("id").single();
+    if (r.error || !r.data?.id) {
+      setNotice(`Product could not be saved: ${r.error?.message || "No product ID returned."}`);
       return;
+    }
+    const productId = r.data.id as string;
+    if (prod.has_size_options) {
+      const variantRows = (prod.variant_rows || []).filter((v: any) => String(v.label || "").trim()).map((v: any, index: number) => ({
+        ...(v.id ? { id: v.id } : {}), product_id: productId, label: String(v.label).trim(),
+        price_inr: Math.max(0, Number(v.price_inr || 0)), stock_quantity: Math.max(0, Math.floor(Number(v.stock_quantity || 0))),
+        sku: String(v.sku || "").trim() || null, carat: v.carat === "" || v.carat == null ? null : Number(v.carat),
+        ratti: v.ratti === "" || v.ratti == null ? null : Number(v.ratti), weight_grams: v.weight_grams === "" || v.weight_grams == null ? null : Number(v.weight_grams),
+        is_active: v.is_active !== false, sort_order: index, updated_at: new Date().toISOString(),
+      }));
+      if (variantRows.length) {
+        const { error: variantError } = await supabase.from("product_variants").upsert(variantRows, { onConflict: "id" });
+        if (variantError) { setNotice(`Product saved, but size options could not be saved: ${variantError.message}`); await load(); return; }
+      }
+    } else {
+      const { error: disableError } = await supabase.from("product_variants").update({ is_active: false, updated_at: new Date().toISOString() }).eq("product_id", productId);
+      if (disableError) { setNotice(`Product saved, but existing size options could not be disabled: ${disableError.message}`); await load(); return; }
     }
     setNotice("Product saved successfully.");
     setProd(blankProd);
     await load();
+  }
+  async function editProduct(product: Prod) {
+    const { data, error } = await supabase.from("product_variants").select("id,product_id,label,carat,ratti,weight_grams,price_inr,sku,stock_quantity,is_active,sort_order").eq("product_id", product.id).order("sort_order", { ascending: true });
+    if (error) { setNotice(`Could not load product options: ${error.message}`); return; }
+    setProd({ ...product, variant_rows: data || [] });
+    setTab("add-product");
   }
   async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
     const value = Number(rawValue);
@@ -472,6 +590,32 @@ export default function AdminDashboard() {
       .update({ ...settings, updated_at: new Date().toISOString() })
       .eq("id", 1);
     setNotice(error?.message || "Website content updated.");
+  }
+  async function updateFulfilment(id: string, changes: Record<string, any>) {
+    const { error } = await supabase.from("orders").update({ ...changes, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { setNotice(error.message); return; }
+    const order = orders.find((entry) => entry.id === id);
+    const { data: authData } = await supabase.auth.getSession();
+    const token = authData.session?.access_token;
+    if (token) {
+      const response = await fetch("https://hhtqnpxarrbagyvswqrj.supabase.co/functions/v1/order-status-email", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status: order?.order_status || "processing", tracking_update: true }) });
+      const result = await response.json().catch(() => ({}));
+      setNotice(result?.error || (result?.email_sent ? "Shipment details saved and customer email sent." : "Shipment details saved. Customer email notification is pending the updated notification service."));
+    } else setNotice("Shipment details saved. Admin session expired before email notification.");
+    setShipmentDrafts((current) => { const next = { ...current }; delete next[id]; return next; });
+    load();
+  }
+  function updateShipmentDraft(id: string, changes: Record<string, any>) {
+    const order = orders.find((entry) => entry.id === id);
+    setShipmentDrafts((current) => ({
+      ...current,
+      [id]: {
+        courier_company_id: order?.courier_company_id || null, courier_name: order?.courier_name || null, tracking_number: order?.tracking_number || null, tracking_url: order?.tracking_url || null,
+        courier_charge_inr: Number(order?.courier_charge_inr || 0), shipping_inr: Number(order?.shipping_inr || 0),
+        dispatch_date: order?.dispatch_date || null, expected_delivery_date: order?.expected_delivery_date || null,
+        ...(current[id] || {}), ...changes,
+      },
+    }));
   }
   async function updateOrder(id: string, order_status: string) {
     setNotice(`Updating order to ${order_status}...`);
@@ -657,6 +801,7 @@ export default function AdminDashboard() {
         </button>
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
+        {isPrimaryAdmin && <button className={tab === "shipping" ? "on" : ""} onClick={() => setTab("shipping")}><Package /> Shipping & Coupons</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
@@ -683,7 +828,9 @@ export default function AdminDashboard() {
                   ? "Product Categories"
                   : tab === "products"
                     ? "Products & Inventory"
-                    : tab === "reviews"
+                    : tab === "shipping"
+                  ? "Shipping & Coupons"
+                : tab === "reviews"
                       ? "Customer Review Approval"
                       : tab === "currency"
                         ? "Global Currency Rates"
@@ -837,7 +984,19 @@ export default function AdminDashboard() {
                       ₹{Number(o.total_inr).toLocaleString("en-IN")}
                     </strong>
                   </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px",margin:"12px 0"}}>
+                    <select aria-label="Courier company" value={shipmentDrafts[o.id]?.courier_company_id ?? o.courier_company_id ?? ""} onChange={(e)=>{ const company=shippingCompanies.find((entry)=>entry.id===e.target.value); updateShipmentDraft(o.id,{courier_company_id:company?.id || null,courier_name:company?.name || "",courier_charge_inr:company ? Number(company.default_charge_inr || 0) : Number(o.courier_charge_inr || 0),shipping_inr:company ? Number(company.default_charge_inr || 0) : Number(o.shipping_inr || 0)}); }}>
+                      <option value="">Select courier company</option>{shippingCompanies.filter((company)=>company.is_active).map((company)=><option key={company.id} value={company.id}>{company.name}</option>)}
+                    </select>
+                    <input placeholder="Courier name" value={shipmentDrafts[o.id]?.courier_name ?? o.courier_name ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{courier_name:e.target.value || null})} />
+                    <input placeholder="Tracking / AWB number" value={shipmentDrafts[o.id]?.tracking_number ?? o.tracking_number ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{tracking_number:e.target.value || null})} />
+                    <input placeholder="Tracking URL" value={shipmentDrafts[o.id]?.tracking_url ?? o.tracking_url ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{tracking_url:e.target.value || null})} />
+                    <input type="number" min="0" placeholder="Courier charge (₹)" value={shipmentDrafts[o.id]?.courier_charge_inr ?? o.courier_charge_inr ?? 0} onChange={(e)=>updateShipmentDraft(o.id,{courier_charge_inr:Number(e.target.value||0),shipping_inr:Number(e.target.value||0)})} />
+                    <label>Dispatch date<input type="date" value={shipmentDrafts[o.id]?.dispatch_date ?? o.dispatch_date ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{dispatch_date:e.target.value || null})} /></label>
+                    <label>Expected delivery<input type="date" value={shipmentDrafts[o.id]?.expected_delivery_date ?? o.expected_delivery_date ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{expected_delivery_date:e.target.value || null})} /></label>
+                  </div>
                   <div className="order-actions">
+                    <button type="button" onClick={() => updateFulfilment(o.id, shipmentDrafts[o.id] || { courier_name: o.courier_name, tracking_number: o.tracking_number, tracking_url: o.tracking_url, courier_charge_inr: o.courier_charge_inr, shipping_inr: o.shipping_inr, dispatch_date: o.dispatch_date, expected_delivery_date: o.expected_delivery_date })}>SAVE SHIPMENT & EMAIL CUSTOMER</button>
                     <a
                       href={`https://wa.me/${o.phone.replace(/\D/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(`Hello ${o.customer_name}, your Shree Gauri order ${o.order_number} is ${o.order_status}.`)}`}
                       target="_blank"
@@ -851,7 +1010,9 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
+                      <option value="packed">Packed</option>
                       <option value="shipped">Shipped</option>
+                      <option value="out_for_delivery">Out for Delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
@@ -1056,6 +1217,63 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </label>
+
+              <section style={{ border: "1px solid #e7d9ce", borderRadius: 12, padding: 16, marginTop: 8, display: "grid", gap: 12 }}>
+                <h3 style={{ margin: 0 }}>Customer Product Options</h3>
+                <label className="check"><input type="checkbox" checked={!!prod.certificate_available} onChange={(e) => setProd({ ...prod, certificate_available: e.target.checked })} /> Offer optional authenticity certificate</label>
+                {prod.certificate_available && <label>Certificate additional price (₹)<input type="number" min="0" step="1" value={prod.certificate_price_inr ?? 0} onChange={(e) => setProd({ ...prod, certificate_price_inr: e.target.value })} /></label>}
+                <label className="check"><input type="checkbox" checked={!!prod.abhimantrit_available} onChange={(e) => setProd({ ...prod, abhimantrit_available: e.target.checked })} /> Offer Abhimantrit / Energisation (Yes / No)</label>
+                <label className="check"><input type="checkbox" checked={!!prod.has_size_options} onChange={(e) => setProd({ ...prod, has_size_options: e.target.checked, variant_rows: e.target.checked ? (prod.variant_rows || []) : prod.variant_rows })} /> This product has selectable size / weight options</label>
+                {prod.has_size_options && <div style={{ display: "grid", gap: 10 }}>
+                  <small style={{ color: "#806f68" }}>Add each option separately. Each option has its own price and stock; customers must select one before checkout.</small>
+                  {(prod.variant_rows || []).map((variant: any, index: number) => <div key={variant.id || `variant-${index}`} style={{ display: "grid", gridTemplateColumns: "minmax(120px,1.4fr) minmax(90px,1fr) minmax(80px,.8fr) auto", gap: 8, alignItems: "end", padding: 10, border: "1px solid #eadfd4", borderRadius: 9, opacity: variant.is_active === false ? .55 : 1 }}>
+                    <label>Option label<input value={variant.label || ""} placeholder="e.g. 6 mm / Small" onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, label: e.target.value } : v) })} /></label>
+                    <label>Price (₹)<input type="number" min="0" value={variant.price_inr ?? 0} onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, price_inr: e.target.value } : v) })} /></label>
+                    <label>Stock<input type="number" min="0" step="1" value={variant.stock_quantity ?? 0} onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, stock_quantity: e.target.value } : v) })} /></label>
+                    <button type="button" onClick={() => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, is_active: v.is_active === false } : v) })}>{variant.is_active === false ? "Enable" : "Disable"}</button>
+                  </div>)}
+                  <button type="button" onClick={() => setProd({ ...prod, variant_rows: [...(prod.variant_rows || []), { label: "", price_inr: prod.price_inr || 0, stock_quantity: 0, is_active: true }] })}>+ Add size / weight option</button>
+                </div>}
+                <label className="check"><input type="checkbox" checked={!!prod.custom_shipping_enabled} onChange={(e) => setProd({ ...prod, custom_shipping_enabled: e.target.checked })} /> Use a custom shipping charge for this product</label>
+                {prod.custom_shipping_enabled && <label>Custom shipping charge (₹)<input type="number" min="0" step="1" value={prod.custom_shipping_charge_inr ?? 0} onChange={(e) => setProd({ ...prod, custom_shipping_charge_inr: e.target.value })} /></label>}
+              </section>
+
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "6px" }}>Zodiac</h3>
+                <small style={{ display: "block", marginBottom: "10px", color: "#806f68" }}>
+                  You may select more than one zodiac sign.
+                </small>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: "8px" }}>
+                  {zodiacOptions.map((name) => (
+                    <label className="check" key={name}>
+                      <input type="checkbox" checked={(prod.zodiac_signs || []).includes(name)}
+                        onChange={(e) => {
+                          const current = prod.zodiac_signs || [];
+                          setProd({ ...prod, zodiac_signs: e.target.checked
+                            ? Array.from(new Set([...current, name]))
+                            : current.filter((x: string) => x !== name) });
+                        }} />{" "}{name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #e7d9ce", paddingTop: "18px", marginTop: "8px" }}>
+                <h3 style={{ marginBottom: "12px" }}>Google / SEO</h3>
+                <label>
+                  SEO Title
+                  <input value={prod.seo_title || ""} maxLength={70}
+                    placeholder={prod.name ? prod.name + " | Shree Gauri" : "Product title for Google"}
+                    onChange={(e) => setProd({ ...prod, seo_title: e.target.value })} />
+                </label>
+                <label>
+                  SEO Description
+                  <textarea value={prod.seo_description || ""} maxLength={170}
+                    placeholder="Short accurate description for search engines"
+                    onChange={(e) => setProd({ ...prod, seo_description: e.target.value })} />
+                </label>
+              </div>
+
               <label>
                 Main Product Photo
                 <input
@@ -1159,7 +1377,7 @@ export default function AdminDashboard() {
                       <small>{p.image_urls?.length || 0} extra photos</small>
                     </div>
                     <div className="product-admin-card-actions">
-                      <button className="product-edit-action" onClick={() => { setProd(p); setTab("add-product"); }}>Edit</button>
+                      <button className="product-edit-action" onClick={() => { void editProduct(p); }}>Edit</button>
                       <button className={p.is_active ? "product-hide-button" : "product-show-button"} onClick={() => toggleProductVisibility(p)}>{p.is_active ? "Hide" : "Show"}</button>
                       <button className="product-delete-icon" aria-label={"Delete " + p.name} title="Delete product" onClick={() => remove("products", p.id)}><Trash2 /></button>
                     </div>
@@ -1311,6 +1529,18 @@ export default function AdminDashboard() {
         )}
         {tab === "settings" && staffRole === "admin" && settings && (
           <div className="editor settings">
+            <div style={{marginBottom:24,padding:18,border:"1px solid #e3d7ca",background:"#fffaf5"}}>
+              <h2>Global Currency Conversion Rates</h2>
+              <p>INR is the base price. Enter how much 1 INR equals in each currency. Converted storefront prices use these rates; orders remain priced in INR.</p>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,margin:"16px 0"}}>
+                {["INR","USD","EUR","GBP","AED","CAD","AUD","SGD","JPY","CHF","NZD","SAR","QAR","KWD","BHD","OMR","MYR","THB","IDR","PHP","VND","ZAR","MUR","NPR","LKR","BDT","KRW","SEK","NOK","DKK","PLN","HKD"].map((code) => { const rates = { ...{"INR":1,"USD":0.012,"EUR":0.01,"GBP":0.009,"AED":0.044,"CAD":0.016,"AUD":0.018,"SGD":0.015,"JPY":1.75,"CHF":0.0095,"NZD":0.02,"SAR":0.045,"QAR":0.044,"KWD":0.0037,"BHD":0.0045,"OMR":0.0046,"MYR":0.051,"THB":0.38,"IDR":190,"PHP":0.68,"VND":315,"ZAR":0.21,"MUR":0.55,"NPR":1.6,"LKR":3.65,"BDT":1.46,"KRW":16.5,"SEK":0.112,"NOK":0.118,"DKK":0.069,"PLN":0.043,"HKD":0.093}, ...(settings.currency_rates || {}) }; return (
+                  <label key={code} style={{display:"flex",flexDirection:"column",gap:5}}>{code}{code === "INR" ? " (Base)" : ""}
+                    <input type="number" min="0" step="0.000001" disabled={code === "INR"} value={rates[code] ?? ""} onChange={(e) => setSettings({ ...settings, currency_rates: { ...rates, [code]: Number(e.target.value) } })} />
+                  </label>
+                )})}
+              </div>
+              <button onClick={saveSettings}><Save /> SAVE CURRENCY RATES</button>
+            </div>
             <h2>Edit Website Content & Brand Images</h2>
             <label>
               Main Shree Gauri Logo
@@ -1456,6 +1686,7 @@ export default function AdminDashboard() {
             </button>
           </div>
         )}
+        {tab === "shipping" && isPrimaryAdmin && <ShippingPromoManager />}
         {tab === "currency" && isPrimaryAdmin && settings && (
           <div className="editor settings currency-settings">
             <h2>Global Currency Conversion Rates</h2>

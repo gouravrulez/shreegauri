@@ -1,8 +1,0 @@
-e.target.value })} /></label>}
-+                <label className="check"><input type="checkbox" checked={!!prod.abhimantrit_available} onChange={(e) => setProd({ ...prod, abhimantrit_available: e.target.checked })} /> Offer Abhimantrit / Energisation (Yes / No)</label>
-+                <label className="check"><input type="checkbox" checked={!!prod.has_size_options} onChange={(e) => setProd({ ...prod, has_size_options: e.target.checked, variant_rows: e.target.checked ? (prod.variant_rows || []) : prod.variant_rows })} /> This product has selectable size / weight options</label>
-+                {prod.has_size_options && <div style={{ display: "grid", gap: 10 }}>
-+                  <small style={{ color: "#806f68" }}>Add each option separately. Each option has its own price and stock; customers must select one before checkout.</small>
-+                  {(prod.variant_rows || []).map((variant: any, index: number) => <div key={variant.id || `variant-${index}`} style={{ display: "grid", gridTemplateColumns: "minmax(120px,1.4fr) minmax(90px,1fr) minmax(80px,.8fr) auto", gap: 8, alignItems: "end", padding: 10, border: "1px solid #eadfd4", borderRadius: 9, opacity: variant.is_active === false ? .55 : 1 }}>
-+                    <label>Option label<input value={variant.label || ""} placeholder="e.g. 6 mm / Small" onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, label: e.target.value } : v) })} /></label>
-+           

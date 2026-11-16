@@ -4,8 +4,17 @@ import CartFix from "./cart-fix";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Shree Gauri | Divine Energy. Timeless Beauty.",
-  description: "Authentic gemstones, sacred jewellery, Rudraksha, spiritual products and meaningful gifts.",
+  metadataBase: new URL("https://shreegauri.in"),
+  title: { default: "Shree Gauri | Jewellery, Gemstones & Spiritual Products", template: "%s | Shree Gauri" },
+  description: "Shop jewellery, gemstones, Rudraksha and thoughtfully selected spiritual products from Shree Gauri.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "https://shreegauri.in",
+    siteName: "Shree Gauri",
+    title: "Shree Gauri | Jewellery, Gemstones & Spiritual Products",
+    description: "Jewellery, gemstones, Rudraksha and thoughtfully selected spiritual products.",
+  },
   verification: {
     google: "lN23qxr0DWCu_kG2znDpYCJqtep-1Yq-Jxk1gJAbM_k",
   },

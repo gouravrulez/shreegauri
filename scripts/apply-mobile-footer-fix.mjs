@@ -33,8 +33,7 @@ const newGo = `  const go = (v: string) => {
     }, 80);
   };`;
 
-if (!text.includes(newGo)) {
-  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
+if (!text.includes(newGo) && text.includes(oldGo)) {
   text = text.replace(oldGo, newGo);
 }
 

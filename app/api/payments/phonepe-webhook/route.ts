@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     const body = JSON.parse(rawBody || "{}");
     const payload = body?.payload || {};
-    const merchantOrderId = String(payload?.merchantOrderId || "");
+    const merchantOrderId = String(payload?.merchantOrderId || payload?.originalMerchantOrderId || "");
     const state = String(payload?.state || "").toUpperCase();
     if (!merchantOrderId) return NextResponse.json({ ok: true });
 
@@ -30,14 +30,14 @@ export async function POST(request: Request) {
       .from("orders")
       .select("id,payment_status")
       .eq("payment_provider", "phonepe")
-      .eq("payment_reference", merchantOrderId)
+      .eq("id", merchantOrderId)
       .maybeSingle();
     if (!order) return NextResponse.json({ ok: true });
 
     if (state === "COMPLETED") {
       const { data, error } = await admin.rpc("finalize_paid_order", {
         p_order_id: order.id,
-        p_payment_reference: merchantOrderId,
+        p_payment_reference: String(payload?.paymentDetails?.find((x: any) => String(x?.state || "").toUpperCase() === "COMPLETED")?.transactionId || payload?.orderId || merchantOrderId),
       });
       if (error) throw new Error(error.message);
       if (!data?.already_paid) {

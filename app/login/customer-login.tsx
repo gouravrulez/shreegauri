@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   UserRound, Package, MapPin, LogOut, ShoppingBag, Truck, Home,
-  Plus, Trash2, CheckCircle2
+  Plus, Trash2, CheckCircle2, Heart, Headphones, ChevronRight, CreditCard
 } from "lucide-react";
 
 type Profile = {
@@ -14,6 +14,7 @@ type Profile = {
   email: string;
   phone: string;
   date_of_birth: string;
+  profile_image_url: string;
 };
 
 type Address = {
@@ -34,6 +35,9 @@ type OrderItem = {
   id: string;
   product_name: string;
   variant_label: string | null;
+  certificate_selected?: boolean;
+  certificate_price_inr?: number;
+  abhimantrit_selected?: boolean;
   quantity: number;
   line_total_inr: number;
 };
@@ -47,12 +51,15 @@ type Order = {
   courier_name: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
+  dispatch_date?: string | null;
+  expected_delivery_date?: string | null;
+  courier_charge_inr?: number;
   created_at: string;
   order_items: OrderItem[];
 };
 
 const blankProfile: Profile = {
-  full_name: "", email: "", phone: "", date_of_birth: ""
+  full_name: "", email: "", phone: "", date_of_birth: "", profile_image_url: ""
 };
 
 const blankAddress = {
@@ -71,11 +78,13 @@ export default function CustomerLogin() {
   const [identifier, setIdentifier] = useState("");
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
+  const [challengeId, setChallengeId] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile>(blankProfile);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [dashboardCoupons, setDashboardCoupons] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [newAddress, setNewAddress] = useState(blankAddress);
   const [section, setSection] = useState<"overview" | "orders" | "profile" | "addresses">(() => { if (typeof window === "undefined") return "overview"; const requested = new URLSearchParams(window.location.search).get("section"); return requested === "orders" || requested === "profile" || requested === "addresses" ? requested : "overview"; });
@@ -120,11 +129,14 @@ export default function CustomerLogin() {
     const data = { full_name: fullName };
     if (channel === "email") {
       const email = identifier.trim().toLowerCase();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true, data },
+      const response = await fetch("/api/auth/email-otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, full_name: fullName }),
       });
-      if (error) return setMessage(error.message);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(result?.error || "Unable to send verification code.");
+      setChallengeId(String(result.challenge_id || ""));
     } else {
       let phone = identifier.replace(/\s+/g, "");
       if (!phone.startsWith("+")) phone = `+91${phone.replace(/^0+/, "")}`;
@@ -142,21 +154,45 @@ export default function CustomerLogin() {
   async function verifyOtp(e: FormEvent) {
     e.preventDefault();
     setMessage("Verifying...");
-    const result =
-      channel === "email"
-        ? await supabase.auth.verifyOtp({
-            email: identifier.trim().toLowerCase(),
-            token: otp.trim(),
-            type: "email",
-          })
-        : await supabase.auth.verifyOtp({
-            phone: identifier.trim(),
-            token: otp.trim(),
-            type: "sms",
-          });
 
-    if (result.error) return setMessage(result.error.message);
+    if (channel === "email") {
+      const response = await fetch("/api/auth/email-otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: identifier.trim().toLowerCase(),
+          code: otp.trim(),
+          challenge_id: challengeId,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(result?.error || "Unable to verify code.");
+
+      const access_token = result?.session?.access_token;
+      const refresh_token = result?.session?.refresh_token;
+
+      if (!access_token || !refresh_token) {
+        return setMessage("Unable to establish your login session.");
+      }
+
+      const setResult = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (setResult.error) return setMessage(setResult.error.message);
+    } else {
+      const result = await supabase.auth.verifyOtp({
+        phone: identifier.trim(),
+        token: otp.trim(),
+        type: "sms",
+      });
+
+      if (result.error) return setMessage(result.error.message);
+    }
+
     setMessage("Welcome to Shree Gauri.");
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("returnTo") === "checkout") {
       window.location.href = "/?checkout=1";
@@ -193,9 +229,10 @@ export default function CustomerLogin() {
         email: customer.email || user.email || "",
         phone: customer.phone || user.phone || "",
         date_of_birth: customer.date_of_birth || "",
+        profile_image_url: customer.profile_image_url || "",
       });
 
-      const [a, o] = await Promise.all([
+      const [a, o, coupons] = await Promise.all([
         supabase
           .from("customer_addresses")
           .select("*")
@@ -206,9 +243,11 @@ export default function CustomerLogin() {
           .from("orders")
           .select("*,order_items(*)")
           .order("created_at", { ascending: false }),
+        supabase.from("promo_codes").select("code,discount_type,discount_value,min_order_inr,max_discount_inr,ends_at").eq("is_active", true).eq("is_public", true).eq("show_on_dashboard", true).order("created_at", { ascending: false }),
       ]);
       if (a.data) setAddresses(a.data as Address[]);
       if (o.data) setOrders(o.data as Order[]);
+      if (coupons.data) setDashboardCoupons(coupons.data.filter((coupon: any) => !coupon.ends_at || new Date(coupon.ends_at).getTime() >= Date.now()));
     }
     setLoading(false);
   }
@@ -230,6 +269,66 @@ export default function CustomerLogin() {
     setSaving(false);
     setMessage(error?.message || "Profile updated.");
     if (!error) loadAccount();
+  }
+
+  async function uploadProfilePhoto(file?: File) {
+    if (!file || !user || !profile.id) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setMessage("Please choose a JPG, PNG or WEBP image.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setMessage("Profile photo must be 3 MB or smaller.");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("Uploading profile photo...");
+
+    const ext =
+      file.type === "image/png" ? "png" :
+      file.type === "image/webp" ? "webp" : "jpg";
+
+    const path = `${user.id}/avatar.${ext}`;
+
+    const uploaded = await supabase.storage
+      .from("customer-avatars")
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type,
+        cacheControl: "3600",
+      });
+
+    if (uploaded.error) {
+      setSaving(false);
+      setMessage(uploaded.error.message);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("customer-avatars")
+      .getPublicUrl(path);
+
+    const imageUrl = `${publicData.publicUrl}?v=${Date.now()}`;
+
+    const updated = await supabase
+      .from("customers")
+      .update({
+        profile_image_url: imageUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id);
+
+    setSaving(false);
+
+    if (updated.error) {
+      setMessage(updated.error.message);
+      return;
+    }
+
+    setProfile((p) => ({ ...p, profile_image_url: imageUrl }));
+    setMessage("Profile photo updated.");
   }
 
   async function addAddress(e: FormEvent) {
@@ -312,14 +411,12 @@ export default function CustomerLogin() {
               </button>
               <div className="login-divider"><span>OR USE OTP</span></div>
 
-              <div className="otp-channel">
-                <button type="button" className={channel === "email" ? "active" : ""} onClick={() => { setChannel("email"); setIdentifier(""); setMessage(""); }}>
+              <div className="otp-channel email-only">
+                <button type="button" className="active">
                   EMAIL OTP
                 </button>
-                <button type="button" className={channel === "phone" ? "active" : ""} onClick={() => { setChannel("phone"); setIdentifier(""); setMessage(""); }}>
-                  MOBILE OTP
-                </button>
               </div>
+              <p className="auth-free-note">Secure password-free login. Your 6-digit code will be sent to your email.</p>
 
               <label>
                 Full Name <small>(first-time customers)</small>
@@ -327,12 +424,12 @@ export default function CustomerLogin() {
               </label>
 
               <label>
-                {channel === "email" ? "Email Address" : "Mobile Number"}
+                Email Address
                 <input
-                  type={channel === "email" ? "email" : "tel"}
+                  type="email"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={channel === "email" ? "you@example.com" : "9876543210"}
+                  placeholder="you@example.com"
                   required
                 />
               </label>
@@ -345,15 +442,15 @@ export default function CustomerLogin() {
               <a href="/">← Return to store</a>
               <small>SHREE GAURI VERIFICATION</small>
               <h1>Enter OTP</h1>
-              <p>We sent a verification code to {identifier}.</p>
+              <p>We sent a 6-digit verification code to {identifier}.</p>
               <label>
                 6-digit OTP
                 <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required />
               </label>
               {message && <p className="auth-message">{message}</p>}
               <button>VERIFY & CONTINUE</button>
-              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setMessage(""); }}>
-                Change email/mobile
+              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setChallengeId(""); setMessage(""); }}>
+                Change email
               </button>
             </form>
           )}
@@ -375,13 +472,31 @@ export default function CustomerLogin() {
 
       <div className="customer-dash-layout">
         <aside className="customer-dash-nav">
-          <div className="customer-avatar"><UserRound /></div>
+          <label className="customer-avatar customer-avatar-edit" title="Change profile photo">
+            {profile.profile_image_url ? (
+              <img src={profile.profile_image_url} alt="Customer profile" />
+            ) : (
+              <UserRound />
+            )}
+            <span>CHANGE PHOTO</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadProfilePhoto(file);
+                e.currentTarget.value = "";
+              }}
+              disabled={saving}
+            />
+          </label>
           <b>{profile.full_name || "Shree Gauri Customer"}</b>
           <small>{profile.email || profile.phone}</small>
           <button className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Home /> Account Overview</button>
           <button className={section === "orders" ? "active" : ""} onClick={() => setSection("orders")}><Package /> My Orders</button>
           <button className={section === "profile" ? "active" : ""} onClick={() => setSection("profile")}><UserRound /> Profile</button>
           <button className={section === "addresses" ? "active" : ""} onClick={() => setSection("addresses")}><MapPin /> Saved Addresses</button>
+          <a href="/?view=wishlist"><Heart /> Wishlist</a>
           <a href="/"><ShoppingBag /> Continue Shopping</a>
         </aside>
 
@@ -395,6 +510,12 @@ export default function CustomerLogin() {
                 <h1>Welcome, {profile.full_name?.split(" ")[0] || "Customer"}</h1>
                 <p>Manage orders, delivery addresses and account details from one place.</p>
               </div>
+              <div className="customer-account-actions">
+                <button onClick={() => setSection("orders")}><Package /><span><b>Track Orders</b><small>See payment, fulfilment and delivery status</small></span><ChevronRight /></button>
+                <button onClick={() => setSection("addresses")}><MapPin /><span><b>Delivery Addresses</b><small>Manage your default and saved addresses</small></span><ChevronRight /></button>
+                <button onClick={() => setSection("profile")}><UserRound /><span><b>Account Details</b><small>Keep your contact information updated</small></span><ChevronRight /></button>
+                <a href="/contact"><Headphones /><span><b>Customer Support</b><small>Shree Gauri support is available 24/7</small></span><ChevronRight /></a>
+              </div>
               <div className="customer-summary-grid">
                 <button onClick={() => setSection("orders")}><Package /><span><strong>{orders.length}</strong>Total Orders</span></button>
                 <button onClick={() => setSection("orders")}><Truck /><span><strong>{orders.filter((o) => ["confirmed","processing","packed","shipped","out_for_delivery"].includes(o.order_status)).length}</strong>In Progress</span></button>
@@ -405,8 +526,8 @@ export default function CustomerLogin() {
                 {orders.length ? orders.slice(0,3).map((o) => (
                   <div className="customer-order-row" key={o.id}>
                     <div><small>{new Date(o.created_at).toLocaleDateString("en-IN")}</small><b>{o.order_number}</b></div>
-                    <span>{statusLabel(o.order_status)}</span>
-                    <strong>₹{Number(o.total_inr).toLocaleString("en-IN")}</strong>
+                    <span className={`order-state order-state-${o.order_status}`}>{statusLabel(o.order_status)}</span>
+                    <div className="customer-order-payment"><small><CreditCard /> {statusLabel(o.payment_status)}</small><strong>₹{Number(o.total_inr).toLocaleString("en-IN")}</strong></div>
                   </div>
                 )) : <div className="customer-empty"><ShoppingBag /><h3>No orders yet</h3><p>Your paid Shree Gauri orders will appear here.</p><a href="/">START SHOPPING</a></div>}
               </div>
@@ -414,6 +535,15 @@ export default function CustomerLogin() {
                 <div><UserRound /><span><small>PROFILE</small><b>{profile.full_name || "Add your name"}</b><p>{profile.phone || profile.email}</p></span></div>
                 <div><MapPin /><span><small>DEFAULT ADDRESS</small><b>{defaultAddress?.label || "Add delivery address"}</b><p>{defaultAddress ? [defaultAddress.line1, defaultAddress.city, defaultAddress.state, defaultAddress.pincode].filter(Boolean).join(", ") : "Save an address for faster checkout."}</p></span></div>
               </div>
+              {dashboardCoupons.length > 0 && <div className="customer-panel" style={{ marginTop: 18, padding: 18 }}>
+                <small>EXCLUSIVE OFFERS</small><h2 style={{ margin: "6px 0 12px" }}>Available Coupons</h2>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {dashboardCoupons.map((coupon) => <div key={coupon.code} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, border: "1px solid #eadfd4", borderRadius: 9, padding: 12 }}>
+                    <span><b>{coupon.code}</b><br /><small>{coupon.discount_type === "percentage" ? `${coupon.discount_value}% off` : `₹${Number(coupon.discount_value).toLocaleString("en-IN")} off`} · Minimum order ₹{Number(coupon.min_order_inr || 0).toLocaleString("en-IN")}</small></span>
+                    <button type="button" onClick={() => { navigator.clipboard?.writeText(coupon.code); setMessage(`Coupon ${coupon.code} copied. Apply it at checkout.`); }}>COPY CODE</button>
+                  </div>)}
+                </div>
+              </div>}
             </>
           )}
 
@@ -434,7 +564,7 @@ export default function CustomerLogin() {
                     </div>
                     <div className="customer-order-items">
                       {o.order_items?.map((i) => (
-                        <div key={i.id}><span><b>{i.product_name}</b>{i.variant_label && <small>{i.variant_label}</small>}<small>Qty: {i.quantity}</small></span><strong>₹{Number(i.line_total_inr).toLocaleString("en-IN")}</strong></div>
+                        <div key={i.id}><span><b>{i.product_name}</b>{i.variant_label && <small>{i.variant_label}</small>}{i.abhimantrit_selected && <small>Abhimantrit / Energisation: Yes</small>}{i.certificate_selected && <small>Authenticity certificate: Yes · ₹{Number(i.certificate_price_inr || 0).toLocaleString("en-IN")} each</small>}<small>Qty: {i.quantity}</small></span><strong>₹{Number(i.line_total_inr).toLocaleString("en-IN")}</strong></div>
                       ))}
                     </div>
                     {o.tracking_number && <div className="customer-tracking"><Truck /> Tracking: <b>{o.tracking_number}</b></div>}

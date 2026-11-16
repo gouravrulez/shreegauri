@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "./lib/supabase";
+import { COUNTRY_OPTIONS, DEFAULT_COUNTRY, getCountry, canUsePhonePe, INTERNATIONAL_PAYMENT_MESSAGE } from "./lib/global-commerce";
 import {
   Menu,
   X,
@@ -32,9 +33,11 @@ type C = {
   parent_id: string | null;
   collection_type: "category" | "purpose" | "planet";
 };
+type ProductVariant = { id: string; product_id: string; label: string; price_inr: number; stock_quantity: number; is_active: boolean; sort_order: number };
 type P = {
   id: string;
   category_id: string | null;
+  category_ids: string[];
   name: string;
   slug: string;
   short_description: string;
@@ -46,6 +49,17 @@ type P = {
   stock_quantity: number;
   is_featured: boolean;
   badge: string | null;
+  abhimantrit_available?: boolean;
+  abhimantrit_selected?: boolean;
+  certificate_available?: boolean;
+  certificate_price_inr?: number;
+  certificate_selected?: boolean;
+  has_size_options?: boolean;
+  custom_shipping_enabled?: boolean;
+  custom_shipping_charge_inr?: number;
+  variants?: ProductVariant[];
+  variant_id?: string | null;
+  variant_label?: string | null;
   created_at?: string;
 };
 type AstrologyService = { name: string; description: string; active: boolean };
@@ -71,6 +85,20 @@ type Checkout = {
   city: string;
   state: string;
   pincode: string;
+  country_code: string;
+  phone_country_code: string;
+};
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipient_name: string | null;
+  phone: string | null;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
 };
 type S = {
   announcement: string;
@@ -114,13 +142,23 @@ export default function Storefront() {
     [astrologyMessage, setAstrologyMessage] = useState(""),
     [view, setView] = useState("home"),
     [q, setQ] = useState(""),
+    [displayCurrency, setDisplayCurrency] = useState("INR"),
+    [currencyRates, setCurrencyRates] = useState<Record<string, number>>({"INR":1,"USD":0.012,"EUR":0.01,"GBP":0.009,"AED":0.044,"CAD":0.016,"AUD":0.018,"SGD":0.015,"JPY":1.75,"CHF":0.0095,"NZD":0.02,"SAR":0.045,"QAR":0.044,"KWD":0.0037,"BHD":0.0045,"OMR":0.0046,"MYR":0.051,"THB":0.38,"IDR":190,"PHP":0.68,"VND":315,"ZAR":0.21,"MUR":0.55,"NPR":1.6,"LKR":3.65,"BDT":1.46,"KRW":16.5,"SEK":0.112,"NOK":0.118,"DKK":0.069,"PLN":0.043,"HKD":0.093}),
     [menu, setMenu] = useState(false),
     [item, setItem] = useState<P | null>(null),
     [selectedImage, setSelectedImage] = useState(""),
     [imageZoomOpen, setImageZoomOpen] = useState(false),
     [descriptionOpen, setDescriptionOpen] = useState(false),
     [qty, setQty] = useState(1),
-    [cart, setCart] = useState<P[]>([]),
+    [abhimantritChoice, setAbhimantritChoice] = useState(false),
+    [certificateChoice, setCertificateChoice] = useState(false),
+    [catalogPage, setCatalogPage] = useState(1),
+    [selectedVariantId, setSelectedVariantId] = useState(""),
+    [cartNotice, setCartNotice] = useState(""),
+    [cart, setCart] = useState<P[]>(() => {
+      if (typeof window === "undefined") return [];
+      try { return JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { return []; }
+    }),
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
     [categoryFilter, setCategoryFilter] = useState("all"),
@@ -133,6 +171,13 @@ export default function Storefront() {
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
+    [couponCode, setCouponCode] = useState(""),
+    [availableCoupons, setAvailableCoupons] = useState<any[]>([]),
+    [activeCoupon, setActiveCoupon] = useState<any>(null),
+    [couponMessage, setCouponMessage] = useState(""),
+    [shippingSettings, setShippingSettings] = useState<any>(null),
+    [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
+    [selectedAddressId, setSelectedAddressId] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -142,6 +187,8 @@ export default function Storefront() {
       city: "",
       state: "",
       pincode: "",
+      country_code: DEFAULT_COUNTRY.code,
+      phone_country_code: DEFAULT_COUNTRY.dialCode,
     });
   useEffect(() => {
     Promise.all([
@@ -153,7 +200,7 @@ export default function Storefront() {
       supabase
         .from("products")
         .select(
-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
+          "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,certificate_available,certificate_price_inr,has_size_options,custom_shipping_enabled,custom_shipping_charge_inr,abhimantrit_available",
         )
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -163,29 +210,168 @@ export default function Storefront() {
         .select("id,product_id,reviewer_name,rating,title,body,created_at")
         .eq("is_approved", true)
         .order("created_at", { ascending: false }),
-    ]).then(([a, b, d, r]) => {
+    ]).then(async ([a, b, d, r]) => {
       if (a.data) setCats(a.data as C[]);
-      if (b.data)
-        setProducts(
-          b.data.map((p: any) => ({
-            ...p,
-            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-          })) as P[],
-        );
-      if (d.data)
+      if (b.data) {
+        const productIds = b.data.map((p: any) => p.id);
+        const { data: variantData } = productIds.length
+          ? await supabase.from("product_variants").select("id,product_id,label,price_inr,stock_quantity,is_active,sort_order").in("product_id", productIds).eq("is_active", true).order("sort_order", { ascending: true })
+          : { data: [] as any[] };
+        const variantsByProduct = new Map<string, ProductVariant[]>();
+        (variantData || []).forEach((variant: any) => {
+          const list = variantsByProduct.get(variant.product_id) || [];
+          list.push(variant as ProductVariant);
+          variantsByProduct.set(variant.product_id, list);
+        });
+        setProducts(b.data.map((p: any) => ({
+          ...p, variants: variantsByProduct.get(p.id) || [],
+          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          category_ids: Array.isArray(p.category_ids) && p.category_ids.length ? p.category_ids : p.category_id ? [p.category_id] : [],
+        })) as P[]);
+      }
+      if (d.data) {
         setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
         if (Array.isArray((d.data as any).astrology_services)) setAstrologyServices((d.data as any).astrology_services);
+      }
       if (r.data) setReviews(r.data as R[]);
     });
   }, []);
-  const money = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(n);
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("sg_cart", JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("checkout") === "1") {
+      openSecureCheckout();
+    }
+  }, []);
+
+  function confirmAddedToCart(productName: string, quantity = 1) {
+    setCartNotice(`${quantity} × ${productName} added to cart successfully.`);
+    window.setTimeout(() => setCartNotice(""), 2800);
+  }
+
+  async function openSecureCheckout() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      localStorage.setItem("sg_cart", JSON.stringify(cart));
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
+
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("auth_user_id", session.user.id)
+      .maybeSingle();
+
+    const [{ data: couponRows }, { data: shippingConfig }] = await Promise.all([
+      supabase.from("promo_codes").select("code,discount_type,discount_value,min_order_inr,max_discount_inr,starts_at,ends_at").eq("is_active", true).eq("is_public", true).eq("show_on_dashboard", true).order("created_at", { ascending: false }),
+      supabase.from("shipping_settings").select("*").eq("id", 1).maybeSingle(),
+    ]);
+    setShippingSettings(shippingConfig || null);
+    const now = Date.now();
+    setAvailableCoupons((couponRows || []).filter((coupon: any) => (!coupon.starts_at || new Date(coupon.starts_at).getTime() <= now) && (!coupon.ends_at || new Date(coupon.ends_at).getTime() >= now)));
+
+    const profileName = customer?.full_name || session.user.user_metadata?.full_name || "";
+    const profileEmail = customer?.email || session.user.email || "";
+    const profilePhone = customer?.phone || session.user.phone || "";
+
+    let addresses: SavedAddress[] = [];
+    if (customer?.id) {
+      const { data } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true });
+      addresses = (data || []) as SavedAddress[];
+    }
+
+    setCheckoutAddresses(addresses);
+    const chosen = addresses.find((a) => a.is_default) || addresses[0];
+    setSelectedAddressId(chosen?.id || "");
+    setCheckout({
+      name: chosen?.recipient_name || profileName,
+      email: profileEmail,
+      phone: chosen?.phone || profilePhone,
+      line1: chosen?.line1 || "",
+      line2: chosen?.line2 || "",
+      city: chosen?.city || "",
+      state: chosen?.state || "",
+      pincode: chosen?.pincode || "",
+      country_code: DEFAULT_COUNTRY.code,
+      phone_country_code: DEFAULT_COUNTRY.dialCode,
+    });
+    setCheckoutMsg(addresses.length ? "" : "Add a delivery address here or save one in My Account.");
+    setCheckoutOpen(true);
+  }
+
+  async function applyCoupon(rawCode = couponCode) {
+    const code = String(rawCode || "").trim().toUpperCase();
+    if (!code) { setActiveCoupon(null); setCouponMessage("Enter a coupon code first."); return; }
+    const { data: coupon, error } = await supabase.from("promo_codes").select("*").eq("code", code).eq("is_active", true).maybeSingle();
+    if (error || !coupon) { setActiveCoupon(null); setCouponMessage("This coupon is invalid or inactive."); return; }
+    const now = Date.now();
+    if (coupon.starts_at && new Date(coupon.starts_at).getTime() > now) { setActiveCoupon(null); setCouponMessage("This coupon is not active yet."); return; }
+    if (coupon.ends_at && new Date(coupon.ends_at).getTime() < now) { setActiveCoupon(null); setCouponMessage("This coupon has expired."); return; }
+    if (cartSubtotal < Number(coupon.min_order_inr || 0)) { setActiveCoupon(null); setCouponMessage(`Minimum order for this coupon is ₹${Number(coupon.min_order_inr).toLocaleString("en-IN")}.`); return; }
+    if (coupon.applies_to === "products" && !cart.every((product) => (coupon.product_ids || []).includes(product.id))) { setActiveCoupon(null); setCouponMessage("This coupon applies only to its selected products. Remove other products to use it."); return; }
+    if (coupon.applies_to === "categories" && !cart.every((product) => [...(product.category_ids || []), ...(product.category_id ? [product.category_id] : [])].some((id) => (coupon.category_ids || []).includes(id)))) { setActiveCoupon(null); setCouponMessage("This coupon applies only to its selected categories. Remove other products to use it."); return; }
+    setCouponCode(code); setActiveCoupon(coupon); setCouponMessage("Coupon applied. Final eligibility is checked securely at payment.");
+  }
+
+  function chooseCheckoutAddress(id: string) {
+    setSelectedAddressId(id);
+    const a = checkoutAddresses.find((x) => x.id === id);
+    if (!a) return;
+    setCheckout((c) => ({
+      ...c,
+      name: a.recipient_name || c.name,
+      phone: a.phone || c.phone,
+      line1: a.line1,
+      line2: a.line2 || "",
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+      country_code: DEFAULT_COUNTRY.code,
+      phone_country_code: DEFAULT_COUNTRY.dialCode,
+    }));
+  }
+
+
+  const fastImage = (url: string, width = 520, quality = 72) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (
+        u.hostname.endsWith(".supabase.co") &&
+        u.pathname.includes("/storage/v1/object/public/")
+      ) {
+        u.pathname = u.pathname.replace(
+          "/storage/v1/object/public/",
+          "/storage/v1/render/image/public/",
+        );
+        u.searchParams.set("width", String(width));
+        u.searchParams.set("quality", String(quality));
+        u.searchParams.set("resize", "contain");
+        return u.toString();
+      }
+    } catch {}
+    return url;
+  };
+
+  const money = (n: number) => new Intl.NumberFormat(undefined, { style: "currency", currency: displayCurrency, maximumFractionDigits: displayCurrency === "INR" ? 0 : 2 }).format(n * (currencyRates[displayCurrency] || 1));
+  useEffect(() => {
+    const savedCurrency=localStorage.getItem("sg_currency");
+    if(savedCurrency && ["INR","USD","EUR","GBP","AED","CAD","AUD","SGD","JPY","CHF","NZD","SAR","QAR","KWD","BHD","OMR","MYR","THB","IDR","PHP","VND","ZAR","MUR","NPR","LKR","BDT","KRW","SEK","NOK","DKK","PLN","HKD"].includes(savedCurrency)) setDisplayCurrency(savedCurrency);
+    supabase.from("site_settings").select("currency_rates").eq("id",1).single().then(({data})=>{if((data as any)?.currency_rates)setCurrencyRates({...{"INR":1,"USD":0.012,"EUR":0.01,"GBP":0.009,"AED":0.044,"CAD":0.016,"AUD":0.018,"SGD":0.015,"JPY":1.75,"CHF":0.0095,"NZD":0.02,"SAR":0.045,"QAR":0.044,"KWD":0.0037,"BHD":0.0045,"OMR":0.0046,"MYR":0.051,"THB":0.38,"IDR":190,"PHP":0.68,"VND":315,"ZAR":0.21,"MUR":0.55,"NPR":1.6,"LKR":3.65,"BDT":1.46,"KRW":16.5,"SEK":0.112,"NOK":0.118,"DKK":0.069,"PLN":0.043,"HKD":0.093},...(data as any).currency_rates})});
+  }, []);
+  useEffect(() => { localStorage.setItem("sg_currency",displayCurrency); }, [displayCurrency]);
   const go = (v: string) => {
     setView(v);
+    setCatalogPage(1);
     setMenu(false);
     setItem(null);
     setTimeout(
@@ -239,16 +425,27 @@ export default function Storefront() {
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
     if (!cart.length) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      localStorage.setItem("sg_cart", JSON.stringify(cart));
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
+    if (!canUsePhonePe(checkout.country_code)) {
+      setCheckoutMsg(INTERNATIONAL_PAYMENT_MESSAGE);
+      return;
+    }
     setCheckoutBusy(true);
-    setCheckoutMsg("Opening secure Razorpay payment...");
+    setCheckoutMsg("Opening secure payment...");
     const grouped = Object.values(
       cart.reduce(
         (a, p) => {
-          a[p.id] ??= { product_id: p.id, quantity: 0 };
-          a[p.id].quantity++;
+          const key = `${p.id}:${p.variant_id || "base"}:${p.abhimantrit_selected ? "yes" : "no"}:${p.certificate_selected ? "cert" : "nocert"}`;
+          a[key] ??= { product_id: p.id, variant_id: p.variant_id || null, variant_label: p.variant_label || null, quantity: 0, abhimantrit_selected: !!p.abhimantrit_selected, certificate_selected: !!p.certificate_selected };
+          a[key].quantity++;
           return a;
         },
-        {} as Record<string, { product_id: string; quantity: number }>,
+        {} as Record<string, { product_id: string; variant_id: string | null; variant_label: string | null; quantity: number; abhimantrit_selected: boolean; certificate_selected: boolean }>,
       ),
     );
     const payload = {
@@ -265,15 +462,24 @@ export default function Storefront() {
         pincode: checkout.pincode,
       },
       items: grouped,
+      promo_code: couponCode.trim().toUpperCase(),
     };
     try {
       const response = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(payload),
       });
       const order = await response.json();
       if (!response.ok) throw new Error(order.error);
+      if (order.provider === "phonepe" && order.redirect_url) {
+        setCheckoutMsg("Redirecting to secure PhonePe checkout...");
+        window.location.assign(order.redirect_url);
+        return;
+      }
       if (!(window as any).Razorpay) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
@@ -346,10 +552,11 @@ export default function Storefront() {
           view === "shop" ||
           view === "new" ||
           view === "best" ||
-          activeCategory === p.category_id) &&
+          activeCategory === p.category_id ||
+          (!!activeCategory && p.category_ids.includes(activeCategory))) &&
         (view !== "best" || p.is_featured) &&
         (categoryFilter === "all" || p.category_id === categoryFilter) &&
-        (!stockOnly || p.stock_quantity > 0)
+        (!stockOnly || p.stock_quantity > 0 || (p.variants || []).some((variant) => variant.stock_quantity > 0))
     );
     return [...list].sort((a, b) =>
       sort === "price-low"
@@ -365,6 +572,25 @@ export default function Storefront() {
                 : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
+  const pageSize = 12;
+  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  const pageProducts = shown.slice((catalogPage - 1) * pageSize, catalogPage * pageSize);
+  const selectedVariant = item?.variants?.find((variant) => variant.id === selectedVariantId) || item?.variants?.[0] || null;
+  const displayedItemPrice = selectedVariant ? Number(selectedVariant.price_inr) : Number(item?.price_inr || 0);
+  const displayedItemStock = selectedVariant ? Number(selectedVariant.stock_quantity) : Number(item?.stock_quantity || 0);
+  const cartSubtotal = cart.reduce((sum, product) => sum + Number(product.price_inr || 0), 0);
+  const certificateEstimate = cart.reduce((sum, product) => sum + (product.certificate_selected ? Number(product.certificate_price_inr || 0) : 0), 0);
+  const customShippingEstimate = cart.reduce((sum, product) => sum + (product.custom_shipping_enabled ? Number(product.custom_shipping_charge_inr || 0) : 0), 0);
+  const needsDefaultShipping = cart.some((product) => !product.custom_shipping_enabled);
+  const defaultShippingEstimate = needsDefaultShipping ? Number(shippingSettings?.default_shipping_charge_inr || 0) : 0;
+  const freeShippingEstimate = Boolean(shippingSettings?.free_shipping_enabled && Number(shippingSettings?.free_shipping_threshold_inr || 0) > 0 && cartSubtotal >= Number(shippingSettings.free_shipping_threshold_inr));
+  const shippingEstimate = freeShippingEstimate ? 0 : customShippingEstimate + defaultShippingEstimate;
+  const couponDiscountEstimate = activeCoupon && cartSubtotal >= Number(activeCoupon.min_order_inr || 0)
+    ? Math.min(activeCoupon.discount_type === "percentage" ? cartSubtotal * Number(activeCoupon.discount_value) / 100 : Number(activeCoupon.discount_value), (activeCoupon.max_discount_inr == null ? Number.POSITIVE_INFINITY : Number(activeCoupon.max_discount_inr)), cartSubtotal)
+    : 0;
+  const checkoutTotalEstimate = Math.max(0, cartSubtotal + certificateEstimate + shippingEstimate - couponDiscountEstimate);
+  useEffect(() => { setCatalogPage(1); }, [q, view, categoryFilter, stockOnly, sort]);
+  useEffect(() => { if (catalogPage > pageCount) setCatalogPage(pageCount); }, [catalogPage, pageCount]);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -376,6 +602,13 @@ export default function Storefront() {
   ];
   return (
     <main>
+      {cartNotice && (
+        <div className="sg-cart-toast" role="status" aria-live="polite">
+          <span>✓</span>
+          <div><b>Added to cart</b><small>{cartNotice}</small></div>
+          <button type="button" onClick={() => { setCartNotice(""); go("cart"); }}>VIEW CART</button>
+        </div>
+      )}
       <div className="topbar">
         <span>{s.announcement}</span>
         <span>
@@ -417,6 +650,7 @@ export default function Storefront() {
           />
         </label>
         <div className="head-actions">
+          <label className="header-currency" title="Display currency"><span>Currency</span><select aria-label="Select display currency" value={displayCurrency} onChange={(e)=>setDisplayCurrency(e.target.value)}>{["INR","USD","EUR","GBP","AED","CAD","AUD","SGD","JPY","CHF","NZD","SAR","QAR","KWD","BHD","OMR","MYR","THB","IDR","PHP","VND","ZAR","MUR","NPR","LKR","BDT","KRW","SEK","NOK","DKK","PLN","HKD"].map((code)=><option key={code} value={code}>{code}</option>)}</select></label>
           <a href="/login">
             <UserRound />
             <span>Login</span>
@@ -614,7 +848,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -637,7 +871,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
                       ) : (
                         <span>✦</span>
                       )}
@@ -660,7 +894,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
                       ) : (
                         <span>
                           {(
@@ -780,7 +1014,7 @@ export default function Storefront() {
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="product-grid">
               {shown.length ? (
-                shown.map((p) => (
+                pageProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -789,7 +1023,7 @@ export default function Storefront() {
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
                       setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);
+                      setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
                       setDescriptionOpen(false);
                       setQty(1);
                     }}
@@ -797,7 +1031,7 @@ export default function Storefront() {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
+                        setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
                         setDescriptionOpen(false);
                         setQty(1);
                       }
@@ -822,21 +1056,25 @@ export default function Storefront() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
+                        setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
                         setDescriptionOpen(false);
                         setQty(1);
                       }}
                     >
                       <img
                         src={
-                          p.primary_image_url ||
-                          p.image_urls?.[0] ||
-                          "/shree-gauri-logo.png"
+                          p.primary_image_url
+                            ? fastImage(p.primary_image_url, 420, 68)
+                            : p.image_urls?.[0]
+                              ? fastImage(p.image_urls[0], 420, 68)
+                              : "/shree-gauri-logo.png"
                         }
                         alt={p.name}
-                        loading="lazy"
+                        loading={shown.indexOf(p) < 8 ? "eager" : "lazy"}
                         decoding="async"
-                        fetchPriority="low"
+                        fetchPriority={shown.indexOf(p) < 4 ? "high" : "auto"}
+                        width={420}
+                        height={420}
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
@@ -849,12 +1087,15 @@ export default function Storefront() {
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setCart((c) => [...c, p])}>
+                        <button onClick={() => {
+                          if (p.certificate_available || p.abhimantrit_available || p.has_size_options || p.variants?.length) { setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setCertificateChoice(false); setAbhimantritChoice(false); return; }
+                          setCart((c) => [...c, p]); confirmAddedToCart(p.name);
+                        }}>
                           ADD TO CART
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { if (p.certificate_available || p.abhimantrit_available || p.has_size_options || p.variants?.length) { setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setCertificateChoice(false); setAbhimantritChoice(false); return; } setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
                         >
                           BUY NOW
                         </button>
@@ -869,6 +1110,16 @@ export default function Storefront() {
                 </p>
               )}
             </div>
+            {shown.length > pageSize && (
+              <nav className="catalog-pagination" aria-label="Product pages">
+                <button type="button" disabled={catalogPage <= 1} onClick={() => { setCatalogPage((n) => Math.max(1, n - 1)); document.querySelector(".catalog-toolbar")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Previous</button>
+                <div className="catalog-page-numbers" style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button key={page} type="button" aria-current={catalogPage === page ? "page" : undefined} className={catalogPage === page ? "active" : ""} onClick={() => { setCatalogPage(page); document.querySelector(".catalog-toolbar")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{page}</button>)}
+                </div>
+                <span>Page {catalogPage} of {pageCount}</span>
+                <button type="button" disabled={catalogPage >= pageCount} onClick={() => { setCatalogPage((n) => Math.min(pageCount, n + 1)); document.querySelector(".catalog-toolbar")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Next</button>
+              </nav>
+            )}
           </div>
         </section>
       )}
@@ -915,8 +1166,11 @@ export default function Storefront() {
           <h1>Your Cart</h1>
           {cart.map((p, i) => (
             <div className="cart" key={i}>
-              <img src={p.primary_image_url} />
+              <img src={fastImage(p.primary_image_url, 160, 65)} alt={p.name} loading="lazy" decoding="async" width={160} height={160} />
               <b>{p.name}</b>
+              {p.variant_label && <small>Selected option: {p.variant_label}</small>}
+              {p.abhimantrit_selected && <small>Abhimantrit / Energisation: Yes</small>}
+              {p.certificate_selected && <small>Authenticity certificate: Yes</small>}
               <span>{money(Number(p.price_inr))}</span>
               <button
                 onClick={() => setCart((c) => c.filter((_, x) => x !== i))}
@@ -947,6 +1201,8 @@ export default function Storefront() {
         <img
           src={s.founder_image_url || "/gourav-sharma-founder.jpeg"}
           alt="Gourav Sharma, Founder of Shree Gauri"
+          loading="lazy"
+          decoding="async"
         />
         <div>
           <small className="kicker">A PERSONAL NOTE</small>
@@ -1033,10 +1289,26 @@ export default function Storefront() {
             <small className="kicker">SECURE CHECKOUT</small>
             <h2>Delivery Details</h2>
             <p>
-              Enter your delivery address, then complete payment securely
-              through Razorpay.
+              Select a saved delivery address or enter another address. India orders can complete payment securely through PhonePe. International customers can enter their delivery details and contact Shree Gauri for shipping and payment assistance.
+            </p>
+            {checkoutAddresses.length > 0 && (
+              <label className="checkout-address-select">
+                Saved Address
+                <select value={selectedAddressId} onChange={(e) => chooseCheckoutAddress(e.target.value)}>
+                  {checkoutAddresses.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}{a.is_default ? " (Default)" : ""} — {a.line1}, {a.city}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <p className="checkout-account-note">
+              Logged-in checkout • <a href="/login?section=addresses">Manage saved addresses</a>
             </p>
             <div className="checkout-grid">
+              <label>Country<select value={checkout.country_code} onChange={(e) => { const country=getCountry(e.target.value); setCheckout((c)=>({...c,country_code:country.code,phone_country_code:country.dialCode})); }}>{COUNTRY_OPTIONS.map((country)=><option key={country.code} value={country.code}>{country.name}</option>)}</select></label>
+              <label>Phone code<select value={checkout.phone_country_code} onChange={(e)=>setCheckout((c)=>({...c,phone_country_code:e.target.value}))}>{COUNTRY_OPTIONS.map((country)=><option key={country.code} value={country.dialCode}>{country.name} ({country.dialCode})</option>)}</select></label>
               <label>
                 Full Name
                 <input
@@ -1129,16 +1401,25 @@ export default function Storefront() {
               {cart.map((p, i) => (
                 <div className="checkout-product-row" key={`${p.id}-${i}`}>
                   <img src={p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"} alt={p.name} />
-                  <div><b>{p.name}</b><small>{money(Number(p.price_inr))}</small></div>
+                  <div><b>{p.name}</b>{p.variant_label && <small>Option: {p.variant_label}</small>}{p.abhimantrit_selected && <small>Abhimantrit / Energisation: Yes</small>}{p.certificate_selected && <small>Authenticity certificate: Yes</small>}<small>{money(Number(p.price_inr))}</small></div>
                   <button type="button" aria-label={`Remove ${p.name}`} onClick={() => setCart((items) => items.filter((_, index) => index !== i))}><X /> REMOVE</button>
                 </div>
               ))}
             </div>
-            <div className="checkout-summary">
-              <b>{cart.length} item(s)</b>
-              <strong>
-                {money(cart.reduce((sum, p) => sum + Number(p.price_inr), 0))}
-              </strong>
+            <div className="checkout-coupon" style={{ margin: "14px 0", padding: 14, border: "1px solid #e5d7c9", borderRadius: 10 }}>
+              <b>Apply a discount coupon</b>
+              {availableCoupons.length > 0 && <div style={{ margin: "8px 0", display: "grid", gap: 6 }}>{availableCoupons.map((c:any) => <button type="button" key={c.code} onClick={() => { setCouponCode(c.code); void applyCoupon(c.code); }} style={{ textAlign: "left", padding: 8, border: "1px solid #e5d7c9", borderRadius: 7, background: "#fffdf9" }}>{c.code} · {c.discount_type === "percentage" ? `${c.discount_value}% off` : `₹${c.discount_value} off`} · Min. ₹{Number(c.min_order_inr || 0).toLocaleString("en-IN")}</button>)}</div>}
+              <input aria-label="Coupon code" placeholder="Enter a coupon code" value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); setActiveCoupon(null); setCouponMessage(""); }} />
+              <button type="button" onClick={() => void applyCoupon()}>APPLY COUPON</button>
+              <small>Private coupon codes can also be entered here. {couponMessage}</small>
+            </div>
+            <div className="checkout-summary" style={{ display: "grid", gap: 8, padding: 14, border: "1px solid #e5d7c9", borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal · {cart.length} item(s)</span><b>{money(cartSubtotal)}</b></div>
+              {certificateEstimate > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Authenticity certificates</span><b>{money(certificateEstimate)}</b></div>}
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Shipping {freeShippingEstimate ? "(Free)" : "(Estimated)"}</span><b>{shippingEstimate ? money(shippingEstimate) : "₹0"}</b></div>
+              {couponDiscountEstimate > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Coupon · {activeCoupon.code}</span><b>−{money(couponDiscountEstimate)}</b></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e5d7c9", paddingTop: 10, fontSize: 17 }}><strong>Estimated total</strong><strong>{money(checkoutTotalEstimate)}</strong></div>
+              <small>Final shipping and coupon eligibility are verified by the server before payment.</small>
             </div>
             <button className="place-order" disabled={checkoutBusy}>
               {checkoutBusy
@@ -1229,16 +1510,21 @@ export default function Storefront() {
                   </button>
                 </div>
               )}
+              {item.variants && item.variants.length > 0 && <label className="product-variant-picker" style={{ display: "grid", gap: 7, margin: "14px 0" }}>
+                <b>Select size / weight</b>
+                <select value={selectedVariant?.id || ""} onChange={(e) => setSelectedVariantId(e.target.value)} style={{ padding: 12, border: "1px solid #d8c8a8", borderRadius: 8, background: "#fff" }}>
+                  {item.variants.map((variant) => <option key={variant.id} value={variant.id} disabled={variant.stock_quantity <= 0}>{variant.label} — {money(Number(variant.price_inr))}{variant.stock_quantity <= 0 ? " · Out of stock" : ""}</option>)}
+                </select>
+              </label>}
+              {item.has_size_options && !item.variants?.length && <p role="status" style={{ color: "#8b1e25" }}>Size / weight options are temporarily unavailable. Please contact Shree Gauri before ordering.</p>}
               <div className="product-price-block">
                 <small>Price</small>
-                <h3>{money(Number(item.price_inr))}</h3>
+                <h3>{money(displayedItemPrice)}</h3>
                 {item.compare_at_price_inr && <del>{money(Number(item.compare_at_price_inr))}</del>}
                 <span>Inclusive of all taxes</span>
               </div>
-              <span className={item.stock_quantity ? "in-stock" : "out-stock"}>
-                {item.stock_quantity
-                  ? `In stock · Only ${item.stock_quantity} available`
-                  : "Currently unavailable"}
+              <span className={displayedItemStock > 0 ? "in-stock" : "out-stock"}>
+                {displayedItemStock > 0 ? `In stock · Only ${displayedItemStock} available` : "Currently unavailable"}
               </span>
               <div className="purchase-promises">
                 <span>
@@ -1250,6 +1536,30 @@ export default function Storefront() {
                   Secure packaging
                 </span>
               </div>
+              {item.certificate_available && (
+                <div style={{ margin: "16px 0", padding: 14, border: "1px solid #e5d7c9", borderRadius: 10 }}>
+                  <b>Product Authenticity Certificate</b>
+                  <p style={{ margin: "6px 0 10px", fontSize: 13 }}>Would you like to add an authenticity certificate for this product? Additional charge: {money(Number(item.certificate_price_inr || 0))}.</p>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginRight: 18 }}><input type="radio" name="certificate-choice" checked={!certificateChoice} onChange={() => setCertificateChoice(false)} /> No certificate</label>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><input type="radio" name="certificate-choice" checked={certificateChoice} onChange={() => setCertificateChoice(true)} /> Yes, add certificate</label>
+                </div>
+              )}
+              {item.abhimantrit_available && (
+                <div className="product-service-choice" style={{ margin: "18px 0", padding: 14, border: "1px solid #e5d7c9", borderRadius: 10 }}>
+                  <b>Abhimantrit / Energisation</b>
+                  <p style={{ margin: "6px 0 10px", fontSize: 13 }}>Would you like Shree Gauri to perform the Abhimantrit energisation of this product before dispatch?</p>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginRight: 18 }}><input type="radio" name="abhimantrit-choice" checked={!abhimantritChoice} onChange={() => setAbhimantritChoice(false)} /> No, thank you</label>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><input type="radio" name="abhimantrit-choice" checked={abhimantritChoice} onChange={() => setAbhimantritChoice(true)} /> Yes, please</label>
+                </div>
+              )}
+              {item.abhimantrit_available && (
+                <div style={{ margin: "16px 0", padding: 14, border: "1px solid #e5d7c9", borderRadius: 10 }}>
+                  <b>Abhimantrit / Energisation</b>
+                  <p style={{ margin: "6px 0 10px", fontSize: 13 }}>Would you like Shree Gauri to perform Abhimantrit energisation before dispatch?</p>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginRight: 18 }}><input type="radio" name="abhimantrit-choice" checked={!abhimantritChoice} onChange={() => setAbhimantritChoice(false)} /> No, thank you</label>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><input type="radio" name="abhimantrit-choice" checked={abhimantritChoice} onChange={() => setAbhimantritChoice(true)} /> Yes, please</label>
+                </div>
+              )}
               <div className="quantity">
                 <button onClick={() => setQty(Math.max(1, qty - 1))}>
                   <Minus />
@@ -1261,8 +1571,11 @@ export default function Storefront() {
               </div>
               <div className="buy">
                 <button
+                  disabled={displayedItemStock <= 0 || (item.has_size_options && !selectedVariant)}
                   onClick={() => {
-                    setCart((c) => [...c, ...Array(qty).fill(item)]);
+                    if (qty > displayedItemStock) { setCheckoutMsg(`Only ${displayedItemStock} available for this option.`); return; }
+                    setCart((c) => [...c, ...Array.from({ length: qty }, () => ({ ...item, price_inr: displayedItemPrice, stock_quantity: displayedItemStock, variant_id: selectedVariant?.id || null, variant_label: selectedVariant?.label || null, abhimantrit_selected: !!(item.abhimantrit_available && abhimantritChoice), certificate_selected: !!(item.certificate_available && certificateChoice) }))]);
+                    confirmAddedToCart(item.name, qty);
                     setItem(null);
                   }}
                 >
@@ -1270,7 +1583,8 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                  disabled={displayedItemStock <= 0 || (item.has_size_options && !selectedVariant)}
+                  onClick={() => { if (qty > displayedItemStock) { setCheckoutMsg(`Only ${displayedItemStock} available for this option.`); return; } const chosen=Array.from({ length: qty }, () => ({ ...item, price_inr: displayedItemPrice, stock_quantity: displayedItemStock, variant_id: selectedVariant?.id || null, variant_label: selectedVariant?.label || null, abhimantrit_selected: !!(item.abhimantrit_available && abhimantritChoice), certificate_selected: !!(item.certificate_available && certificateChoice) })); setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
                 >
                   BUY NOW
                 </button>

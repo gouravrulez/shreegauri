@@ -1,5 +1,0 @@
-sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1>${heading}</h1><p>Namaste ${order.customer_name||"Customer"},</p><p>${message}</p><p>Order: <strong>${order.order_number}</strong></p><p>Thank you for choosing Shree Gauri.</p></div>`})});
-+    const res=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({from,to:[order.email],subject:`${heading} — ${order.order_number}`,html:`<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1>${heading}</h1><p>Namaste ${order.customer_name||"Customer"},</p><p>${message}</p><p>Order: <strong>${order.order_number}</strong></p>${trackingHtml}<p>Thank you for choosing Shree Gauri.</p></div>`})});
-     if(!res.ok){console.error("Resend:",await res.text()); return json({ok:true,email_sent:false,warning:"Order updated but email could not be sent."});}
-     return json({ok:true,email_sent:true});
-   } catch(e){ console.error(e); return json({error:"Unable to update order status."},500); }
