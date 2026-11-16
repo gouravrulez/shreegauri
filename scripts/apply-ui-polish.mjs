@@ -21,12 +21,16 @@ fs.writeFileSync(storePath, store);
 const adminPath = "app/admin/shipping-promo-manager.tsx";
 let admin = fs.readFileSync(adminPath, "utf8");
 if (!admin.includes('className="shipping-promo-manager"')) {
-  const root = admin.match(/return\s*\(\s*(<div\b[^>]*>)/s);
-  if (!root) throw new Error("UI polish patch could not find shipping admin root element");
+  const root = admin.match(/<div\\b[^>]*>/);
+  if (!root) throw new Error("UI polish patch could not find shipping admin container");
+  let taggedRoot = root[0];
+  if (/className="[^"]*"/.test(taggedRoot)) {
+    taggedRoot = taggedRoot.replace(/className="([^"]*)"/, 'className="$1 shipping-promo-manager"');
+  } else {
+    taggedRoot = taggedRoot.replace("<div", '<div className="shipping-promo-manager"');
+  }
   const heading = '<div className="shipping-promo-heading">\\n        <div>\\n          <span className="shipping-promo-eyebrow">FULFILMENT & PROMOTIONS</span>\\n          <h1>Shipping & Coupons</h1>\\n          <p>Manage delivery charges, courier partners and customer offers in one place.</p>\\n        </div>\\n        <div className="shipping-promo-summary">\\n          <div><strong>{companies.length}</strong><span>Courier partners</span></div>\\n          <div><strong>{coupons.length}</strong><span>Coupons created</span></div>\\n          <div><strong>{coupons.filter((c) => c.is_active).length}</strong><span>Active coupons</span></div>\\n        </div>\\n      </div>';
-  admin = admin.replace(root[1], root[1] + heading);
-  admin = admin.replace(/className="admin-panel"/, 'className="admin-panel shipping-promo-manager"');
-  if (!admin.includes('className="shipping-promo-manager"')) admin = admin.replace(/(<div\b[^>]*>)/, '$1');
+  admin = admin.replace(root[0], taggedRoot + heading);
 }
 fs.writeFileSync(adminPath, admin);
 
