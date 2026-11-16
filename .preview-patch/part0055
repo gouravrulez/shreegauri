@@ -1,0 +1,31 @@
+ated_at", { ascending: false }),
+@@ -163,29 +210,168 @@ export default function Storefront() {
+         .select("id,product_id,reviewer_name,rating,title,body,created_at")
+         .eq("is_approved", true)
+         .order("created_at", { ascending: false }),
+-    ]).then(([a, b, d, r]) => {
++    ]).then(async ([a, b, d, r]) => {
+       if (a.data) setCats(a.data as C[]);
+-      if (b.data)
+-        setProducts(
+-          b.data.map((p: any) => ({
+-            ...p,
+-            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+-          })) as P[],
+-        );
+-      if (d.data)
++      if (b.data) {
++        const productIds = b.data.map((p: any) => p.id);
++        const { data: variantData } = productIds.length
++          ? await supabase.from("product_variants").select("id,product_id,label,price_inr,stock_quantity,is_active,sort_order").in("product_id", productIds).eq("is_active", true).order("sort_order", { ascending: true })
++          : { data: [] as any[] };
++        const variantsByProduct = new Map<string, ProductVariant[]>();
++        (variantData || []).forEach((variant: any) => {
++          const list = variantsByProduct.get(variant.product_id) || [];
++          list.push(variant as ProductVariant);
++          variantsByProduct.set(variant.product_id, list);
++        });
++        setProducts(b.data.map((p: any) => ({
++          ...p, variants: variantsByProduct.get(p.id) || [],
++          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
++  

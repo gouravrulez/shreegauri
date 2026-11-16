@@ -1,0 +1,30 @@
++      .from("customers")
++      .select("*")
++      .eq("auth_user_id", session.user.id)
++      .maybeSingle();
++
++    const [{ data: couponRows }, { data: shippingConfig }] = await Promise.all([
++      supabase.from("promo_codes").select("code,discount_type,discount_value,min_order_inr,max_discount_inr,starts_at,ends_at").eq("is_active", true).eq("is_public", true).eq("show_on_dashboard", true).order("created_at", { ascending: false }),
++      supabase.from("shipping_settings").select("*").eq("id", 1).maybeSingle(),
++    ]);
++    setShippingSettings(shippingConfig || null);
++    const now = Date.now();
++    setAvailableCoupons((couponRows || []).filter((coupon: any) => (!coupon.starts_at || new Date(coupon.starts_at).getTime() <= now) && (!coupon.ends_at || new Date(coupon.ends_at).getTime() >= now)));
++
++    const profileName = customer?.full_name || session.user.user_metadata?.full_name || "";
++    const profileEmail = customer?.email || session.user.email || "";
++    const profilePhone = customer?.phone || session.user.phone || "";
++
++    let addresses: SavedAddress[] = [];
++    if (customer?.id) {
++      const { data } = await supabase
++        .from("customer_addresses")
++        .select("*")
++        .eq("customer_id", customer.id)
++        .order("is_default", { ascending: false })
++        .order("created_at", { ascending: true });
++      addresses = (data || []) as SavedAddress[];
++    }
++
++    setCheckoutAddresses(addresses);
++    const chosen = addresses.find((a)

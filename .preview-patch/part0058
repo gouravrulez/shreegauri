@@ -1,0 +1,27 @@
+ => a.is_default) || addresses[0];
++    setSelectedAddressId(chosen?.id || "");
++    setCheckout({
++      name: chosen?.recipient_name || profileName,
++      email: profileEmail,
++      phone: chosen?.phone || profilePhone,
++      line1: chosen?.line1 || "",
++      line2: chosen?.line2 || "",
++      city: chosen?.city || "",
++      state: chosen?.state || "",
++      pincode: chosen?.pincode || "",
++      country_code: DEFAULT_COUNTRY.code,
++      phone_country_code: DEFAULT_COUNTRY.dialCode,
++    });
++    setCheckoutMsg(addresses.length ? "" : "Add a delivery address here or save one in My Account.");
++    setCheckoutOpen(true);
++  }
++
++  async function applyCoupon(rawCode = couponCode) {
++    const code = String(rawCode || "").trim().toUpperCase();
++    if (!code) { setActiveCoupon(null); setCouponMessage("Enter a coupon code first."); return; }
++    const { data: coupon, error } = await supabase.from("promo_codes").select("*").eq("code", code).eq("is_active", true).maybeSingle();
++    if (error || !coupon) { setActiveCoupon(null); setCouponMessage("This coupon is invalid or inactive."); return; }
++    const now = Date.now();
++    if (coupon.starts_at && new Date(coupon.starts_at).getTime() > now) { setActiveCoupon(null); setCouponMessage("This coupon is not active yet."); return; }
++    if (coupon.ends_at && new Date(coupon.ends_at).getTime() < now) { setActiveCoupon(null); setCouponMessage("This coupon has expired."); return; }
++    if (cartSubtotal < Number(coupon.min_ord

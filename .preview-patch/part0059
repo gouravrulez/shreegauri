@@ -1,0 +1,26 @@
+er_inr || 0)) { setActiveCoupon(null); setCouponMessage(`Minimum order for this coupon is ₹${Number(coupon.min_order_inr).toLocaleString("en-IN")}.`); return; }
++    if (coupon.applies_to === "products" && !cart.every((product) => (coupon.product_ids || []).includes(product.id))) { setActiveCoupon(null); setCouponMessage("This coupon applies only to its selected products. Remove other products to use it."); return; }
++    if (coupon.applies_to === "categories" && !cart.every((product) => [...(product.category_ids || []), ...(product.category_id ? [product.category_id] : [])].some((id) => (coupon.category_ids || []).includes(id)))) { setActiveCoupon(null); setCouponMessage("This coupon applies only to its selected categories. Remove other products to use it."); return; }
++    setCouponCode(code); setActiveCoupon(coupon); setCouponMessage("Coupon applied. Final eligibility is checked securely at payment.");
++  }
++
++  function chooseCheckoutAddress(id: string) {
++    setSelectedAddressId(id);
++    const a = checkoutAddresses.find((x) => x.id === id);
++    if (!a) return;
++    setCheckout((c) => ({
++      ...c,
++      name: a.recipient_name || c.name,
++      phone: a.phone || c.phone,
++      line1: a.line1,
++      line2: a.line2 || "",
++      city: a.city,
++      state: a.state,
++      pincode: a.pincode,
++      country_code: DEFAULT_COUNTRY.code,
++      phone_country_code: DEFAULT_COUNTRY.dialCode,
++    }));
++  }
++
++
++  const fastImage = (url: string, width = 520, quality = 72) 
