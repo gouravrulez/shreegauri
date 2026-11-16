@@ -1,0 +1,25 @@
+ {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
+             <div className="product-grid">
+               {shown.length ? (
+-                shown.map((p) => (
++                pageProducts.map((p) => (
+                   <article
+                     key={p.id}
+                     className="product-card-clickable"
+@@ -789,7 +1023,7 @@ export default function Storefront() {
+                     onClick={(e) => {
+                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
+                       setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+-                      setItem(p);
++                      setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
+                       setDescriptionOpen(false);
+                       setQty(1);
+                     }}
+@@ -797,7 +1031,7 @@ export default function Storefront() {
+                       if (e.key === "Enter" || e.key === " ") {
+                         e.preventDefault();
+                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+-                        setItem(p);
++                        setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
+                         setDescriptionOpen(false);
+                   

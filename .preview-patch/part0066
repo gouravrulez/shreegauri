@@ -1,0 +1,27 @@
+        <div>
+                       {c.image_url ? (
+-                        <img src={c.image_url} alt={c.name} />
++                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
+                       ) : (
+                         <span className="category-symbol">✦</span>
+                       )}
+@@ -637,7 +871,7 @@ export default function Storefront() {
+                   <button key={c.id} onClick={() => go(c.slug)}>
+                     <div>
+                       {c.image_url ? (
+-                        <img src={c.image_url} alt={c.name} />
++                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
+                       ) : (
+                         <span>✦</span>
+                       )}
+@@ -660,7 +894,7 @@ export default function Storefront() {
+                   <button key={c.id} onClick={() => go(c.slug)}>
+                     <div>
+                       {c.image_url ? (
+-                        <img src={c.image_url} alt={c.name} />
++                        <img src={fastImage(c.image_url, 180, 66)} alt={c.name} loading="eager" fetchPriority="high" decoding="async" width={180} height={180} />
+                       ) : (
+                         <span>
+                           {(
+@@ -780,7 +1014,7 @@ export default function Storefront() {
+            

@@ -1,0 +1,31 @@
+      setQty(1);
+                       }
+@@ -822,21 +1056,25 @@ export default function Storefront() {
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
+-                        setItem(p);
++                        setItem(p); setSelectedVariantId(p.variants?.[0]?.id || ""); setQty(1); setAbhimantritChoice(false); setCertificateChoice(false);
+                         setDescriptionOpen(false);
+                         setQty(1);
+                       }}
+                     >
+                       <img
+                         src={
+-                          p.primary_image_url ||
+-                          p.image_urls?.[0] ||
+-                          "/shree-gauri-logo.png"
++                          p.primary_image_url
++                            ? fastImage(p.primary_image_url, 420, 68)
++                            : p.image_urls?.[0]
++                              ? fastImage(p.image_urls[0], 420, 68)
++                              : "/shree-gauri-logo.png"
+                         }
+                         alt={p.name}
+-                        loading="lazy"
++                        loading={shown.indexOf(p) < 8 ? "eager" : "lazy"}
+                         decoding="async"
+-                        fetchPriority="low"
++                        fetchPriority={shown.indexOf(p) < 4 ? "high" : "auto"}
++                        width={420}
++   
