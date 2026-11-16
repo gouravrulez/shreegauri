@@ -1,0 +1,17 @@
+} from "https://esm.sh/@supabase/supabase-js@2";
+ 
+-const allowed = new Set(["pending","confirmed","processing","packed","shipped","delivered","cancelled"]);
+-const mailStatuses = new Set(["confirmed","processing","packed","shipped","delivered"]);
++const allowed = new Set(["pending","confirmed","processing","packed","shipped","out_for_delivery","delivered","cancelled"]);
++const mailStatuses = new Set(["confirmed","processing","packed","shipped","out_for_delivery","delivered"]);
+ 
+ Deno.serve(async (req: Request) => {
+   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type":"application/json" } });
+@@ -18,19 +18,19 @@ Deno.serve(async (req: Request) => {
+     const db=createClient(url,service);
+     const {data:staff}=await db.from("admin_users").select("role").eq("user_id",user.id).maybeSingle();
+     if(!staff || !["admin","manager","orders"].includes(String(staff.role))) return json({error:"Not authorized for order management."},403);
+-    const body=await req.json(); const id=String(body?.order_id||""); const status=String(body?.order_status||"").toLowerCase();
++    const body=await req.json(); const id=String(body?.order_id||""); const status=String(body?.order_status||"").toLowerCase(); const trackingUpdate=body?.tracking_update===true;
+     if(!id||!allowed.has(status)) return json({error:"Invalid order update."},400);
+-    const {data:order,error:oe}=await db.from("orders").select("id,order_number,customer_

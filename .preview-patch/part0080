@@ -1,0 +1,25 @@
+lick={() => { if (qty > displayedItemStock) { setCheckoutMsg(`Only ${displayedItemStock} available for this option.`); return; } const chosen=Array.from({ length: qty }, () => ({ ...item, price_inr: displayedItemPrice, stock_quantity: displayedItemStock, variant_id: selectedVariant?.id || null, variant_label: selectedVariant?.label || null, abhimantrit_selected: !!(item.abhimantrit_available && abhimantritChoice), certificate_selected: !!(item.certificate_available && certificateChoice) })); setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                 >
+                   BUY NOW
+                 </button>
+diff --git a/scripts/apply-mobile-footer-fix.mjs b/scripts/apply-mobile-footer-fix.mjs
+index 08ec19d..519df24 100644
+--- a/scripts/apply-mobile-footer-fix.mjs
++++ b/scripts/apply-mobile-footer-fix.mjs
+@@ -33,8 +33,7 @@ const newGo = `  const go = (v: string) => {
+     }, 80);
+   };`;
+ 
+-if (!text.includes(newGo)) {
+-  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
++if (!text.includes(newGo) && text.includes(oldGo)) {
+   text = text.replace(oldGo, newGo);
+ }
+ 
+diff --git a/supabase/functions/order-status-email/index.ts b/supabase/functions/order-status-email/index.ts
+index e85ce22..972ff3c 100644
+--- a/supabase/functions/order-status-email/index.ts
++++ b/supabase/functions/order-status-email/index.ts
+@@ -1,8 +1,8 @@
+ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+ import { createClient 
