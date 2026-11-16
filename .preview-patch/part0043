@@ -1,0 +1,33 @@
+-193,9 +229,10 @@ export default function CustomerLogin() {
+         email: customer.email || user.email || "",
+         phone: customer.phone || user.phone || "",
+         date_of_birth: customer.date_of_birth || "",
++        profile_image_url: customer.profile_image_url || "",
+       });
+ 
+-      const [a, o] = await Promise.all([
++      const [a, o, coupons] = await Promise.all([
+         supabase
+           .from("customer_addresses")
+           .select("*")
+@@ -206,9 +243,11 @@ export default function CustomerLogin() {
+           .from("orders")
+           .select("*,order_items(*)")
+           .order("created_at", { ascending: false }),
++        supabase.from("promo_codes").select("code,discount_type,discount_value,min_order_inr,max_discount_inr,ends_at").eq("is_active", true).eq("is_public", true).eq("show_on_dashboard", true).order("created_at", { ascending: false }),
+       ]);
+       if (a.data) setAddresses(a.data as Address[]);
+       if (o.data) setOrders(o.data as Order[]);
++      if (coupons.data) setDashboardCoupons(coupons.data.filter((coupon: any) => !coupon.ends_at || new Date(coupon.ends_at).getTime() >= Date.now()));
+     }
+     setLoading(false);
+   }
+@@ -232,6 +271,66 @@ export default function CustomerLogin() {
+     if (!error) loadAccount();
+   }
+ 
++  async function uploadProfilePhoto(file?: File) {
++    if (!file || !user || !profile.id) return;
++
++    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
++      setMessage("Please cho

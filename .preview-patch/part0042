@@ -1,0 +1,47 @@
+    type: "sms",
+-          });
+-
+-    if (result.error) return setMessage(result.error.message);
++
++    if (channel === "email") {
++      const response = await fetch("/api/auth/email-otp/verify", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          email: identifier.trim().toLowerCase(),
++          code: otp.trim(),
++          challenge_id: challengeId,
++        }),
++      });
++      const result = await response.json().catch(() => ({}));
++      if (!response.ok) return setMessage(result?.error || "Unable to verify code.");
++
++      const access_token = result?.session?.access_token;
++      const refresh_token = result?.session?.refresh_token;
++
++      if (!access_token || !refresh_token) {
++        return setMessage("Unable to establish your login session.");
++      }
++
++      const setResult = await supabase.auth.setSession({
++        access_token,
++        refresh_token,
++      });
++
++      if (setResult.error) return setMessage(setResult.error.message);
++    } else {
++      const result = await supabase.auth.verifyOtp({
++        phone: identifier.trim(),
++        token: otp.trim(),
++        type: "sms",
++      });
++
++      if (result.error) return setMessage(result.error.message);
++    }
++
+     setMessage("Welcome to Shree Gauri.");
++
+     const params = new URLSearchParams(window.location.search);
+     if (params.get("returnTo") === "checkout") {
+       window.location.href = "/?checkout=1";
+@@ 

@@ -1,0 +1,35 @@
+sses" ? requested : "overview"; });
+@@ -120,11 +129,14 @@ export default function CustomerLogin() {
+     const data = { full_name: fullName };
+     if (channel === "email") {
+       const email = identifier.trim().toLowerCase();
+-      const { error } = await supabase.auth.signInWithOtp({
+-        email,
+-        options: { shouldCreateUser: true, data },
++      const response = await fetch("/api/auth/email-otp/send", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ email, full_name: fullName }),
+       });
+-      if (error) return setMessage(error.message);
++      const result = await response.json().catch(() => ({}));
++      if (!response.ok) return setMessage(result?.error || "Unable to send verification code.");
++      setChallengeId(String(result.challenge_id || ""));
+     } else {
+       let phone = identifier.replace(/\s+/g, "");
+       if (!phone.startsWith("+")) phone = `+91${phone.replace(/^0+/, "")}`;
+@@ -142,21 +154,45 @@ export default function CustomerLogin() {
+   async function verifyOtp(e: FormEvent) {
+     e.preventDefault();
+     setMessage("Verifying...");
+-    const result =
+-      channel === "email"
+-        ? await supabase.auth.verifyOtp({
+-            email: identifier.trim().toLowerCase(),
+-            token: otp.trim(),
+-            type: "email",
+-          })
+-        : await supabase.auth.verifyOtp({
+-            phone: identifier.trim(),
+-            token: otp.trim(),
+-        

@@ -1,0 +1,60 @@
+ose a JPG, PNG or WEBP image.");
++      return;
++    }
++    if (file.size > 3 * 1024 * 1024) {
++      setMessage("Profile photo must be 3 MB or smaller.");
++      return;
++    }
++
++    setSaving(true);
++    setMessage("Uploading profile photo...");
++
++    const ext =
++      file.type === "image/png" ? "png" :
++      file.type === "image/webp" ? "webp" : "jpg";
++
++    const path = `${user.id}/avatar.${ext}`;
++
++    const uploaded = await supabase.storage
++      .from("customer-avatars")
++      .upload(path, file, {
++        upsert: true,
++        contentType: file.type,
++        cacheControl: "3600",
++      });
++
++    if (uploaded.error) {
++      setSaving(false);
++      setMessage(uploaded.error.message);
++      return;
++    }
++
++    const { data: publicData } = supabase.storage
++      .from("customer-avatars")
++      .getPublicUrl(path);
++
++    const imageUrl = `${publicData.publicUrl}?v=${Date.now()}`;
++
++    const updated = await supabase
++      .from("customers")
++      .update({
++        profile_image_url: imageUrl,
++        updated_at: new Date().toISOString(),
++      })
++      .eq("id", profile.id);
++
++    setSaving(false);
++
++    if (updated.error) {
++      setMessage(updated.error.message);
++      return;
++    }
++
++    setProfile((p) => ({ ...p, profile_image_url: imageUrl }));
++    setMessage("Profile photo updated.");
++  }
++
+   async function addAddress(e: FormEvent) {
+     e.preventDefault();
+     if (!profile.id) return;
+@@ -312,14 +411,12 @@ export default funct
