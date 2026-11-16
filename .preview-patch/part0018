@@ -1,0 +1,30 @@
+n:"column",gap:5}}>{code}{code === "INR" ? " (Base)" : ""}
++                    <input type="number" min="0" step="0.000001" disabled={code === "INR"} value={rates[code] ?? ""} onChange={(e) => setSettings({ ...settings, currency_rates: { ...rates, [code]: Number(e.target.value) } })} />
++                  </label>
++                )})}
++              </div>
++              <button onClick={saveSettings}><Save /> SAVE CURRENCY RATES</button>
++            </div>
+             <h2>Edit Website Content & Brand Images</h2>
+             <label>
+               Main Shree Gauri Logo
+@@ -1456,6 +1686,7 @@ export default function AdminDashboard() {
+             </button>
+           </div>
+         )}
++        {tab === "shipping" && isPrimaryAdmin && <ShippingPromoManager />}
+         {tab === "currency" && isPrimaryAdmin && settings && (
+           <div className="editor settings currency-settings">
+             <h2>Global Currency Conversion Rates</h2>
+diff --git a/app/admin/shipping-promo-manager.tsx b/app/admin/shipping-promo-manager.tsx
+new file mode 100644
+index 0000000..2a425a6
+--- /dev/null
++++ b/app/admin/shipping-promo-manager.tsx
+@@ -0,0 +1,26 @@
++"use client";
++import { useEffect, useState } from "react";
++import { supabase } from "../lib/supabase";
++
++export default function ShippingPromoManager() {
++  const [settings,setSettings]=useState<any>({id:1,default_shipping_charge_inr:0,free_shipping_enabled:false,free_shipping_threshold_inr:0,default_min_delivery_days:3,default_ma
