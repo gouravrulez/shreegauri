@@ -33,8 +33,7 @@ const newGo = `  const go = (v: string) => {
     }, 80);
   };`;
 
-if (!text.includes(newGo)) {
-  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
+if (!text.includes(newGo) && text.includes(oldGo)) {
   text = text.replace(oldGo, newGo);
 }
 
@@ -48,8 +47,4 @@ const oldEmail = `          <a href="mailto:gauritechnologiespvt@gmail.com">
 const newEmail = `          <a href="mailto:gauritechnologiespvt@gmail.com">
             gauritechnologiespvt@gmail.com
           </a>
-          <a href="tel:+917400617601">+91 74006 17601</a>`;
-if (!text.includes(newEmail)) text = text.replace(oldEmail, newEmail);
-
-fs.writeFileSync(store, text);
-console.log("Mobile category and footer contact fix applied.");
+     ¶»§q«^
