@@ -1,0 +1,17 @@
+d", storeOrder.order_id).eq("product_id", line.product_id);
++      itemUpdate = line.variant_id ? itemUpdate.eq("variant_id", line.variant_id) : itemUpdate.is("variant_id", null);
++      const { error: itemOptionError } = await itemUpdate;
++      if (itemOptionError) throw new Error("Could not save the selected product options.");
++      if (product.custom_shipping_enabled) customShippingTotal += Math.max(0, Number(product.custom_shipping_charge_inr || 0)) * quantity;
++      else needsDefaultShipping = true;
++    }
++    let shippingTotal = customShippingTotal + (needsDefaultShipping ? Math.max(0, Number(shippingSettings?.default_shipping_charge_inr || 0)) : 0);
++    const freeShippingThreshold = Number(shippingSettings?.free_shipping_threshold_inr || 0);
++    if (shippingSettings?.free_shipping_enabled && freeShippingThreshold > 0 && Number(storeOrder.subtotal_inr || 0) >= freeShippingThreshold) shippingTotal = 0;
++    const certificateAmount = Math.round(certificateTotal * 100) / 100;
++    shippingTotal = Math.round(shippingTotal * 100) / 100;
++    const discountAmount = Number(storeOrder.discount_inr || 0);
++    storeOrder.certificate_inr = certificateAmount;
++    storeOrder.shipping_inr = shippingTotal;
++    storeOrder.total_inr = Math.max(0, Number(storeOrder.subtotal_inr || 0) + certificateAmount + shippingTotal - discountAmount);
++    const { error: totalsError } = await admin.from("orders").update({ certificate_inr: certificateAmount, shipping_inr: shippingTotal, couri
