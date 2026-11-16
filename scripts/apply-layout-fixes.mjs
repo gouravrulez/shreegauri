@@ -72,6 +72,25 @@ const styles = `
  .admin .catalog-view-switch{position:relative!important;top:auto!important;z-index:1!important}
 }
 
+/* Header currency selector gets a reserved column; it must not push into search. */
+header{grid-template-columns:minmax(210px,270px) minmax(260px,1fr) minmax(340px,auto)!important;column-gap:16px!important;padding-left:3vw!important;padding-right:3vw!important}
+.head-actions{min-width:0!important;gap:10px!important;white-space:nowrap}
+.header-currency{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;white-space:nowrap!important;font-size:10px!important}
+.header-currency select{box-sizing:border-box!important;width:76px!important;max-width:76px!important;min-width:0!important;padding:7px 5px!important;border:1px solid #d8c9bc!important;border-radius:6px!important;background:#fff!important;color:#3f2224!important;font-size:11px!important}
+@media(min-width:901px) and (max-width:1180px){
+ header{grid-template-columns:minmax(190px,220px) minmax(180px,1fr) minmax(300px,auto)!important;column-gap:10px!important;padding-left:2vw!important;padding-right:2vw!important}
+ .head-actions{gap:6px!important}
+ .head-actions a,.head-actions button{gap:4px!important;font-size:11px!important}
+ .header-currency select{width:66px!important;max-width:66px!important}
+}
+@media(max-width:900px){
+ header{grid-template-columns:42px minmax(0,1fr) auto!important;padding:0 12px!important}
+ .head-actions{gap:3px!important}
+ .header-currency{gap:3px!important}
+ .header-currency span{display:none!important}
+ .header-currency select{width:64px!important;max-width:64px!important;padding:6px 3px!important;font-size:10px!important}
+}
+
 `;
 const css = fs.readFileSync(cssPath, "utf8");
 if (!css.includes("Shree Gauri layout refinements: contained pagination")) {
