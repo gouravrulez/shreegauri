@@ -1,0 +1,29 @@
+            placeholder="you@example.com"
+                   required
+                 />
+               </label>
+@@ -345,15 +442,15 @@ export default function CustomerLogin() {
+               <a href="/">← Return to store</a>
+               <small>SHREE GAURI VERIFICATION</small>
+               <h1>Enter OTP</h1>
+-              <p>We sent a verification code to {identifier}.</p>
++              <p>We sent a 6-digit verification code to {identifier}.</p>
+               <label>
+                 6-digit OTP
+                 <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required />
+               </label>
+               {message && <p className="auth-message">{message}</p>}
+               <button>VERIFY & CONTINUE</button>
+-              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setMessage(""); }}>
+-                Change email/mobile
++              <button type="button" className="text-button" onClick={() => { setOtpSent(false); setOtp(""); setChallengeId(""); setMessage(""); }}>
++                Change email
+               </button>
+             </form>
+           )}
+@@ -375,13 +472,31 @@ export default function CustomerLogin() {
+ 
+       <div className="customer-dash-layout">
+         <aside className="customer-dash-nav">
+-          <div className="customer-avatar"><UserRound /></div>
++          <label className="customer-avatar customer-ava

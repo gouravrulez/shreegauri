@@ -1,0 +1,31 @@
+ion CustomerLogin() {
+               </button>
+               <div className="login-divider"><span>OR USE OTP</span></div>
+ 
+-              <div className="otp-channel">
+-                <button type="button" className={channel === "email" ? "active" : ""} onClick={() => { setChannel("email"); setIdentifier(""); setMessage(""); }}>
++              <div className="otp-channel email-only">
++                <button type="button" className="active">
+                   EMAIL OTP
+                 </button>
+-                <button type="button" className={channel === "phone" ? "active" : ""} onClick={() => { setChannel("phone"); setIdentifier(""); setMessage(""); }}>
+-                  MOBILE OTP
+-                </button>
+               </div>
++              <p className="auth-free-note">Secure password-free login. Your 6-digit code will be sent to your email.</p>
+ 
+               <label>
+                 Full Name <small>(first-time customers)</small>
+@@ -327,12 +424,12 @@ export default function CustomerLogin() {
+               </label>
+ 
+               <label>
+-                {channel === "email" ? "Email Address" : "Mobile Number"}
++                Email Address
+                 <input
+-                  type={channel === "email" ? "email" : "tel"}
++                  type="email"
+                   value={identifier}
+                   onChange={(e) => setIdentifier(e.target.value)}
+-                  placeholder={channel === "email" ? "you@example.com" : "9876543210"}
++      

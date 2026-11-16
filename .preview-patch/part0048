@@ -1,0 +1,14 @@
+lt function CustomerLogin() {
+                 <h1>Welcome, {profile.full_name?.split(" ")[0] || "Customer"}</h1>
+                 <p>Manage orders, delivery addresses and account details from one place.</p>
+               </div>
++              <div className="customer-account-actions">
++                <button onClick={() => setSection("orders")}><Package /><span><b>Track Orders</b><small>See payment, fulfilment and delivery status</small></span><ChevronRight /></button>
++                <button onClick={() => setSection("addresses")}><MapPin /><span><b>Delivery Addresses</b><small>Manage your default and saved addresses</small></span><ChevronRight /></button>
++                <button onClick={() => setSection("profile")}><UserRound /><span><b>Account Details</b><small>Keep your contact information updated</small></span><ChevronRight /></button>
++                <a href="/contact"><Headphones /><span><b>Customer Support</b><small>Shree Gauri support is available 24/7</small></span><ChevronRight /></a>
++              </div>
+               <div className="customer-summary-grid">
+                 <button onClick={() => setSection("orders")}><Package /><span><strong>{orders.length}</strong>Total Orders</span></button>
+                 <button onClick={() => setSection("orders")}><Truck /><span><strong>{orders.filter((o) => ["confirmed","processing","packed","shipped","out_for_delivery"].includes(o.order_status)).length}</strong>In Progress</span></button>
+@@ -405,8 +526,8 @@ exp
