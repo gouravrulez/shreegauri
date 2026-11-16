@@ -1,0 +1,54 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..79b019b
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,5 @@
++node_modules/
++.next/
++.vercel/
++out/
++.env*
+diff --git a/app/admin/admin-dashboard.tsx b/app/admin/admin-dashboard.tsx
+index dc26273..e614297 100644
+--- a/app/admin/admin-dashboard.tsx
++++ b/app/admin/admin-dashboard.tsx
+@@ -1,6 +1,7 @@
+ "use client";
+ import { FormEvent, Fragment, useEffect, useState } from "react";
+ import { supabase } from "../lib/supabase";
++import ShippingPromoManager from "./shipping-promo-manager";
+ import {
+   LogOut,
+   Trash2,
+@@ -38,11 +39,35 @@ type Prod = {
+   compare_at_price_inr: number | null;
+   stock_quantity: number;
+   category_id: string | null;
++  category_ids: string[];
++  sku: string | null;
++  product_type: string | null;
++  material: string | null;
++  gemstone_name: string | null;
++  natural_lab_status: string | null;
++  origin: string | null;
++  treatment: string | null;
++  certification: string | null;
++  shape: string | null;
++  color: string | null;
++  weight_grams: number | null;
++  carat_weight: number | null;
++  chakras: string[];
++  zodiac_signs: string[];
++  seo_title: string | null;
++  seo_description: string | null;
+   primary_image_url: string;
+   image_urls: string[];
+   badge: string | null;
+   is_active: boolean;
+   is_featured: boolean;
++  certificate_available?: boolean;
++  certificate_price_inr?: number;
++  abhimantrit_available?: boolean;
++  has_size_options?: boolean;
++  custom_shipping

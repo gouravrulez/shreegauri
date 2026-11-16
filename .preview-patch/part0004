@@ -1,0 +1,31 @@
+ function AdminDashboard() {
+     }
+   }
+   async function saveProd() {
++    if (prod.has_size_options && !(prod.variant_rows || []).some((v: any) => String(v.label || "").trim() && v.is_active !== false)) {
++      setNotice("Add at least one active size / weight option before saving this product.");
++      return;
++    }
+     setNotice("Saving product...");
+     const { data: authData, error: authError } = await supabase.auth.refreshSession();
+     if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
+@@ -419,24 +497,64 @@ export default function AdminDashboard() {
+           .toLowerCase()
+           .replace(/[^a-z0-9]+/g, "-")
+           .replace(/(^-|-$)/g, ""),
+-      category_id: prod.category_id || null,
++      category_ids: Array.isArray(prod.category_ids) ? prod.category_ids : [],
++      category_id:
++        (Array.isArray(prod.category_ids) && prod.category_ids[0]) ||
++        prod.category_id ||
++        null,
++      sku: prod.sku?.trim() || null,
++      weight_grams: prod.weight_grams ? Number(prod.weight_grams) : null,
++      carat_weight: prod.carat_weight ? Number(prod.carat_weight) : null,
++      chakras: Array.isArray(prod.chakras) ? prod.chakras : [],
++      zodiac_signs: Array.isArray(prod.zodiac_signs) ? prod.zodiac_signs : [],
++      seo_title: prod.seo_title?.trim() || null,
++      seo_description: prod.seo_description?.trim() || null,
+       price_inr: Number(prod.price_inr),
+       compare_at_price_inr: prod.compare_at_price_inr
+  

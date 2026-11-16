@@ -1,0 +1,58 @@
+_enabled?: boolean;
++  custom_shipping_charge_inr?: number;
++  variant_rows?: any[];
+ };
+ type Review = {
+   id: string;
+@@ -86,8 +111,20 @@ type Order = {
+   phone: string;
+   shipping_address: Record<string, string>;
+   total_inr: number;
++  shipping_inr?: number;
+   payment_status: string;
+   order_status: string;
++  courier_name: string | null;
++  courier_company_id?: string | null;
++  courier_charge_inr?: number;
++  tracking_number: string | null;
++  tracking_url: string | null;
++  dispatch_date?: string | null;
++  expected_delivery_date?: string | null;
++  tracking_updated_at?: string | null;
++  coupon_code?: string | null;
++  coupon_discount_inr?: number;
++  refund_status: string;
+   created_at: string;
+   order_items: OrderItem[];
+ };
+@@ -110,12 +147,39 @@ const blankProd = {
+   compare_at_price_inr: null,
+   stock_quantity: 0,
+   category_id: "",
++  category_ids: [] as string[],
++  sku: "",
++  product_type: "",
++  material: "",
++  gemstone_name: "",
++  natural_lab_status: "",
++  origin: "",
++  treatment: "",
++  certification: "",
++  shape: "",
++  color: "",
++  weight_grams: "",
++  carat_weight: "",
++  chakras: [] as string[],
++  zodiac_signs: [] as string[],
++  seo_title: "",
++  seo_description: "",
+   primary_image_url: "",
+   image_urls: [] as string[],
+   badge: "",
+   is_active: false,
+   is_featured: false,
++  certificate_available: false,
++  certificate_price_inr: 0,
++  has_size_options: false,
++  abhimantrit_available: false,
++  custom_shipping_enabled: false,
