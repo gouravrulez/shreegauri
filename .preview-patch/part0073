@@ -1,0 +1,20 @@
+one_country_code} onChange={(e)=>setCheckout((c)=>({...c,phone_country_code:e.target.value}))}>{COUNTRY_OPTIONS.map((country)=><option key={country.code} value={country.dialCode}>{country.name} ({country.dialCode})</option>)}</select></label>
+               <label>
+                 Full Name
+                 <input
+@@ -1129,16 +1401,25 @@ export default function Storefront() {
+               {cart.map((p, i) => (
+                 <div className="checkout-product-row" key={`${p.id}-${i}`}>
+                   <img src={p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"} alt={p.name} />
+-                  <div><b>{p.name}</b><small>{money(Number(p.price_inr))}</small></div>
++                  <div><b>{p.name}</b>{p.variant_label && <small>Option: {p.variant_label}</small>}{p.abhimantrit_selected && <small>Abhimantrit / Energisation: Yes</small>}{p.certificate_selected && <small>Authenticity certificate: Yes</small>}<small>{money(Number(p.price_inr))}</small></div>
+                   <button type="button" aria-label={`Remove ${p.name}`} onClick={() => setCart((items) => items.filter((_, index) => index !== i))}><X /> REMOVE</button>
+                 </div>
+               ))}
+             </div>
+-            <div className="checkout-summary">
+-              <b>{cart.length} item(s)</b>
+-              <strong>
+-                {money(cart.reduce((sum, p) => sum + Number(p.price_inr), 0))}
+-              </strong>
++            <div className="checkout-coupon" style=
