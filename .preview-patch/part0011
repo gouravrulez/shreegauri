@@ -1,0 +1,9 @@
+e.target.value || null})} />
++                    <input type="number" min="0" placeholder="Courier charge (₹)" value={shipmentDrafts[o.id]?.courier_charge_inr ?? o.courier_charge_inr ?? 0} onChange={(e)=>updateShipmentDraft(o.id,{courier_charge_inr:Number(e.target.value||0),shipping_inr:Number(e.target.value||0)})} />
++                    <label>Dispatch date<input type="date" value={shipmentDrafts[o.id]?.dispatch_date ?? o.dispatch_date ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{dispatch_date:e.target.value || null})} /></label>
++                    <label>Expected delivery<input type="date" value={shipmentDrafts[o.id]?.expected_delivery_date ?? o.expected_delivery_date ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{expected_delivery_date:e.target.value || null})} /></label>
++                  </div>
+                   <div className="order-actions">
++                    <button type="button" onClick={() => updateFulfilment(o.id, shipmentDrafts[o.id] || { courier_name: o.courier_name, tracking_number: o.tracking_number, tracking_url: o.tracking_url, courier_charge_inr: o.courier_charge_inr, shipping_inr: o.shipping_inr, dispatch_date: o.dispatch_date, expected_delivery_date: o.expected_delivery_date })}>SAVE SHIPMENT & EMAIL CUSTOMER</button>
+                     <a
+                       href={`https://wa.me/${o.phone.replace(/\D/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(`Hello ${o.customer_name}, your Shree Gauri order ${o.order_number} is ${o.order_stat

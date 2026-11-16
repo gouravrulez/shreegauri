@@ -1,0 +1,8 @@
+         <label>Price (₹)<input type="number" min="0" value={variant.price_inr ?? 0} onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, price_inr: e.target.value } : v) })} /></label>
++                    <label>Stock<input type="number" min="0" step="1" value={variant.stock_quantity ?? 0} onChange={(e) => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, stock_quantity: e.target.value } : v) })} /></label>
++                    <button type="button" onClick={() => setProd({ ...prod, variant_rows: prod.variant_rows.map((v: any, i: number) => i === index ? { ...v, is_active: v.is_active === false } : v) })}>{variant.is_active === false ? "Enable" : "Disable"}</button>
++                  </div>)}
++                  <button type="button" onClick={() => setProd({ ...prod, variant_rows: [...(prod.variant_rows || []), { label: "", price_inr: prod.price_inr || 0, stock_quantity: 0, is_active: true }] })}>+ Add size / weight option</button>
++                </div>}
++                <label className="check"><input type="checkbox" checked={!!prod.custom_shipping_enabled} onChange={(e) => setProd({ ...prod, custom_shipping_enabled: e.target.checked })} /> Use a custom shipping charge for this product</label>
++                {prod.custom_shipping_enabled && <label>Custom shipping charge (₹)<input type="number" min="0" step="1" value={prod.custom_shipping_charge_inr ?? 0} on

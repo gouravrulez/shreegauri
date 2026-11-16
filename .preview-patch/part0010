@@ -1,0 +1,7 @@
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px",margin:"12px 0"}}>
++                    <select aria-label="Courier company" value={shipmentDrafts[o.id]?.courier_company_id ?? o.courier_company_id ?? ""} onChange={(e)=>{ const company=shippingCompanies.find((entry)=>entry.id===e.target.value); updateShipmentDraft(o.id,{courier_company_id:company?.id || null,courier_name:company?.name || "",courier_charge_inr:company ? Number(company.default_charge_inr || 0) : Number(o.courier_charge_inr || 0),shipping_inr:company ? Number(company.default_charge_inr || 0) : Number(o.shipping_inr || 0)}); }}>
++                      <option value="">Select courier company</option>{shippingCompanies.filter((company)=>company.is_active).map((company)=><option key={company.id} value={company.id}>{company.name}</option>)}
++                    </select>
++                    <input placeholder="Courier name" value={shipmentDrafts[o.id]?.courier_name ?? o.courier_name ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{courier_name:e.target.value || null})} />
++                    <input placeholder="Tracking / AWB number" value={shipmentDrafts[o.id]?.tracking_number ?? o.tracking_number ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{tracking_number:e.target.value || null})} />
++                    <input placeholder="Tracking URL" value={shipmentDrafts[o.id]?.tracking_url ?? o.tracking_url ?? ""} onChange={(e)=>updateShipmentDraft(o.id,{tracking_url:
