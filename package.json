@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/apply-preview-patch.mjs",
+    "prebuild": "node scripts/apply-preview-patch.mjs && node scripts/apply-layout-fixes.mjs",
     "build": "next build",
     "start": "next start",
     "sg:reset": "node scripts/shreegauri-customer-reset.mjs"
