@@ -1,0 +1,19 @@
+ checkout."}</p></span></div>
+               </div>
++              {dashboardCoupons.length > 0 && <div className="customer-panel" style={{ marginTop: 18, padding: 18 }}>
++                <small>EXCLUSIVE OFFERS</small><h2 style={{ margin: "6px 0 12px" }}>Available Coupons</h2>
++                <div style={{ display: "grid", gap: 10 }}>
++                  {dashboardCoupons.map((coupon) => <div key={coupon.code} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, border: "1px solid #eadfd4", borderRadius: 9, padding: 12 }}>
++                    <span><b>{coupon.code}</b><br /><small>{coupon.discount_type === "percentage" ? `${coupon.discount_value}% off` : `₹${Number(coupon.discount_value).toLocaleString("en-IN")} off`} · Minimum order ₹{Number(coupon.min_order_inr || 0).toLocaleString("en-IN")}</small></span>
++                    <button type="button" onClick={() => { navigator.clipboard?.writeText(coupon.code); setMessage(`Coupon ${coupon.code} copied. Apply it at checkout.`); }}>COPY CODE</button>
++                  </div>)}
++                </div>
++              </div>}
+             </>
+           )}
+ 
+@@ -434,7 +564,7 @@ export default function CustomerLogin() {
+                     </div>
+                     <div className="customer-order-items">
+                       {o.order_items?.map((i) => (
+-                        <div key={i.id}><span><b>{i.product_name}</b>{i.variant_label && <small>{i.variant_label}</sma

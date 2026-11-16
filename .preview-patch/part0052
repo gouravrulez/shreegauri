@@ -1,0 +1,50 @@
+gory_id: string | null;
++  category_ids: string[];
+   name: string;
+   slug: string;
+   short_description: string;
+@@ -46,6 +49,17 @@ type P = {
+   stock_quantity: number;
+   is_featured: boolean;
+   badge: string | null;
++  abhimantrit_available?: boolean;
++  abhimantrit_selected?: boolean;
++  certificate_available?: boolean;
++  certificate_price_inr?: number;
++  certificate_selected?: boolean;
++  has_size_options?: boolean;
++  custom_shipping_enabled?: boolean;
++  custom_shipping_charge_inr?: number;
++  variants?: ProductVariant[];
++  variant_id?: string | null;
++  variant_label?: string | null;
+   created_at?: string;
+ };
+ type AstrologyService = { name: string; description: string; active: boolean };
+@@ -71,6 +85,20 @@ type Checkout = {
+   city: string;
+   state: string;
+   pincode: string;
++  country_code: string;
++  phone_country_code: string;
++};
++type SavedAddress = {
++  id: string;
++  label: string;
++  recipient_name: string | null;
++  phone: string | null;
++  line1: string;
++  line2: string | null;
++  city: string;
++  state: string;
++  pincode: string;
++  is_default: boolean;
+ };
+ type S = {
+   announcement: string;
+@@ -114,13 +142,23 @@ export default function Storefront() {
+     [astrologyMessage, setAstrologyMessage] = useState(""),
+     [view, setView] = useState("home"),
+     [q, setQ] = useState(""),
++    [displayCurrency, setDisplayCurrency] = useState("INR"),
++    [currencyRates, setCurrencyRates] = useState<Record<string, number>>({"INR":1,"USD":0.012,"EUR"

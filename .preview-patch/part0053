@@ -1,0 +1,23 @@
+:0.01,"GBP":0.009,"AED":0.044,"CAD":0.016,"AUD":0.018,"SGD":0.015,"JPY":1.75,"CHF":0.0095,"NZD":0.02,"SAR":0.045,"QAR":0.044,"KWD":0.0037,"BHD":0.0045,"OMR":0.0046,"MYR":0.051,"THB":0.38,"IDR":190,"PHP":0.68,"VND":315,"ZAR":0.21,"MUR":0.55,"NPR":1.6,"LKR":3.65,"BDT":1.46,"KRW":16.5,"SEK":0.112,"NOK":0.118,"DKK":0.069,"PLN":0.043,"HKD":0.093}),
+     [menu, setMenu] = useState(false),
+     [item, setItem] = useState<P | null>(null),
+     [selectedImage, setSelectedImage] = useState(""),
+     [imageZoomOpen, setImageZoomOpen] = useState(false),
+     [descriptionOpen, setDescriptionOpen] = useState(false),
+     [qty, setQty] = useState(1),
+-    [cart, setCart] = useState<P[]>([]),
++    [abhimantritChoice, setAbhimantritChoice] = useState(false),
++    [certificateChoice, setCertificateChoice] = useState(false),
++    [catalogPage, setCatalogPage] = useState(1),
++    [selectedVariantId, setSelectedVariantId] = useState(""),
++    [cartNotice, setCartNotice] = useState(""),
++    [cart, setCart] = useState<P[]>(() => {
++      if (typeof window === "undefined") return [];
++      try { return JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { return []; }
++    }),
+     [wish, setWish] = useState<string[]>([]),
+     [sort, setSort] = useState("featured"),
+     [categoryFilter, setCategoryFilter] = useState("all"),
+@@ -133,6 +171,13 @@ export default function Storefront() {
+     [checkoutOpen, setCheckoutOpen] = useState(false),
+     [checkoutBusy, setCheckoutBusy] = useState(f

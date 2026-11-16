@@ -1,0 +1,30 @@
+alse),
+     [checkoutMsg, setCheckoutMsg] = useState(""),
++    [couponCode, setCouponCode] = useState(""),
++    [availableCoupons, setAvailableCoupons] = useState<any[]>([]),
++    [activeCoupon, setActiveCoupon] = useState<any>(null),
++    [couponMessage, setCouponMessage] = useState(""),
++    [shippingSettings, setShippingSettings] = useState<any>(null),
++    [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
++    [selectedAddressId, setSelectedAddressId] = useState(""),
+     [checkout, setCheckout] = useState<Checkout>({
+       name: "",
+       email: "",
+@@ -142,6 +187,8 @@ export default function Storefront() {
+       city: "",
+       state: "",
+       pincode: "",
++      country_code: DEFAULT_COUNTRY.code,
++      phone_country_code: DEFAULT_COUNTRY.dialCode,
+     });
+   useEffect(() => {
+     Promise.all([
+@@ -153,7 +200,7 @@ export default function Storefront() {
+       supabase
+         .from("products")
+         .select(
+-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
++          "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,certificate_available,certificate_price_inr,has_size_options,custom_shipping_enabled,custom_shipping_charge_inr,abhimantrit_available",
+         )
+         .eq("is_active", true)
+         .order("cre
