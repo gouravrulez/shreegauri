@@ -1,0 +1,20 @@
+oor(Number(v.stock_quantity || 0))),
++        sku: String(v.sku || "").trim() || null, carat: v.carat === "" || v.carat == null ? null : Number(v.carat),
++        ratti: v.ratti === "" || v.ratti == null ? null : Number(v.ratti), weight_grams: v.weight_grams === "" || v.weight_grams == null ? null : Number(v.weight_grams),
++        is_active: v.is_active !== false, sort_order: index, updated_at: new Date().toISOString(),
++      }));
++      if (variantRows.length) {
++        const { error: variantError } = await supabase.from("product_variants").upsert(variantRows, { onConflict: "id" });
++        if (variantError) { setNotice(`Product saved, but size options could not be saved: ${variantError.message}`); await load(); return; }
++      }
++    } else {
++      const { error: disableError } = await supabase.from("product_variants").update({ is_active: false, updated_at: new Date().toISOString() }).eq("product_id", productId);
++      if (disableError) { setNotice(`Product saved, but existing size options could not be disabled: ${disableError.message}`); await load(); return; }
++    }
+     setNotice("Product saved successfully.");
+     setProd(blankProd);
+     await load();
+   }
++  async function editProduct(product: Prod) {
++    const { data, error } = await supabase.from("product_variants").select("id,product_id,label,carat,ratti,weight_grams,price_inr,sku,stock_quantity,is_active,sort_order").eq("product_id", product.id).order("sort_order", { ascending: true });
++    if (error) {
