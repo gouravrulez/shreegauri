@@ -2,12 +2,10 @@
   "name": "shree-gauri",
   "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": "22.x"
-  },
+  "engines": { "node": "22.x" },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/apply-preview-patch.mjs",
+    "prebuild": "node scripts/apply-preview-patch.mjs && node scripts/apply-ui-polish.mjs",
     "build": "next build",
     "start": "next start",
     "sg:reset": "node scripts/shreegauri-customer-reset.mjs"
