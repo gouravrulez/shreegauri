@@ -53,6 +53,25 @@ const styles = `
 .customer-product-options>.check input{flex:0 0 auto;margin-top:2px}
 .customer-product-options>div{min-width:0;max-width:100%}
 @media(max-width:680px){.catalog-pagination{flex-direction:column;align-items:stretch!important}.catalog-page-buttons{justify-content:center;width:100%}.product-actions{gap:6px!important}.product-actions button{min-height:38px;padding:8px 5px!important;font-size:10px!important}.shipping-promo-manager>section{padding:15px!important}.shipping-promo-manager .two{grid-template-columns:minmax(0,1fr)}.shipping-promo-manager li{align-items:flex-start;flex-wrap:wrap}.customer-product-options{padding:12px!important}.customer-product-options>.check{padding:9px}.customer-product-options input:not([type=checkbox]),.customer-product-options select{font-size:16px}}
+
+/* Hard-stop overlap correction: catalogue controls must never cover the site header/search. */
+.catalog-toolbar{position:relative!important;top:auto!important;z-index:1!important;isolation:auto!important;margin-top:20px!important}
+.catalog-layout .filters{position:relative!important;top:auto!important;max-height:none!important;overflow:visible!important}
+.catalog-pagination{position:relative!important;inset:auto!important;float:none!important;clear:both!important;transform:none!important;z-index:1!important;display:flex!important;grid-column:1 / -1!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:16px 0!important;padding:12px!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important}
+.records.product-card-grid>.catalog-pagination{grid-column:1 / -1!important;align-self:stretch!important}
+.catalog-pagination>label,.catalog-pagination>.catalog-page-count,.catalog-pagination>.catalog-page-buttons{position:static!important;float:none!important;transform:none!important;min-width:0!important;max-width:100%!important}
+.catalog-page-buttons{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important}
+.admin .catalog-view-switch{position:relative!important;top:auto!important;z-index:1!important;isolation:auto!important}
+@media(max-width:900px){
+ .catalog-toolbar{position:relative!important;top:auto!important;z-index:1!important;margin-top:20px!important}
+ .catalog-layout .filters{position:fixed!important;inset:0 auto 0 0!important;top:0!important;max-height:none!important;overflow-y:auto!important;z-index:102!important}
+ .catalog-pagination{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:10px!important;width:100%!important;margin:14px 0!important}
+ .catalog-pagination>label{justify-content:center!important;margin:0!important}
+ .catalog-page-count{width:100%!important;text-align:center!important;order:0!important}
+ .catalog-page-buttons{width:100%!important;justify-content:center!important}
+ .admin .catalog-view-switch{position:relative!important;top:auto!important;z-index:1!important}
+}
+
 `;
 const css = fs.readFileSync(cssPath, "utf8");
 if (!css.includes("Shree Gauri layout refinements: contained pagination")) {
