@@ -20,8 +20,8 @@ fs.writeFileSync(storePath, store);
 
 const adminPath = "app/admin/shipping-promo-manager.tsx";
 let admin = fs.readFileSync(adminPath, "utf8");
-const oldAdminRoot = '<div className="admin-panel" style={{ display: "grid", gap: 24 }}>\n      <section>';
-const newAdminRoot = '<div className="admin-panel shipping-promo-manager" style={{ display: "grid", gap: 24 }}>\n      <div className="shipping-promo-heading">\n        <div>\n          <span className="shipping-promo-eyebrow">FULFILMENT & PROMOTIONS</span>\n          <h1>Shipping & Coupons</h1>\n          <p>Manage delivery charges, courier partners and customer offers in one place.</p>\n        </div>\n        <div className="shipping-promo-summary">\n          <div><strong>{companies.length}</strong><span>Courier partners</span></div>\n          <div><strong>{coupons.length}</strong><span>Coupons created</span></div>\n          <div><strong>{coupons.filter((c) => c.is_active).length}</strong><span>Active coupons</span></div>\n        </div>\n      </div>\n      <section>';
+const oldAdminRoot = '<div className="admin-panel" style={{ display: "grid", gap: 24 }}>';
+const newAdminRoot = '<div className="admin-panel shipping-promo-manager" style={{ display: "grid", gap: 24 }}>\n      <div className="shipping-promo-heading">\n        <div>\n          <span className="shipping-promo-eyebrow">FULFILMENT & PROMOTIONS</span>\n          <h1>Shipping & Coupons</h1>\n          <p>Manage delivery charges, courier partners and customer offers in one place.</p>\n        </div>\n        <div className="shipping-promo-summary">\n          <div><strong>{companies.length}</strong><span>Courier partners</span></div>\n          <div><strong>{coupons.length}</strong><span>Coupons created</span></div>\n          <div><strong>{coupons.filter((c) => c.is_active).length}</strong><span>Active coupons</span></div>\n        </div>\n      </div>';
 admin = replaceOnce(admin, oldAdminRoot, newAdminRoot, "shipping admin heading");
 fs.writeFileSync(adminPath, admin);
 
