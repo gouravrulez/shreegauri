@@ -21,7 +21,7 @@ fs.writeFileSync(storePath, store);
 const adminPath = "app/admin/shipping-promo-manager.tsx";
 let admin = fs.readFileSync(adminPath, "utf8");
 if (!admin.includes('className="shipping-promo-manager"')) {
-  const root = admin.match(/<div\\b[^>]*>/);
+  const root = admin.match(/<div\b[^>]*>/);
   if (!root) throw new Error("UI polish patch could not find shipping admin container");
   let taggedRoot = root[0];
   if (/className="[^"]*"/.test(taggedRoot)) {
