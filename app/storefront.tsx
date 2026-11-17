@@ -189,6 +189,13 @@ export default function Storefront() {
   };
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
+  const openProduct = (product: P) => {
+    setSelectedImage(product.primary_image_url || product.image_urls?.[0] || "");
+    setImageZoomOpen(false);
+    setDescriptionOpen(false);
+    setQty(1);
+    setItem(product);
+  };
   const ratingFor = (id: string) => {
     const rr = reviews.filter((r) => r.product_id === id);
     return {
@@ -734,18 +741,12 @@ export default function Storefront() {
                     tabIndex={0}
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
-                      setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);
-                      setDescriptionOpen(false);
-                      setQty(1);
+                      openProduct(p);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
-                        setDescriptionOpen(false);
-                        setQty(1);
+                        openProduct(p);
                       }
                     }}
                   >
@@ -767,10 +768,7 @@ export default function Storefront() {
                       className="photo"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
-                        setDescriptionOpen(false);
-                        setQty(1);
+                        openProduct(p);
                       }}
                     >
                       <img
