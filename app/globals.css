@@ -556,3 +556,28 @@ body:has(.product-page-backdrop){
   overflow-x:hidden;
   overflow-y:auto;
 }
+
+/* Final mobile pagination containment: the controls stay inside the catalogue width. */
+@media(max-width:760px){
+  .catalog .catalog-pagination{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  .catalog .catalog-page-numbers{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex-wrap:wrap!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}
