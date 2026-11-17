@@ -800,10 +800,12 @@ export default function Storefront() {
                       <small>SHREE GAURI</small>
                       <h3>{p.name}</h3>
                       <p>{(p.short_description || p.description || "").trim().slice(0, 96)}{(p.short_description || p.description || "").trim().length > 96 ? "…" : ""}</p>
-                      <b>{money(Number(p.price_inr))}</b>
-                      {p.compare_at_price_inr && (
-                        <del>{money(Number(p.compare_at_price_inr))}</del>
-                      )}
+                      <div className="product-price-line">
+                        <b>{money(Number(p.price_inr))}</b>
+                        {p.compare_at_price_inr && (
+                          <del>{money(Number(p.compare_at_price_inr))}</del>
+                        )}
+                      </div>
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => setCart((c) => [...c, p])}>
                           ADD TO CART
@@ -854,6 +856,12 @@ export default function Storefront() {
                       </button>
                     ),
                   )}
+                  <button type="button" disabled={currentPage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}>
+                    Next
+                  </button>
+                </div>
+              </nav>
+            )}
           </div>
         </section>
       )}
