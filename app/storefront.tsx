@@ -1198,9 +1198,14 @@ export default function Storefront() {
                 </span>
                 <span>{ratingFor(item.id).count} review(s)</span>
               </div>
-              <div className="product-short-description">
+              <div className={`product-short-description ${descriptionOpen ? "open" : ""}`}>
                 <b>About this item</b>
                 <p>{item.short_description || item.description}</p>
+                {(item.short_description || item.description || "").length > 180 && (
+                  <button type="button" onClick={() => setDescriptionOpen((v) => !v)}>
+                    {descriptionOpen ? "SHOW LESS" : "READ MORE"}
+                  </button>
+                )}
               </div>
               {item.description && item.description !== item.short_description && (
                 <div className={`product-full-description ${descriptionOpen ? "open" : ""}`}>
