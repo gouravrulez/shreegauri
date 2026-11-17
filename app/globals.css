@@ -906,3 +906,173 @@ main {
     font-size: 10px;
   }
 }
+
+
+/* Product detail refinement: one natural vertical scroll, balanced columns and compact copy. */
+.product-page-backdrop {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.product-page-backdrop .product-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, .92fr);
+  align-items: start;
+  width: min(100%, 1440px);
+  min-height: 100%;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  margin: 0 auto;
+}
+.product-page-backdrop .product-gallery {
+  position: relative;
+  top: auto;
+  align-self: start;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  height: min(82vh, 820px);
+  min-height: 560px;
+  max-height: 820px;
+  padding: 28px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.product-page-backdrop .gallery-stage {
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 1 / 1;
+}
+.product-page-backdrop .gallery-zoom-trigger {
+  height: calc(100% - 34px);
+  min-height: 0;
+}
+.product-page-backdrop .product-copy {
+  width: 100%;
+  max-width: 660px;
+  min-width: 0;
+  padding: 42px 42px 64px;
+  box-sizing: border-box;
+}
+.product-page-backdrop .product-short-description {
+  margin: 12px 0 14px;
+  line-height: 1.55;
+}
+.product-page-backdrop .product-short-description p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+  max-width: 60ch;
+}
+.product-page-backdrop .product-short-description.open p {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.product-page-backdrop .product-full-description {
+  margin: 10px 0 16px;
+  line-height: 1.55;
+}
+.product-page-backdrop .product-full-description .description-text {
+  max-height: 72px;
+  overflow: hidden;
+  line-height: 1.55;
+}
+.product-page-backdrop .product-full-description.open .description-text {
+  max-height: none;
+}
+.product-page-backdrop .product-price-block {
+  margin: 12px 0 8px;
+}
+.product-page-backdrop .purchase-promises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+}
+.product-page-backdrop .quantity {
+  margin: 16px 0;
+}
+.product-page-backdrop .buy {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px;
+  width: 100%;
+}
+.product-page-backdrop .buy button {
+  min-width: 0;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: clamp(10px, 1vw, 13px);
+  letter-spacing: .25px;
+}
+.product-page-backdrop .share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 14px 0 22px;
+}
+@media (max-width: 900px) {
+  .product-page-backdrop .product-detail {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+  }
+  .product-page-backdrop .product-gallery {
+    position: relative;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    padding: 58px 18px 12px;
+    overflow: visible;
+  }
+  .product-page-backdrop .gallery-stage {
+    height: min(78vw, 540px);
+    min-height: 280px;
+    max-height: 540px;
+  }
+  .product-page-backdrop .gallery-thumbs {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .product-page-backdrop .product-copy {
+    max-width: none;
+    padding: 22px 20px 44px;
+  }
+  .product-page-backdrop .buy {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 420px) {
+  .product-page-backdrop .product-copy {
+    padding: 18px 14px 36px;
+  }
+  .product-page-backdrop .buy {
+    gap: 7px;
+  }
+  .product-page-backdrop .buy button {
+    min-height: 46px;
+    padding: 0 5px;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+}
