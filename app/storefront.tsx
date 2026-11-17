@@ -118,6 +118,7 @@ export default function Storefront() {
     [stockOnly, setStockOnly] = useState(false),
     [maxPrice, setMaxPrice] = useState(""),
     [filtersOpen, setFiltersOpen] = useState(false),
+    [currentPage, setCurrentPage] = useState(1),
     [rating, setRating] = useState(5),
     [reviewTitle, setReviewTitle] = useState(""),
     [reviewBody, setReviewBody] = useState(""),
@@ -356,6 +357,26 @@ export default function Storefront() {
               : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
+  const pageSize = 24;
+  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageProducts = useMemo(
+    () => shown.slice(pageStart, pageStart + pageSize),
+    [shown, pageStart],
+  );
+  const pageNumbers = useMemo(() => {
+    const candidates = [...new Set([1, pageCount, currentPage - 1, currentPage, currentPage + 1])]
+      .filter((page) => page >= 1 && page <= pageCount)
+      .sort((a, b) => a - b);
+    return candidates.reduce<Array<number | string>>((result, page, index) => {
+      if (index > 0 && page - candidates[index - 1] > 1) result.push(`ellipsis-${page}`);
+      result.push(page);
+      return result;
+    }, []);
+  }, [pageCount, currentPage]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, view, categoryFilter, stockOnly, maxPrice, sort]);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -705,7 +726,7 @@ export default function Storefront() {
             </aside>
             <div className="product-grid">
               {shown.length ? (
-                shown.map((p) => (
+                pageProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -792,6 +813,40 @@ export default function Storefront() {
                   No products match these filters. Try clearing a filter or
                   check back when the collection is added.
                 </p>
+              )}
+              {shown.length > pageSize && (
+                <nav className="catalog-pagination" aria-label="Product pages">
+                  <span>
+                    Showing {pageStart + 1}–{Math.min(pageStart + pageSize, shown.length)} of {shown.length} products
+                  </span>
+                  <div className="catalog-page-numbers">
+                    <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                      Previous
+                    </button>
+                    {pageNumbers.map((page) =>
+                      typeof page === "string" ? (
+                        <span key={page} aria-hidden="true">…</span>
+                      ) : (
+                        <button
+                          key={page}
+                          type="button"
+                          className={currentPage === page ? "active" : ""}
+                          aria-current={currentPage === page ? "page" : undefined}
+                          aria-label={`Page ${page}`}
+                          onClick={() => {
+                            setCurrentPage(page);
+                            document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }}
+                        >
+                          {page}
+                        </button>
+                      ),
+                    )}
+                    <button type="button" disabled={currentPage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}>
+                      Next
+                    </button>
+                  </div>
+                </nav>
               )}
             </div>
           </div>
