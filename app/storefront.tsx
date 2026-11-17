@@ -357,7 +357,7 @@ export default function Storefront() {
               : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
-  const pageSize = 24;
+  const pageSize = 20;
   const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
   const pageStart = (currentPage - 1) * pageSize;
   const pageProducts = useMemo(
@@ -1136,7 +1136,7 @@ export default function Storefront() {
         </div>
       )}
       {item && (
-        <div className="backdrop" onClick={() => setItem(null)}>
+        <div className="product-page-backdrop" onClick={() => setItem(null)}>
           <div
             className="modal product-detail"
             onClick={(e) => e.stopPropagation()}
@@ -1181,6 +1181,7 @@ export default function Storefront() {
               </div>
             </div>
             <div className="product-copy">
+              <button type="button" className="product-back-link" onClick={() => setItem(null)}>← Back to products</button>
               <small className="kicker">AUTHENTIC • CAREFULLY SELECTED</small>
               <h2>{item.name}</h2>
               <div className="rating-line">
