@@ -581,3 +581,30 @@ body:has(.product-page-backdrop){
     box-sizing:border-box!important;
   }
 }
+
+/* Keep the page-number row in normal flow on narrow screens; no sticky positioning or horizontal spill. */
+@media(max-width:760px){
+  .catalog .catalog-pagination{
+    position:static!important;
+    inset:auto!important;
+    display:block!important;
+    float:none!important;
+    transform:none!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:14px 0 8px!important;
+    padding:14px 0 8px!important;
+    box-sizing:border-box!important;
+  }
+  .catalog .catalog-page-numbers{
+    position:static!important;
+    display:flex!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:12px 0 0!important;
+    justify-content:center!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    box-sizing:border-box!important;
+  }
+}
