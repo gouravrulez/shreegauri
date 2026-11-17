@@ -608,3 +608,117 @@ body:has(.product-page-backdrop){
     box-sizing:border-box!important;
   }
 }
+
+
+/* Refined pagination and compact product information layout. */
+.catalog .catalog-pagination{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  padding:18px 0 10px!important;
+}
+.catalog .catalog-pagination>span{
+  order:0;
+  display:block;
+  width:100%;
+  text-align:center;
+  font-size:12px;
+}
+.catalog .catalog-page-numbers{
+  order:1;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  padding:2px 2px 5px;
+  scrollbar-width:thin;
+}
+.catalog .catalog-page-numbers button{
+  flex:0 0 auto;
+  min-width:38px;
+  min-height:38px;
+  border-radius:6px;
+}
+.catalog .catalog-page-numbers button:first-child,
+.catalog .catalog-page-numbers button:last-child{
+  min-width:76px;
+  padding-left:12px;
+  padding-right:12px;
+}
+.catalog .catalog-page-numbers>span{flex:0 0 auto}
+.product-page-backdrop .product-copy{
+  max-width:680px;
+  padding-bottom:48px;
+}
+.product-page-backdrop .product-short-description{
+  margin:10px 0 5px;
+  padding-top:11px;
+}
+.product-page-backdrop .product-short-description p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:4;
+  overflow:hidden;
+  line-height:1.5;
+  margin:0;
+}
+.product-page-backdrop .product-short-description.open p{
+  display:block;
+  -webkit-line-clamp:unset;
+  overflow:visible;
+}
+.product-page-backdrop .product-short-description>button{
+  border:0;
+  background:transparent;
+  color:#7b1420;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.3px;
+  padding:7px 0 2px;
+  cursor:pointer;
+}
+.product-page-backdrop .product-full-description{
+  margin:2px 0 8px;
+}
+.product-page-backdrop .product-full-description .description-text{
+  max-height:68px;
+  line-height:1.5;
+}
+.product-page-backdrop .product-full-description.open .description-text{max-height:none}
+.product-page-backdrop .product-price-block{
+  margin:8px 0 6px;
+  padding:10px 0;
+}
+.product-page-backdrop .purchase-promises{
+  margin:12px 0;
+  padding:10px 0;
+}
+.product-page-backdrop .quantity{margin:14px 0}
+.product-page-backdrop .buy{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:8px;
+}
+.product-page-backdrop .buy button{
+  min-height:48px;
+  border-radius:5px;
+}
+@media(max-width:760px){
+  .catalog .catalog-pagination{padding:14px 0 8px!important}
+  .catalog .catalog-page-numbers{gap:5px!important}
+  .catalog .catalog-page-numbers button{min-width:34px;min-height:36px;padding:6px 8px}
+  .catalog .catalog-page-numbers button:first-child,
+  .catalog .catalog-page-numbers button:last-child{min-width:66px;padding:6px 9px}
+  .product-page-backdrop .product-copy{padding:20px 18px 38px}
+  .product-page-backdrop .product-short-description p{-webkit-line-clamp:3}
+  .product-page-backdrop .buy{gap:8px}
+  .product-page-backdrop .buy button{min-height:46px;font-size:11px}
+}
