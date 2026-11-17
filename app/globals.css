@@ -722,3 +722,187 @@ body:has(.product-page-backdrop){
   .product-page-backdrop .buy{gap:8px}
   .product-page-backdrop .buy button{min-height:46px;font-size:11px}
 }
+
+
+/* Stability pass: prevent viewport-width overflow and keep product detail controls predictable. */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+main {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.product-page-backdrop {
+  left: 0;
+  right: 0;
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.product-page-backdrop .product-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.product-page-backdrop .product-gallery {
+  min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  max-height: 100vh;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  padding: 24px;
+  overflow: hidden;
+}
+.product-page-backdrop .gallery-thumbs {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+}
+.product-page-backdrop .gallery-thumbs button {
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+}
+.product-page-backdrop .gallery-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+.product-page-backdrop .gallery-stage {
+  width: 100%;
+  height: calc(100vh - 48px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.product-page-backdrop .gallery-zoom-trigger {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: calc(100% - 36px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.product-page-backdrop .gallery-main {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain !important;
+  object-position: center;
+  background: #fff;
+}
+.product-page-backdrop .product-copy {
+  min-width: 0;
+  width: 100%;
+  max-width: 680px;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.product-page-backdrop .buy {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+.product-page-backdrop .buy button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .product-page-backdrop .product-detail {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+  }
+  .product-page-backdrop .product-gallery {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(260px, 62vw) auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    padding: 58px 16px 12px;
+    overflow: visible;
+  }
+  .product-page-backdrop .gallery-stage {
+    order: 1;
+    width: 100%;
+    height: min(62vw, 500px);
+    min-height: 260px;
+    max-height: 500px;
+  }
+  .product-page-backdrop .gallery-zoom-trigger {
+    height: calc(100% - 34px);
+  }
+  .product-page-backdrop .gallery-main {
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain !important;
+  }
+  .product-page-backdrop .gallery-thumbs {
+    order: 2;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    padding: 4px 2px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+  .product-page-backdrop .gallery-thumbs button {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+  }
+  .product-page-backdrop .product-copy {
+    width: 100%;
+    max-width: none;
+    padding: 20px 18px 40px;
+  }
+  .product-page-backdrop .buy {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .product-page-backdrop .buy button {
+    min-height: 46px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 360px) {
+  .product-page-backdrop .buy {
+    gap: 6px;
+  }
+  .product-page-backdrop .buy button {
+    padding: 0 5px;
+    font-size: 10px;
+  }
+}
