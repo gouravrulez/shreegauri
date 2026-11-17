@@ -787,7 +787,7 @@ export default function Storefront() {
                     <div className="info">
                       <small>SHREE GAURI</small>
                       <h3>{p.name}</h3>
-                      <p>{p.short_description || p.description}</p>
+                      <p>{(p.short_description || p.description || "").trim().slice(0, 96)}{(p.short_description || p.description || "").trim().length > 96 ? "…" : ""}</p>
                       <b>{money(Number(p.price_inr))}</b>
                       {p.compare_at_price_inr && (
                         <del>{money(Number(p.compare_at_price_inr))}</del>
@@ -812,34 +812,7 @@ export default function Storefront() {
                   check back when the collection is added.
                 </p>
               )}
-              {shown.length > pageSize && (
-                <nav className="catalog-pagination" aria-label="Product pages">
-                  <span>
-                    Showing {pageStart + 1}–{Math.min(pageStart + pageSize, shown.length)} of {shown.length} products
-                  </span>
-                  <div className="catalog-page-numbers">
-                    <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
-                      Previous
-                    </button>
-                    {pageNumbers.map((page) =>
-                      typeof page === "string" ? (
-                        <span key={page} aria-hidden="true">…</span>
-                      ) : (
-                        <button
-                          key={page}
-                          type="button"
-                          className={currentPage === page ? "active" : ""}
-                          aria-current={currentPage === page ? "page" : undefined}
-                          aria-label={`Page ${page}`}
-                          onClick={() => {
-                            setCurrentPage(page);
-                            document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                          }}
-                        >
-                          {page}
-                        </button>
-                      ),
-                    )}
+
                     <button type="button" disabled={currentPage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}>
                       Next
                     </button>
@@ -847,6 +820,34 @@ export default function Storefront() {
                 </nav>
               )}
             </div>
+            {shown.length > pageSize && (
+              <nav className="catalog-pagination" aria-label="Product pages">
+                <span>
+                  Showing {pageStart + 1}–{Math.min(pageStart + pageSize, shown.length)} of {shown.length} products
+                </span>
+                <div className="catalog-page-numbers">
+                  <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                    Previous
+                  </button>
+                  {pageNumbers.map((page) =>
+                    typeof page === "string" ? (
+                      <span key={page} aria-hidden="true">…</span>
+                    ) : (
+                      <button
+                        key={page}
+                        type="button"
+                        className={currentPage === page ? "active" : ""}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        aria-label={`Page ${page}`}
+                        onClick={() => {
+                          setCurrentPage(page);
+                          document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
           </div>
         </section>
       )}
