@@ -542,3 +542,17 @@ body {
  .product-page-backdrop .product-copy{padding:24px 20px 48px;max-height:none}
  .product-page-backdrop .close{right:12px;top:10px}
 }
+
+
+/* Keep the full-screen product page from inheriting horizontal overflow from the catalogue behind it. */
+html:has(.product-page-backdrop),
+body:has(.product-page-backdrop){
+  overflow:hidden!important;
+  max-width:100%;
+}
+.product-page-backdrop{
+  width:100vw;
+  max-width:100vw;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
