@@ -461,6 +461,7 @@ export default function Storefront() {
             {l}
           </button>
         ))}
+        <a className="astrology-nav-link" href="/astrology">ASTROLOGY CONSULTATION</a>
       </nav>
       {menu && (
         <aside className="drawer">
@@ -474,6 +475,9 @@ export default function Storefront() {
               <ChevronRight />
             </button>
           ))}
+          <a href="/astrology">
+            Astrology Consultation <ChevronRight />
+          </a>
           <a href="/login">
             Customer Login <ChevronRight />
           </a>
@@ -533,6 +537,14 @@ export default function Storefront() {
               care.
             </p>
             <span>✦</span>
+          </section>
+          <section className="astrology-promo">
+            <div>
+              <small className="kicker">PERSONAL ASTROLOGY SERVICES</small>
+              <h2>Kundali Analysis &amp; Gemstone Consultation</h2>
+              <p>Explore a personal Kundali Analysis or a Gemstone Consultation with the Shree Gauri team.</p>
+            </div>
+            <a href="/astrology">EXPLORE CONSULTATION</a>
           </section>
         </>
       )}
