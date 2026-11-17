@@ -1198,7 +1198,7 @@ export default function Storefront() {
               </div>
               <div className={`product-short-description ${descriptionOpen ? "open" : ""}`}>
                 <b>About this item</b>
-                <p>{item.short_description || item.description}</p>
+                <p>{(item.short_description || item.description || "").trim().slice(0, 180)}{(item.short_description || item.description || "").trim().length > 180 ? "…" : ""}</p>
                 {(item.short_description || item.description || "").length > 180 && (
                   <button type="button" onClick={() => setDescriptionOpen((v) => !v)}>
                     {descriptionOpen ? "SHOW LESS" : "READ MORE"}
