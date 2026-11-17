@@ -813,12 +813,6 @@ export default function Storefront() {
                 </p>
               )}
 
-                    <button type="button" disabled={currentPage === pageCount} onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}>
-                      Next
-                    </button>
-                  </div>
-                </nav>
-              )}
             </div>
             {shown.length > pageSize && (
               <nav className="catalog-pagination" aria-label="Product pages">
