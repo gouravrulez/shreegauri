@@ -357,7 +357,7 @@ export default function Storefront() {
               : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
-  const pageSize = 20;
+  const pageSize = 12;
   const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
   const pageStart = (currentPage - 1) * pageSize;
   const pageProducts = useMemo(
