@@ -77,10 +77,15 @@ export default function CustomerLogin() {
   const [profile, setProfile] = useState<Profile>(blankProfile);
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [publicCoupons, setPublicCoupons] = useState<any[]>([]);
   const [newAddress, setNewAddress] = useState(blankAddress);
   const [section, setSection] = useState<"overview" | "orders" | "profile" | "addresses">(() => { if (typeof window === "undefined") return "overview"; const requested = new URLSearchParams(window.location.search).get("section"); return requested === "orders" || requested === "profile" || requested === "addresses" ? requested : "overview"; });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/coupons").then((response) => response.json()).then((data) => setPublicCoupons(Array.isArray(data.coupons) ? data.coupons : [])).catch(() => setPublicCoupons([]));
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -400,6 +405,14 @@ export default function CustomerLogin() {
                 <button onClick={() => setSection("orders")}><Truck /><span><strong>{orders.filter((o) => ["confirmed","processing","packed","shipped","out_for_delivery"].includes(o.order_status)).length}</strong>In Progress</span></button>
                 <button onClick={() => setSection("addresses")}><MapPin /><span><strong>{addresses.length}</strong>Saved Addresses</span></button>
               </div>
+              {publicCoupons.length > 0 && (
+                <div className="customer-panel customer-offers-panel">
+                  <div className="customer-panel-title"><div><small>EXCLUSIVE OFFERS</small><h2>Offers for you</h2></div><a href="/">SHOP NOW</a></div>
+                  <div className="customer-offer-grid">
+                    {publicCoupons.map((offer) => <article key={offer.id}><div><b>{offer.code}</b><span>{offer.discount_type === "percentage" ? offer.discount_value + "% off" : "₹" + offer.discount_value + " off"}</span><small>{Number(offer.min_order_inr || 0) > 0 ? "On orders above ₹" + Number(offer.min_order_inr).toLocaleString("en-IN") : "On eligible purchases"}</small></div><button type="button" onClick={() => { navigator.clipboard?.writeText(offer.code); setMessage("Coupon " + offer.code + " copied. Apply it at checkout."); }}>COPY CODE</button></article>)}
+                  </div>
+                </div>
+              )}
               <div className="customer-panel">
                 <div className="customer-panel-title"><div><small>RECENT ACTIVITY</small><h2>Your Recent Orders</h2></div><button onClick={() => setSection("orders")}>VIEW ALL</button></div>
                 {orders.length ? orders.slice(0,3).map((o) => (
