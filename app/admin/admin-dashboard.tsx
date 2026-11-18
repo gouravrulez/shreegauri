@@ -138,6 +138,10 @@ export default function AdminDashboard() {
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
     [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
     [newStaffPassword, setNewStaffPassword] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [productVisibility, setProductVisibility] = useState("all");
+  const [productPage, setProductPage] = useState(1);
+  const adminProductPageSize = 12;
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -411,6 +415,15 @@ export default function AdminDashboard() {
   const pendingReviews = reviews.filter((r) => !r.is_approved).length;
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
   const paidRevenue = orders.filter((o) => ["paid", "success", "completed"].includes(String(o.payment_status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
+  const filteredAdminProducts = products.filter((p) => {
+    const term = productSearch.trim().toLowerCase();
+    const matchesSearch = !term || [p.name, p.slug].some((value) => String(value || "").toLowerCase().includes(term));
+    const matchesVisibility = productVisibility === "all" || (productVisibility === "live" ? p.is_active : !p.is_active);
+    return matchesSearch && matchesVisibility;
+  });
+  const adminProductPageCount = Math.max(1, Math.ceil(filteredAdminProducts.length / adminProductPageSize));
+  const safeAdminProductPage = Math.min(productPage, adminProductPageCount);
+  const paginatedAdminProducts = filteredAdminProducts.slice((safeAdminProductPage - 1) * adminProductPageSize, safeAdminProductPage * adminProductPageSize);
   function openDashboard() {
     const now = Date.now();
     setLastSeenActivity(now);
@@ -851,6 +864,22 @@ export default function AdminDashboard() {
                 <button onClick={() => setCat(blankCat)}>Clear</button>
               </div>
             </div>
+            <div className="admin-product-tools">
+              <div className="admin-product-counts">
+                <strong>{products.length} products total</strong>
+                <span>{products.filter((p) => p.is_active).length} live on website</span>
+                <span>{products.filter((p) => !p.is_active).length} hidden</span>
+              </div>
+              <div className="admin-product-filters">
+                <input type="search" value={productSearch} placeholder="Search product name..." aria-label="Search products" onChange={(e) => { setProductSearch(e.target.value); setProductPage(1); }} />
+                <select aria-label="Filter product visibility" value={productVisibility} onChange={(e) => { setProductVisibility(e.target.value); setProductPage(1); }}>
+                  <option value="all">All products</option>
+                  <option value="live">Live on website</option>
+                  <option value="hidden">Hidden products</option>
+                </select>
+              </div>
+              <p className="admin-product-range">Showing {filteredAdminProducts.length ? (safeAdminProductPage - 1) * adminProductPageSize + 1 : 0}–{Math.min(safeAdminProductPage * adminProductPageSize, filteredAdminProducts.length)} of {filteredAdminProducts.length} matching products</p>
+            </div>
             <div className="records">
               {cats.map((c) => (
                 <article key={c.id}>
@@ -1063,7 +1092,7 @@ export default function AdminDashboard() {
             </div>
             <div className="records">
               {products.length ? (
-                products.map((p) => (
+                paginatedAdminProducts.map((p) => (
                   <article key={p.id}>
                     <img src={p.primary_image_url} />
                     <div>
@@ -1100,6 +1129,15 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+            {filteredAdminProducts.length > adminProductPageSize && (
+              <nav className="admin-product-pagination" aria-label="Product pages">
+                <button disabled={safeAdminProductPage === 1} onClick={() => setProductPage((p) => Math.max(1, p - 1))}>Previous</button>
+                {Array.from({ length: adminProductPageCount }, (_, i) => i + 1).map((pageNumber) => (
+                  <button key={pageNumber} className={safeAdminProductPage === pageNumber ? "active" : ""} aria-current={safeAdminProductPage === pageNumber ? "page" : undefined} onClick={() => setProductPage(pageNumber)}>{pageNumber}</button>
+                ))}
+                <button disabled={safeAdminProductPage === adminProductPageCount} onClick={() => setProductPage((p) => Math.min(adminProductPageCount, p + 1))}>Next</button>
+              </nav>
+            )}
           </div>
         )}
         {tab === "reviews" && (
