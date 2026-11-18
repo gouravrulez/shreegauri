@@ -72,7 +72,7 @@ const helper = `  async function ensurePlanetCategories() {
     const missing = planets.filter(([name]) => !existing.has(name.toLowerCase()));
     if (!missing.length) { setNotice("All nine planet associations are already available."); return; }
     const rows = missing.map(([name, slug], index) => ({
-      name, slug, description: `Products traditionally associated with ${name}.`,
+      name, slug, description: "Products traditionally associated with " + name + ".",
       image_url: "", parent_id: null, collection_type: "planet", is_active: true,
       sort_order: 100 + index,
     }));
