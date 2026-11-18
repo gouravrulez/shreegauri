@@ -47,6 +47,7 @@ if (!text.includes('profile_image_url: customer.profile_image_url || "",')) {
 if (!text.includes("async function uploadProfilePhoto")) {
   const marker = `  async function addAddress(e: FormEvent) {`;
   const fn = `  async function uploadProfilePhoto(file?: File) {
+    if (guardPreviewWrite()) return;
     if (!file || !user || !profile.id) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
