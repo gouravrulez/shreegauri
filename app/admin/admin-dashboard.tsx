@@ -88,9 +88,6 @@ type Order = {
   created_at: string;
   order_items: OrderItem[];
   courier_company_id?: string | null;
-  courier_name?: string | null;
-  tracking_number?: string | null;
-  tracking_url?: string | null;
   courier_charge_inr?: number;
   dispatch_date?: string | null;
   expected_delivery_date?: string | null;
