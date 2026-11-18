@@ -62,6 +62,7 @@ const adminPath = "app/admin/admin-dashboard.tsx";
 let admin = fs.readFileSync(adminPath, "utf8");
 const helperAnchor = "  async function saveCat() {";
 const helper = `  async function ensurePlanetCategories() {
+    if (guardPreviewWrite()) return;
     const planets = [
       ["Sun", "sun", "☉"], ["Moon", "moon", "☾"], ["Mars", "mars", "♂"],
       ["Mercury", "mercury", "☿"], ["Jupiter", "jupiter", "♃"],
