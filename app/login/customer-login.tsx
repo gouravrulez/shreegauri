@@ -83,6 +83,13 @@ export default function CustomerLogin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const previewReadOnly = process.env.NEXT_PUBLIC_APP_ENV === "preview";
+  function guardPreviewWrite() {
+    if (!previewReadOnly) return false;
+    setMessage("Preview mode is read-only. Account and address changes are disabled to protect live customer records.");
+    return true;
+  }
+
   useEffect(() => {
     fetch("/api/coupons").then((response) => response.json()).then((data) => setPublicCoupons(Array.isArray(data.coupons) ? data.coupons : [])).catch(() => setPublicCoupons([]));
   }, []);
@@ -219,6 +226,7 @@ export default function CustomerLogin() {
   }
 
   async function saveProfile(e: FormEvent) {
+    if (guardPreviewWrite()) return;
     e.preventDefault();
     if (!user || !profile.id) return;
     setSaving(true);
@@ -238,6 +246,7 @@ export default function CustomerLogin() {
   }
 
   async function addAddress(e: FormEvent) {
+    if (guardPreviewWrite()) return;
     e.preventDefault();
     if (!profile.id) return;
     setSaving(true);
@@ -270,6 +279,7 @@ export default function CustomerLogin() {
   }
 
   async function makeDefault(id: string) {
+    if (guardPreviewWrite()) return;
     const { error } = await supabase.rpc("set_default_customer_address", {
       p_address_id: id,
     });
@@ -278,6 +288,7 @@ export default function CustomerLogin() {
   }
 
   async function removeAddress(id: string) {
+    if (guardPreviewWrite()) return;
     const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
     setMessage(error?.message || "Address removed.");
     if (!error) loadAccount();
