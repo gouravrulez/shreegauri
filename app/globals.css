@@ -398,3 +398,9 @@ body {
 .customer-offer-grid article small{font-size:10px;color:#77685f}
 .customer-offer-grid article button{flex:0 0 auto;border:1px solid #d4bf9e;background:#fff;color:#5d3a21;border-radius:5px;padding:8px 10px;font-size:9px;font-weight:850;letter-spacing:.5px}
 @media(max-width:620px){.customer-offer-grid{grid-template-columns:1fr}.customer-offer-grid article{padding:11px}}
+
+.checkout-apply-coupon{justify-self:start;min-height:40px;padding:9px 16px;border:1px solid #4a1016;border-radius:6px;background:#4a1016;color:#fff;font-size:10px;font-weight:850;letter-spacing:.7px;cursor:pointer}
+.checkout-apply-coupon:disabled{opacity:.55;cursor:wait}
+.coupon-feedback{margin:0;font-size:11px;color:#a3202c;font-weight:650}
+.coupon-feedback.success{color:#287044}
+.coupon-savings{margin:0;color:#287044;font-size:12px;font-weight:850}
