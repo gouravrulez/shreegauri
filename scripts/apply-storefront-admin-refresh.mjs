@@ -77,7 +77,7 @@ const helper = `  async function ensurePlanetCategories() {
       sort_order: 100 + index,
     }));
     const { error } = await supabase.from("categories").insert(rows);
-    if (error) { setNotice(`Planet collections could not be added: ${error.message}`); return; }
+    if (error) { setNotice("Planet collections could not be added: " + error.message); return; }
     setNotice("Planet associations added. You can now select Sun, Moon and the other planets for products.");
     await load();
   }
