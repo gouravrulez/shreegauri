@@ -404,3 +404,5 @@ body {
 .coupon-feedback{margin:0;font-size:11px;color:#a3202c;font-weight:650}
 .coupon-feedback.success{color:#287044}
 .coupon-savings{margin:0;color:#287044;font-size:12px;font-weight:850}
+
+.preview-readonly-banner{grid-column:1/-1;margin:12px 0 0;padding:11px 14px;border:1px solid #e4c58d;border-radius:7px;background:#fff8e9;color:#76501b;font-size:10px;font-weight:850;line-height:1.5;letter-spacing:.35px}
