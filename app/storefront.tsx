@@ -125,6 +125,8 @@ export default function Storefront() {
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
+    [promoCode, setPromoCode] = useState(""),
+    [publicCoupons, setPublicCoupons] = useState<any[]>([]),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -169,6 +171,9 @@ export default function Storefront() {
         setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
       if (r.data) setReviews(r.data as R[]);
     });
+  }, []);
+  useEffect(() => {
+    fetch("/api/coupons").then((response) => response.json()).then((data) => setPublicCoupons(Array.isArray(data.coupons) ? data.coupons : [])).catch(() => setPublicCoupons([]));
   }, []);
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -257,6 +262,7 @@ export default function Storefront() {
         pincode: checkout.pincode,
       },
       items: grouped,
+      promo_code: promoCode.trim(),
     };
     try {
       const response = await fetch("/api/payments/create", {
@@ -307,6 +313,7 @@ export default function Storefront() {
             return;
           }
           setCart([]);
+          setPromoCode("");
           setCheckoutBusy(false);
           setCheckoutMsg(
             `Payment successful. Order ${result.order_number} is confirmed.`,
@@ -1049,6 +1056,11 @@ export default function Storefront() {
               <button type="button" onClick={() => { setCheckoutOpen(false); go("cart"); }}>GO TO CART</button>
               <a href="/login?section=overview">MY DASHBOARD</a>
             </div>
+            <section className="checkout-coupon">
+              <div><b>Offers & coupon code</b><small>Enter a code to apply a valid discount to this order.</small></div>
+              <label><span>Coupon code</span><input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Enter coupon code" /></label>
+              {publicCoupons.length > 0 && <div className="checkout-public-coupons"><small>Available offers</small>{publicCoupons.map((offer) => <button type="button" key={offer.id} onClick={() => setPromoCode(offer.code)}><b>{offer.code}</b><span>{offer.discount_type === "percentage" ? offer.discount_value + "% off" : "₹" + offer.discount_value + " off"}{Number(offer.min_order_inr || 0) > 0 ? " · Min. order ₹" + Number(offer.min_order_inr).toLocaleString("en-IN") : ""}</span></button>)}</div>}
+            </section>
             <div className="checkout-products">
               <div className="checkout-products-head"><b>Order Items</b><span>{cart.length} item(s)</span></div>
               {cart.map((p, i) => (
