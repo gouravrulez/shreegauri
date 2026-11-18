@@ -46,12 +46,7 @@ patch(admin,
 patch(admin,
 `                  <div className="order-actions">
                     <a`,
-`                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"8px",margin:"12px 0"}}>
-                    <input placeholder="Courier name" defaultValue={o.courier_name || ""} onBlur={(e)=>updateFulfilment(o.id,{courier_name:e.target.value || null})} />
-                    <input placeholder="Tracking / AWB number" defaultValue={o.tracking_number || ""} onBlur={(e)=>updateFulfilment(o.id,{tracking_number:e.target.value || null})} />
-                    <input placeholder="Tracking URL" defaultValue={o.tracking_url || ""} onBlur={(e)=>updateFulfilment(o.id,{tracking_url:e.target.value || null})} />
-                  </div>
-                  <div className="order-actions">
+`                  <div className="order-actions">
                     <a`,
 "tracking fields");
 
