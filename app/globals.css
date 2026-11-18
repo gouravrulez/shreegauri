@@ -388,3 +388,13 @@ body {
 .checkout-coupon input{min-height:44px;border:1px solid #ded3c8;border-radius:6px;padding:10px 12px;font-size:14px;text-transform:uppercase}
 .checkout-public-coupons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.checkout-public-coupons>small{width:100%;font-size:10px;font-weight:850;color:#8a6b3b;text-transform:uppercase;letter-spacing:1px}
 .checkout-public-coupons button{display:grid;gap:3px;text-align:left;border:1px dashed #d4bd96;background:#fffaf1;border-radius:6px;padding:9px 12px;cursor:pointer}.checkout-public-coupons button b{font-size:11px;color:#5b2528}.checkout-public-coupons button span{font-size:10px;color:#76665b}
+
+.customer-offers-panel{border:1px solid #e8dccd!important;background:linear-gradient(180deg,#fffdf9,#fff)!important}
+.customer-offer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.customer-offer-grid article{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border:1px dashed #d7bf98;border-radius:8px;background:#fffaf2}
+.customer-offer-grid article>div{display:grid;gap:4px;min-width:0}
+.customer-offer-grid article b{font-size:14px;letter-spacing:.8px;color:#4b1115}
+.customer-offer-grid article span{font-size:12px;font-weight:800;color:#90611e}
+.customer-offer-grid article small{font-size:10px;color:#77685f}
+.customer-offer-grid article button{flex:0 0 auto;border:1px solid #d4bf9e;background:#fff;color:#5d3a21;border-radius:5px;padding:8px 10px;font-size:9px;font-weight:850;letter-spacing:.5px}
+@media(max-width:620px){.customer-offer-grid{grid-template-columns:1fr}.customer-offer-grid article{padding:11px}}
