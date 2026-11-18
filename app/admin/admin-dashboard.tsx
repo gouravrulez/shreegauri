@@ -647,6 +647,7 @@ export default function AdminDashboard() {
                       : "Photos, Logo & Homepage"}
             </h1>
           </div>
+          {previewReadOnly && <p className="preview-readonly-banner">PREVIEW MODE · READ ONLY — product, order, customer, shipping and coupon changes are disabled here to protect the live store.</p>}
           {notice && <p>{notice}</p>}
         </header>
         {tab === "dashboard" && (
