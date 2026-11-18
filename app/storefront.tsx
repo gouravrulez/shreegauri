@@ -178,6 +178,10 @@ export default function Storefront() {
   useEffect(() => {
     fetch("/api/coupons").then((response) => response.json()).then((data) => setPublicCoupons(Array.isArray(data.coupons) ? data.coupons : [])).catch(() => setPublicCoupons([]));
   }, []);
+  useEffect(() => {
+    setCouponDiscount(0);
+    setCouponMessage("");
+  }, [cart]);
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
