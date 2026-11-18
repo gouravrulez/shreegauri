@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     if (action === "save_coupon") {
       if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can manage coupons." }, { status: 403 });
       const id = String(body?.id || "");
-      const code = String(body?.code || "").trim().toUpperCase().replace(/\\s+/g, "");
+      const code = String(body?.code || "").trim().toUpperCase().replace(/\s+/g, "");
       const discount_type = String(body?.discount_type || "percentage");
       const discount_value = Number(body?.discount_value || 0);
       const applies_to = String(body?.applies_to || "all");
