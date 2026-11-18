@@ -168,6 +168,7 @@ export default function AdminDashboard() {
       supabase
         .from("products")
         .select("*")
+        .eq("brand", "Shree Gauri")
         .order("created_at", { ascending: false }),
       supabase.from("site_settings").select("*").eq("id", 1).single(),
       supabase
@@ -348,6 +349,7 @@ export default function AdminDashboard() {
     }
     const data = {
       ...prod,
+      brand: "Shree Gauri",
       slug:
         prod.slug ||
         prod.name
