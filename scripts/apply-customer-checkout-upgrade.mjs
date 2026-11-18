@@ -58,6 +58,10 @@ replaceOnce(
 
 replaceOnce(
 `    [checkoutMsg, setCheckoutMsg] = useState(""),
+    [promoCode, setPromoCode] = useState(""),
+    [publicCoupons, setPublicCoupons] = useState<any[]>([]),
+    [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
+    [selectedAddressId, setSelectedAddressId] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({`,
 `    [checkoutMsg, setCheckoutMsg] = useState(""),
     [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
