@@ -99,6 +99,7 @@ const fallback: S = {
 };
 
 export default function Storefront() {
+  const previewReadOnly = process.env.NEXT_PUBLIC_APP_ENV === "preview";
   const [cats, setCats] = useState<C[]>([]),
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
@@ -241,6 +242,7 @@ export default function Storefront() {
     }
   }
   async function applyCoupon() {
+    if (previewReadOnly) { setCouponMessage("Coupon validation is disabled in preview mode."); return; }
     if (!promoCode.trim()) { setCouponMessage("Enter a coupon code first."); return; }
     if (!cart.length) { setCouponMessage("Add a product to your cart first."); return; }
     setCouponBusy(true);
@@ -1092,8 +1094,8 @@ export default function Storefront() {
             </div>
             <section className="checkout-coupon">
               <div><b>Offers & coupon code</b><small>Enter a code to apply a valid discount to this order.</small></div>
-              <label><span>Coupon code</span><input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\s/g, ""))} placeholder="Enter coupon code" /></label>
-              <button type="button" className="checkout-apply-coupon" onClick={applyCoupon} disabled={couponBusy}>{couponBusy ? "CHECKING..." : "APPLY COUPON"}</button>
+              <label><span>Coupon code</span><input disabled={previewReadOnly} value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\s/g, ""))} placeholder="Enter coupon code" /></label>
+              <button type="button" className="checkout-apply-coupon" onClick={applyCoupon} disabled={previewReadOnly || couponBusy}>{previewReadOnly ? "PREVIEW ONLY" : couponBusy ? "CHECKING..." : "APPLY COUPON"}</button>
               {couponMessage && <p className={couponDiscount > 0 ? "coupon-feedback success" : "coupon-feedback"}>{couponMessage}</p>}
               {couponDiscount > 0 && <p className="coupon-savings">You save {money(couponDiscount)} with this code.</p>}
               {publicCoupons.length > 0 && <div className="checkout-public-coupons"><small>Available offers</small>{publicCoupons.map((offer) => <button type="button" key={offer.id} onClick={() => setPromoCode(offer.code)}><b>{offer.code}</b><span>{offer.discount_type === "percentage" ? offer.discount_value + "% off" : "₹" + offer.discount_value + " off"}{Number(offer.min_order_inr || 0) > 0 ? " · Min. order ₹" + Number(offer.min_order_inr).toLocaleString("en-IN") : ""}</span></button>)}</div>}
