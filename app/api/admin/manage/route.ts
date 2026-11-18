@@ -238,7 +238,7 @@ export async function POST(request: Request) {
       let email_warning = "";
       const resendKey = process.env.RESEND_API_KEY;
       if (order.email && resendKey && (row.tracking_number || row.tracking_url || row.expected_delivery_date)) {
-        const safe = (value: unknown) => String(value || "").replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char] || char));
+        const safe = (value: unknown) => String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
         const trackingLink = row.tracking_url ? '<p><a href="' + safe(row.tracking_url) + '">Track your shipment</a></p>' : "";
         const emailBody = '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1>Your Shree Gauri order is on its way</h1><p>Namaste ' + safe(order.customer_name) + ',</p><p>Courier: <strong>' + safe(row.courier_name || "To be confirmed") + '</strong></p><p>Tracking number: <strong>' + safe(row.tracking_number || "Pending") + '</strong></p>' + trackingLink + '<p>Expected delivery: <strong>' + safe(row.expected_delivery_date || "To be confirmed") + '</strong></p><p>Order: <strong>' + safe(order.order_number) + '</strong></p><p>Thank you for choosing Shree Gauri.</p></div>';
         const mail = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" }, body: JSON.stringify({ from: process.env.ORDER_EMAIL_FROM || "Shree Gauri <orders@shreegauri.in>", to: [order.email], subject: "Shipping update — " + order.order_number, html: emailBody }) });
