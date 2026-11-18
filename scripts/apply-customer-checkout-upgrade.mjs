@@ -162,6 +162,11 @@ replaceOnce(
     setCheckoutBusy(true);`,
 `  async function placeOrder(e: FormEvent) {
     e.preventDefault();
+    if (process.env.NEXT_PUBLIC_APP_ENV === "preview") {
+      setCheckoutBusy(false);
+      setCheckoutMsg("Checkout is disabled in preview mode to protect live orders and payments.");
+      return;
+    }
     if (!cart.length) return;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
