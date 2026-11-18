@@ -135,6 +135,8 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
+  const [catalogPage, setCatalogPage] = useState(1);
+  const catalogPageSize = 12;
   useEffect(() => {
     Promise.all([
       supabase
@@ -356,6 +358,12 @@ export default function Storefront() {
               : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
+  useEffect(() => {
+    setCatalogPage(1);
+  }, [q, view, categoryFilter, stockOnly, maxPrice, sort]);
+  const catalogPageCount = Math.max(1, Math.ceil(shown.length / catalogPageSize));
+  const safeCatalogPage = Math.min(catalogPage, catalogPageCount);
+  const pageProducts = shown.slice((safeCatalogPage - 1) * catalogPageSize, safeCatalogPage * catalogPageSize);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -705,7 +713,7 @@ export default function Storefront() {
             </aside>
             <div className="product-grid">
               {shown.length ? (
-                shown.map((p) => (
+                pageProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -795,6 +803,18 @@ export default function Storefront() {
               )}
             </div>
           </div>
+          {shown.length > catalogPageSize && (
+            <nav className="catalog-pagination" aria-label="Catalogue pages">
+              <span>Page {safeCatalogPage} of {catalogPageCount}</span>
+              <div>
+                <button disabled={safeCatalogPage === 1} onClick={() => { setCatalogPage((p) => Math.max(1, p - 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Previous</button>
+                {Array.from({ length: catalogPageCount }, (_, i) => i + 1).map((pageNumber) => (
+                  <button key={pageNumber} className={safeCatalogPage === pageNumber ? "active" : ""} aria-current={safeCatalogPage === pageNumber ? "page" : undefined} onClick={() => { setCatalogPage(pageNumber); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{pageNumber}</button>
+                ))}
+                <button disabled={safeCatalogPage === catalogPageCount} onClick={() => { setCatalogPage((p) => Math.min(catalogPageCount, p + 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Next</button>
+              </div>
+            </nav>
+          )}
         </section>
       )}
       {view === "about" && (
