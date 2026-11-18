@@ -160,6 +160,12 @@ export default function AdminDashboard() {
     [coupons, setCoupons] = useState<any[]>([]),
     [courier, setCourier] = useState<any>(blankCourier),
     [coupon, setCoupon] = useState<any>(blankCoupon);
+  const previewReadOnly = process.env.NEXT_PUBLIC_APP_ENV === "preview";
+  function guardPreviewWrite() {
+    if (!previewReadOnly) return false;
+    setNotice("Preview is read-only to protect live products, orders and customer records. No changes were saved.");
+    return true;
+  }
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -244,6 +250,7 @@ export default function AdminDashboard() {
     }
   }
   async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
+    if (guardPreviewWrite()) return false;
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) { setNotice("Your session expired. Please sign in again."); return false; }
     const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
@@ -310,6 +317,7 @@ export default function AdminDashboard() {
   }
 
   async function upload(file: File, kind: "cat" | "prod") {
+    if (guardPreviewWrite()) return;
     setNotice("Uploading image...");
     const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
     const { error } = await supabase.storage
@@ -326,6 +334,7 @@ export default function AdminDashboard() {
     setNotice("Image ready. Save the item to apply it.");
   }
   async function uploadGallery(files: FileList) {
+    if (guardPreviewWrite()) return;
     setNotice(`Uploading ${files.length} additional image(s)...`);
     const urls: string[] = [];
     for (const file of Array.from(files)) {
@@ -346,6 +355,7 @@ export default function AdminDashboard() {
     setNotice(`${urls.length} additional image(s) ready. Save the product below.`);
   }
   async function moderateReview(id: string, is_approved: boolean) {
+    if (guardPreviewWrite()) return;
     const { error } = await supabase
       .from("product_reviews")
       .update({ is_approved })
@@ -373,6 +383,7 @@ export default function AdminDashboard() {
     setNotice("Image ready. Click Save All Website Settings.");
   }
   async function saveCat() {
+    if (guardPreviewWrite()) return;
     const data = {
       ...cat,
       slug:
@@ -395,6 +406,7 @@ export default function AdminDashboard() {
     }
   }
   async function saveProd() {
+    if (guardPreviewWrite()) return;
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
     if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
@@ -428,6 +440,7 @@ export default function AdminDashboard() {
     await load();
   }
   async function toggleProductVisibility(p: Prod) {
+    if (guardPreviewWrite()) return;
     const next = !p.is_active;
     const { error } = await supabase
       .from("products")
@@ -439,12 +452,14 @@ export default function AdminDashboard() {
   }
 
   async function remove(table: string, id: string) {
+    if (guardPreviewWrite()) return;
     if (!confirm("Delete this permanently?")) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
     setNotice(error?.message || "Deleted.");
     load();
   }
   async function saveSettings() {
+    if (guardPreviewWrite()) return;
     const { error } = await supabase
       .from("site_settings")
       .update({ ...settings, updated_at: new Date().toISOString() })
@@ -452,6 +467,7 @@ export default function AdminDashboard() {
     setNotice(error?.message || "Website content updated.");
   }
   async function updateOrder(id: string, order_status: string) {
+    if (guardPreviewWrite()) return;
     setNotice(`Updating order to ${order_status}...`);
     const { data: authData } = await supabase.auth.getSession();
     const token = authData.session?.access_token;
