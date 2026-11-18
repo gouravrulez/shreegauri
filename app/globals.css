@@ -343,3 +343,41 @@ body {
 
 /* Secure staff and main-admin controls */
 .staff-admin{display:flex;flex-direction:column;gap:18px}.staff-intro{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid #e2d7cc;padding:22px}.staff-intro>svg{width:28px;height:28px;color:#a56b19;flex-shrink:0}.staff-intro h2,.staff-invite-form h2,.staff-list h2{font:25px Georgia,serif;color:#461015;margin:0 0 8px}.staff-intro p{color:#715d58;margin:0;line-height:1.6}.staff-invite-form,.staff-list{background:#fff;border:1px solid #e2d7cc;padding:24px;display:flex;flex-direction:column;gap:16px}.staff-invite-form h2{display:flex;gap:9px;align-items:center}.staff-invite-form h2 svg{width:21px}.staff-invite-form label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;color:#674f4d}.staff-invite-form input,.staff-invite-form select{width:100%;padding:12px;border:1px solid #d9cabe;background:#fff}.staff-invite-form>button{align-self:flex-start;display:flex;align-items:center;gap:8px;background:#3b080d;color:#fff;border:0;padding:13px 17px;font-weight:800}.staff-invite-form>button svg{width:17px}.staff-list article{display:flex;justify-content:space-between;align-items:center;gap:15px;border-top:1px solid #eee4db;padding:15px 0}.staff-list article div{display:flex;flex-direction:column;gap:5px;min-width:0}.staff-list article b{overflow-wrap:anywhere}.staff-list article small{color:#806e68}.staff-list article button,.customer-admin-actions button,.order-delete-button{display:flex;align-items:center;gap:7px;border:1px solid #b52531;background:#fff;color:#a31f2a;padding:9px 12px;font-size:11px;font-weight:800}.staff-list article button svg,.customer-admin-actions svg,.order-delete-button svg{width:15px;height:15px}.customer-admin-actions{border-top:1px solid #eee3da;padding-top:14px;display:flex;justify-content:flex-end}.order-delete-button{align-self:flex-end}.admin-loading{padding:60px 24px;text-align:center}.admin-loading h1{font:30px Georgia,serif;color:#461015}.admin-loading p{color:#715d58}
+
+/* Shree Gauri courier and coupon administration */
+.shipping-admin,.coupon-admin{display:grid;gap:18px;max-width:1100px}
+.shipping-settings-card,.coupon-editor,.coupon-list{background:#fff;border:1px solid #e8ddd2;border-radius:13px;padding:22px;box-shadow:0 6px 22px rgba(58,25,20,.045)}
+.shipping-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.shipping-section-heading small{font-size:9px;font-weight:900;letter-spacing:1.5px;color:#9a6d35}
+.shipping-section-heading h2{font:600 24px Georgia,serif;color:#4b1115;margin:4px 0 0}
+.shipping-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.shipping-form-grid label,.coupon-scope{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:750;color:#59463f}
+.shipping-form-grid input,.shipping-form-grid select,.coupon-scope select{width:100%;min-height:43px;padding:10px 12px;border:1px solid #ded3c8;border-radius:7px;background:#fff;color:#342723}
+.shipping-toggle,.coupon-toggles label{display:flex;align-items:center;gap:8px;margin:15px 0;font-size:12px;font-weight:700;color:#5d4a42}
+.shipping-toggle input,.coupon-toggles input{width:16px;height:16px;accent-color:#6d1720}
+.admin-primary-action{background:#4a1016;color:#fff;border:1px solid #4a1016;border-radius:6px;padding:11px 16px;font-size:11px;font-weight:850;letter-spacing:.35px;cursor:pointer}
+.shipping-action-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.shipping-action-row>button:not(.admin-primary-action){background:#fff;border:1px solid #dfd1c4;border-radius:6px;padding:11px 16px;color:#5c4841;font-size:11px;font-weight:750}
+.shipping-company-list,.coupon-list{display:grid;gap:8px}
+.shipping-company-list{margin-top:18px}
+.shipping-company-list article,.coupon-list article{display:flex;align-items:center;gap:10px;padding:13px 12px;border:1px solid #eee5dc;border-radius:8px;background:#fffdfb}
+.shipping-company-list article>div,.coupon-list article>div{display:grid;gap:4px;flex:1;min-width:0}
+.shipping-company-list article b,.coupon-list article b{font-size:13px;color:#4b1115}
+.shipping-company-list article small,.coupon-list article small,.coupon-list article em{font-size:11px;color:#796b64;font-style:normal}
+.shipping-company-list article button,.coupon-list article button{border:1px solid #e2d5c9;background:#fff;border-radius:5px;padding:8px 10px;font-size:10px;font-weight:800;color:#563b34}
+.shipping-company-list article .shipping-delete,.coupon-list article .shipping-delete{color:#a3202c;border-color:#e9c9c8}
+.shipping-note{font-size:11px;color:#7b6b62;line-height:1.6;padding:12px 15px;background:#fbf6ef;border:1px solid #eee2d5;border-radius:8px}
+.coupon-editor{display:grid;gap:14px}
+.coupon-toggles{display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #eee4da;border-bottom:1px solid #eee4da;padding:6px 0}
+.coupon-scope select{min-height:110px;padding:8px}
+.coupon-list>p,.shipping-company-list>p{color:#82746d;font-size:12px;padding:15px}
+.order-shipping-editor{margin:15px 0;padding:13px 14px;border:1px solid #e8ddd2;border-radius:8px;background:#fffdfb}
+.order-shipping-editor summary{font-size:11px;font-weight:850;color:#5b2528;cursor:pointer;letter-spacing:.25px}
+.order-shipping-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:13px}
+.order-shipping-fields label{display:grid;gap:5px;font-size:10px;font-weight:750;color:#69564f}
+.order-shipping-fields input,.order-shipping-fields select{min-width:0;width:100%;min-height:38px;padding:8px;border:1px solid #ded3c8;border-radius:5px;background:#fff}
+.order-shipping-fields>button{grid-column:1/-1;justify-self:start;background:#4a1016;color:#fff;border:0;border-radius:5px;padding:10px 14px;font-size:10px;font-weight:850;cursor:pointer}
+.product-shipping-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:13px;background:#fffaf5;border:1px solid #eadfd5;border-radius:8px}
+.product-shipping-fields label{display:flex;flex-direction:column;gap:7px;font-size:11px;font-weight:750;color:#59463f}
+.product-shipping-fields label.check{flex-direction:row;align-items:center}
+@media(max-width:760px){.shipping-settings-card,.coupon-editor,.coupon-list{padding:15px}.shipping-form-grid,.order-shipping-fields,.product-shipping-fields{grid-template-columns:1fr}.order-shipping-fields>button{grid-column:auto}.shipping-company-list article,.coupon-list article{flex-wrap:wrap}.shipping-company-list article>div,.coupon-list article>div{flex-basis:100%}}
