@@ -342,6 +342,8 @@ export default function Storefront() {
           }
           setCart([]);
           setPromoCode("");
+          setCouponDiscount(0);
+          setCouponMessage("");
           setCheckoutBusy(false);
           setCheckoutMsg(
             `Payment successful. Order ${result.order_number} is confirmed.`,
@@ -1086,7 +1088,7 @@ export default function Storefront() {
             </div>
             <section className="checkout-coupon">
               <div><b>Offers & coupon code</b><small>Enter a code to apply a valid discount to this order.</small></div>
-              <label><span>Coupon code</span><input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Enter coupon code" /></label>
+              <label><span>Coupon code</span><input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\s/g, ""))} placeholder="Enter coupon code" /></label>
               <button type="button" className="checkout-apply-coupon" onClick={applyCoupon} disabled={couponBusy}>{couponBusy ? "CHECKING..." : "APPLY COUPON"}</button>
               {couponMessage && <p className={couponDiscount > 0 ? "coupon-feedback success" : "coupon-feedback"}>{couponMessage}</p>}
               {couponDiscount > 0 && <p className="coupon-savings">You save {money(couponDiscount)} with this code.</p>}
