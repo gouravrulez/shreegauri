@@ -63,16 +63,18 @@ replaceOnce(
     [couponMessage, setCouponMessage] = useState(""),
     [couponBusy, setCouponBusy] = useState(false),
     [couponDiscount, setCouponDiscount] = useState(0),
-    [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
-    [selectedAddressId, setSelectedAddressId] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({`,
 `    [checkoutMsg, setCheckoutMsg] = useState(""),
+    [promoCode, setPromoCode] = useState(""),
+    [publicCoupons, setPublicCoupons] = useState<any[]>([]),
+    [couponMessage, setCouponMessage] = useState(""),
+    [couponBusy, setCouponBusy] = useState(false),
+    [couponDiscount, setCouponDiscount] = useState(0),
     [checkoutAddresses, setCheckoutAddresses] = useState<SavedAddress[]>([]),
     [selectedAddressId, setSelectedAddressId] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({`,
 "checkout address state"
 );
-
 const effectNeedle = `  const money = (n: number) =>`;
 const effectReplacement = `  useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("sg_cart", JSON.stringify(cart));
