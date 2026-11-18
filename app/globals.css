@@ -381,3 +381,10 @@ body {
 .product-shipping-fields label{display:flex;flex-direction:column;gap:7px;font-size:11px;font-weight:750;color:#59463f}
 .product-shipping-fields label.check{flex-direction:row;align-items:center}
 @media(max-width:760px){.shipping-settings-card,.coupon-editor,.coupon-list{padding:15px}.shipping-form-grid,.order-shipping-fields,.product-shipping-fields{grid-template-columns:1fr}.order-shipping-fields>button{grid-column:auto}.shipping-company-list article,.coupon-list article{flex-wrap:wrap}.shipping-company-list article>div,.coupon-list article>div{flex-basis:100%}}
+
+.checkout-coupon{width:min(820px,100%);margin:18px auto 0;padding:16px;border:1px solid #e8ddd2;border-radius:10px;background:#fff;display:grid;gap:12px}
+.checkout-coupon>div:first-child{display:grid;gap:4px}.checkout-coupon>div:first-child b{font:600 18px Georgia,serif;color:#4b1115}.checkout-coupon>div:first-child small{font-size:11px;color:#786a62}
+.checkout-coupon>label{display:grid;gap:6px;font-size:10px;font-weight:850;color:#6a5147;letter-spacing:.5px}
+.checkout-coupon input{min-height:44px;border:1px solid #ded3c8;border-radius:6px;padding:10px 12px;font-size:14px;text-transform:uppercase}
+.checkout-public-coupons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.checkout-public-coupons>small{width:100%;font-size:10px;font-weight:850;color:#8a6b3b;text-transform:uppercase;letter-spacing:1px}
+.checkout-public-coupons button{display:grid;gap:3px;text-align:left;border:1px dashed #d4bd96;background:#fffaf1;border-radius:6px;padding:9px 12px;cursor:pointer}.checkout-public-coupons button b{font-size:11px;color:#5b2528}.checkout-public-coupons button span{font-size:10px;color:#76665b}
