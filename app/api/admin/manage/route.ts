@@ -74,7 +74,23 @@ export async function GET(request: Request) {
     const needsPasswordSetup = auth.user.user_metadata?.staff_password_setup === true;
     const isPrimaryAdmin = auth.user.id === PRIMARY_ADMIN_USER_ID;
     const staff = isPrimaryAdmin ? await listStaff(auth.admin) : [];
-    return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup, service_configured: true });
+    let shipping_companies: any[] = [];
+    let shipping_settings: any = null;
+    let coupons: any[] = [];
+    if (isPrimaryAdmin) {
+      const [companiesResult, settingsResult, couponsResult] = await Promise.all([
+        auth.admin.from("shipping_companies").select("*").order("name"),
+        auth.admin.from("shipping_settings").select("*").eq("id", 1).maybeSingle(),
+        auth.admin.from("promo_codes").select("*").order("created_at", { ascending: false }),
+      ]);
+      if (companiesResult.error || settingsResult.error || couponsResult.error) {
+        return NextResponse.json({ error: "Shipping or coupon settings could not be loaded." }, { status: 500 });
+      }
+      shipping_companies = companiesResult.data || [];
+      shipping_settings = settingsResult.data;
+      coupons = couponsResult.data || [];
+    }
+    return NextResponse.json({ role: auth.role, staff, is_primary_admin: isPrimaryAdmin, needs_password_setup: needsPasswordSetup, service_configured: true, shipping_companies, shipping_settings, coupons });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Admin request failed." }, { status: 500 });
   }
@@ -105,6 +121,134 @@ export async function POST(request: Request) {
     }
 
     if (!isMainAdmin) return NextResponse.json({ error: "Administrator access is required for this action." }, { status: 403 });
+
+    if (action === "save_shipping_company") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can manage courier companies." }, { status: 403 });
+      const id = String(body?.id || "");
+      const row = {
+        name: String(body?.name || "").trim(),
+        tracking_url_template: String(body?.tracking_url_template || "").trim() || null,
+        default_charge_inr: Math.max(0, Number(body?.default_charge_inr || 0)),
+        estimated_min_days: Math.max(0, Number(body?.estimated_min_days || 0)),
+        estimated_max_days: Math.max(0, Number(body?.estimated_max_days || 0)),
+        is_active: body?.is_active !== false,
+        updated_at: new Date().toISOString()
+      };
+      if (!row.name) return NextResponse.json({ error: "Enter the courier company name." }, { status: 400 });
+      if (row.estimated_max_days < row.estimated_min_days) return NextResponse.json({ error: "Maximum delivery days must be equal to or greater than minimum days." }, { status: 400 });
+      const result = id
+        ? await auth.admin.from("shipping_companies").update(row).eq("id", id).select().single()
+        : await auth.admin.from("shipping_companies").insert(row).select().single();
+      if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+      await audit(auth.admin, auth.user, "shipping_company_saved", "shipping_company", result.data.id, { name: row.name });
+      return NextResponse.json({ ok: true, message: "Courier company saved." });
+    }
+
+    if (action === "delete_shipping_company") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can manage courier companies." }, { status: 403 });
+      const id = String(body?.id || "");
+      if (!id) return NextResponse.json({ error: "Courier company not found." }, { status: 400 });
+      const { error } = await auth.admin.from("shipping_companies").delete().eq("id", id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      await audit(auth.admin, auth.user, "shipping_company_deleted", "shipping_company", id);
+      return NextResponse.json({ ok: true, message: "Courier company removed." });
+    }
+
+    if (action === "save_shipping_settings") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can change shipping settings." }, { status: 403 });
+      const row = {
+        default_shipping_charge_inr: Math.max(0, Number(body?.default_shipping_charge_inr || 0)),
+        free_shipping_enabled: body?.free_shipping_enabled === true,
+        free_shipping_threshold_inr: body?.free_shipping_threshold_inr === "" || body?.free_shipping_threshold_inr == null ? null : Math.max(0, Number(body.free_shipping_threshold_inr)),
+        default_min_delivery_days: Math.max(0, Number(body?.default_min_delivery_days || 0)),
+        default_max_delivery_days: Math.max(0, Number(body?.default_max_delivery_days || 0)),
+        updated_at: new Date().toISOString()
+      };
+      if (row.default_max_delivery_days < row.default_min_delivery_days) return NextResponse.json({ error: "Maximum delivery days must be equal to or greater than minimum days." }, { status: 400 });
+      const { error } = await auth.admin.from("shipping_settings").update(row).eq("id", 1);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      await audit(auth.admin, auth.user, "shipping_settings_saved", "shipping_settings", "1", row);
+      return NextResponse.json({ ok: true, message: "Shipping settings saved." });
+    }
+
+    if (action === "save_coupon") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can manage coupons." }, { status: 403 });
+      const id = String(body?.id || "");
+      const code = String(body?.code || "").trim().toUpperCase().replace(/\\s+/g, "");
+      const discount_type = String(body?.discount_type || "percentage");
+      const discount_value = Number(body?.discount_value || 0);
+      const applies_to = String(body?.applies_to || "all");
+      if (!/^[A-Z0-9_-]{3,30}$/.test(code)) return NextResponse.json({ error: "Coupon code must be 3–30 letters or numbers." }, { status: 400 });
+      if (!["percentage", "fixed"].includes(discount_type) || discount_value <= 0 || (discount_type === "percentage" && discount_value > 100)) return NextResponse.json({ error: "Enter a valid discount." }, { status: 400 });
+      if (!["all", "products", "categories"].includes(applies_to)) return NextResponse.json({ error: "Choose a valid coupon scope." }, { status: 400 });
+      const row = {
+        code, discount_type, discount_value,
+        min_order_inr: Math.max(0, Number(body?.min_order_inr || 0)),
+        max_discount_inr: body?.max_discount_inr === "" || body?.max_discount_inr == null ? null : Math.max(0, Number(body.max_discount_inr)),
+        starts_at: body?.starts_at || null, ends_at: body?.ends_at || null,
+        max_uses: body?.max_uses === "" || body?.max_uses == null ? null : Math.max(1, Number(body.max_uses)),
+        per_customer_limit: body?.per_customer_limit === "" || body?.per_customer_limit == null ? null : Math.max(1, Number(body.per_customer_limit)),
+        is_active: body?.is_active !== false, is_public: body?.is_public === true,
+        show_on_dashboard: body?.show_on_dashboard === true, applies_to,
+        product_ids: Array.isArray(body?.product_ids) ? body.product_ids : [],
+        category_ids: Array.isArray(body?.category_ids) ? body.category_ids : [],
+        updated_at: new Date().toISOString()
+      };
+      if (row.starts_at && row.ends_at && new Date(row.ends_at) < new Date(row.starts_at)) return NextResponse.json({ error: "Coupon end date must be after its start date." }, { status: 400 });
+      const result = id
+        ? await auth.admin.from("promo_codes").update(row).eq("id", id).select().single()
+        : await auth.admin.from("promo_codes").insert(row).select().single();
+      if (result.error) return NextResponse.json({ error: result.error.message }, { status: 400 });
+      await audit(auth.admin, auth.user, "coupon_saved", "coupon", result.data.id, { code, discount_type, discount_value, is_public: row.is_public, show_on_dashboard: row.show_on_dashboard });
+      return NextResponse.json({ ok: true, message: "Coupon saved." });
+    }
+
+    if (action === "delete_coupon") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can delete coupons." }, { status: 403 });
+      const id = String(body?.id || "");
+      const { data: coupon, error: findError } = await auth.admin.from("promo_codes").select("code").eq("id", id).maybeSingle();
+      if (findError || !coupon) return NextResponse.json({ error: "Coupon not found." }, { status: 404 });
+      await audit(auth.admin, auth.user, "coupon_deleted", "coupon", id, { code: coupon.code });
+      const { error } = await auth.admin.from("promo_codes").delete().eq("id", id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ ok: true, message: "Coupon deleted." });
+    }
+
+    if (action === "save_order_shipping") {
+      if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can update courier and tracking details." }, { status: 403 });
+      const id = String(body?.id || "");
+      if (!id) return NextResponse.json({ error: "Order not found." }, { status: 400 });
+      const row = {
+        courier_company_id: body?.courier_company_id || null,
+        courier_name: String(body?.courier_name || "").trim() || null,
+        tracking_number: String(body?.tracking_number || "").trim() || null,
+        tracking_url: String(body?.tracking_url || "").trim() || null,
+        courier_charge_inr: Math.max(0, Number(body?.courier_charge_inr || 0)),
+        dispatch_date: body?.dispatch_date || null,
+        expected_delivery_date: body?.expected_delivery_date || null,
+        tracking_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      const { data: order, error: findError } = await auth.admin.from("orders").select("id,order_number,customer_name,email").eq("id", id).maybeSingle();
+      if (findError || !order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
+      const { error } = await auth.admin.from("orders").update(row).eq("id", id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      await audit(auth.admin, auth.user, "order_tracking_updated", "order", id, { courier_name: row.courier_name, tracking_number: row.tracking_number, expected_delivery_date: row.expected_delivery_date });
+      let email_sent = false;
+      let email_warning = "";
+      const resendKey = process.env.RESEND_API_KEY;
+      if (order.email && resendKey && (row.tracking_number || row.tracking_url || row.expected_delivery_date)) {
+        const safe = (value: unknown) => String(value || "").replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char] || char));
+        const trackingLink = row.tracking_url ? '<p><a href="' + safe(row.tracking_url) + '">Track your shipment</a></p>' : "";
+        const emailBody = '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#3b171d"><h1>Your Shree Gauri order is on its way</h1><p>Namaste ' + safe(order.customer_name) + ',</p><p>Courier: <strong>' + safe(row.courier_name || "To be confirmed") + '</strong></p><p>Tracking number: <strong>' + safe(row.tracking_number || "Pending") + '</strong></p>' + trackingLink + '<p>Expected delivery: <strong>' + safe(row.expected_delivery_date || "To be confirmed") + '</strong></p><p>Order: <strong>' + safe(order.order_number) + '</strong></p><p>Thank you for choosing Shree Gauri.</p></div>';
+        const mail = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" }, body: JSON.stringify({ from: process.env.ORDER_EMAIL_FROM || "Shree Gauri <orders@shreegauri.in>", to: [order.email], subject: "Shipping update — " + order.order_number, html: emailBody }) });
+        email_sent = mail.ok;
+        if (!mail.ok) email_warning = "Courier details saved, but the customer email could not be sent.";
+      } else if (order.email && !resendKey) {
+        email_warning = "Courier details saved. Email service is not configured.";
+      }
+      return NextResponse.json({ ok: true, email_sent, message: email_sent ? "Courier and tracking details saved. Customer email sent." : (email_warning || "Courier and tracking details saved.") });
+    }
 
     if (action === "invite_staff") {
       const email = String(body?.email || "").trim().toLowerCase();
