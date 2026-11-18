@@ -343,3 +343,27 @@ body {
 
 /* Secure staff and main-admin controls */
 .staff-admin{display:flex;flex-direction:column;gap:18px}.staff-intro{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid #e2d7cc;padding:22px}.staff-intro>svg{width:28px;height:28px;color:#a56b19;flex-shrink:0}.staff-intro h2,.staff-invite-form h2,.staff-list h2{font:25px Georgia,serif;color:#461015;margin:0 0 8px}.staff-intro p{color:#715d58;margin:0;line-height:1.6}.staff-invite-form,.staff-list{background:#fff;border:1px solid #e2d7cc;padding:24px;display:flex;flex-direction:column;gap:16px}.staff-invite-form h2{display:flex;gap:9px;align-items:center}.staff-invite-form h2 svg{width:21px}.staff-invite-form label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;color:#674f4d}.staff-invite-form input,.staff-invite-form select{width:100%;padding:12px;border:1px solid #d9cabe;background:#fff}.staff-invite-form>button{align-self:flex-start;display:flex;align-items:center;gap:8px;background:#3b080d;color:#fff;border:0;padding:13px 17px;font-weight:800}.staff-invite-form>button svg{width:17px}.staff-list article{display:flex;justify-content:space-between;align-items:center;gap:15px;border-top:1px solid #eee4db;padding:15px 0}.staff-list article div{display:flex;flex-direction:column;gap:5px;min-width:0}.staff-list article b{overflow-wrap:anywhere}.staff-list article small{color:#806e68}.staff-list article button,.customer-admin-actions button,.order-delete-button{display:flex;align-items:center;gap:7px;border:1px solid #b52531;background:#fff;color:#a31f2a;padding:9px 12px;font-size:11px;font-weight:800}.staff-list article button svg,.customer-admin-actions svg,.order-delete-button svg{width:15px;height:15px}.customer-admin-actions{border-top:1px solid #eee3da;padding-top:14px;display:flex;justify-content:flex-end}.order-delete-button{align-self:flex-end}.admin-loading{padding:60px 24px;text-align:center}.admin-loading h1{font:30px Georgia,serif;color:#461015}.admin-loading p{color:#715d58}
+
+
+/* Shree Gauri catalogue pagination and admin product management */
+.catalog-pagination{max-width:1400px;margin:8px auto 26px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.catalog-pagination>span{font-size:13px;color:#6f5b54}
+.catalog-pagination>div{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.catalog-pagination button,.admin-product-pagination button{min-width:38px;height:38px;padding:0 12px;border:1px solid #d8c8b7;background:#fff;color:#451019;border-radius:5px;font-weight:650}
+.catalog-pagination button.active,.admin-product-pagination button.active{background:#451019;color:#fff;border-color:#451019}
+.catalog-pagination button:disabled,.admin-product-pagination button:disabled{opacity:.4;cursor:not-allowed}
+.admin-product-tools{background:#fff;border:1px solid #eadfd2;border-radius:10px;padding:16px;margin:0 0 14px}
+.admin-product-counts{display:flex;align-items:center;gap:18px;flex-wrap:wrap;color:#77645c;font-size:12px}
+.admin-product-counts strong{font-size:15px;color:#321117}
+.admin-product-filters{display:grid;grid-template-columns:minmax(180px,1fr) minmax(150px,220px);gap:10px;margin-top:14px}
+.admin-product-range{font-size:12px;color:#806f68;margin:10px 0 0}
+.admin-product-pagination{display:flex;justify-content:center;align-items:center;gap:7px;flex-wrap:wrap;margin:18px 0 28px}
+.admin-product-pagination button{cursor:pointer}
+@media(max-width:640px){
+ .catalog-pagination{justify-content:center}
+ .catalog-pagination>span{width:100%;text-align:center}
+ .catalog-pagination>div{justify-content:center}
+ .catalog-pagination button,.admin-product-pagination button{min-width:34px;height:36px;padding:0 9px}
+ .admin-product-filters{grid-template-columns:1fr}
+ .admin-product-counts{gap:10px}
+}
