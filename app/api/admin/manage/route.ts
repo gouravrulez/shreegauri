@@ -148,10 +148,10 @@ export async function POST(request: Request) {
       if (!isPrimaryAdmin) return NextResponse.json({ error: "Only the primary main administrator can manage courier companies." }, { status: 403 });
       const id = String(body?.id || "");
       if (!id) return NextResponse.json({ error: "Courier company not found." }, { status: 400 });
-      const { error } = await auth.admin.from("shipping_companies").delete().eq("id", id);
+      const { error } = await auth.admin.from("shipping_companies").update({ is_active: false, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-      await audit(auth.admin, auth.user, "shipping_company_deleted", "shipping_company", id);
-      return NextResponse.json({ ok: true, message: "Courier company removed." });
+      await audit(auth.admin, auth.user, "shipping_company_archived", "shipping_company", id);
+      return NextResponse.json({ ok: true, message: "Courier company archived. Existing order tracking history was preserved." });
     }
 
     if (action === "save_shipping_settings") {
