@@ -257,7 +257,7 @@ export default function AdminDashboard() {
     if (ok) setCourier(blankCourier);
   }
   async function deleteCourier(id: string) {
-    if (!window.confirm("Remove this courier company? Existing order tracking details will remain saved.")) return;
+    if (!window.confirm("Archive this courier company? Existing order tracking details will remain saved.")) return;
     await runAdminAction("delete_shipping_company", { id });
   }
   async function saveShippingSettings() {
@@ -848,7 +848,7 @@ export default function AdminDashboard() {
               <label className="shipping-toggle"><input type="checkbox" checked={Boolean(courier.is_active)} onChange={(e) => setCourier({ ...courier, is_active: e.target.checked })} /> Available for new orders</label>
               <div className="shipping-action-row"><button type="button" className="admin-primary-action" onClick={saveCourier}>Save courier</button><button type="button" onClick={() => setCourier(blankCourier)}>Clear</button></div>
               <div className="shipping-company-list">
-                {shippingCompanies.map((item) => <article key={item.id}><div><b>{item.name}</b><small>₹{Number(item.default_charge_inr || 0).toLocaleString("en-IN")} · {item.estimated_min_days}–{item.estimated_max_days} days · {item.is_active ? "Active" : "Inactive"}</small></div><button type="button" onClick={() => setCourier(item)}>Edit</button><button type="button" className="shipping-delete" onClick={() => deleteCourier(item.id)}>Delete</button></article>)}
+                {shippingCompanies.map((item) => <article key={item.id}><div><b>{item.name}</b><small>₹{Number(item.default_charge_inr || 0).toLocaleString("en-IN")} · {item.estimated_min_days}–{item.estimated_max_days} days · {item.is_active ? "Active" : "Inactive"}</small></div><button type="button" onClick={() => setCourier(item)}>Edit</button><button type="button" className="shipping-delete" onClick={() => deleteCourier(item.id)}>Archive</button></article>)}
                 {!shippingCompanies.length && <p>No courier companies added yet.</p>}
               </div>
             </section>
