@@ -119,6 +119,7 @@ export default function Storefront() {
     [stockOnly, setStockOnly] = useState(false),
     [maxPrice, setMaxPrice] = useState(""),
     [filtersOpen, setFiltersOpen] = useState(false),
+    [currentPage, setCurrentPage] = useState(1),
     [rating, setRating] = useState(5),
     [reviewTitle, setReviewTitle] = useState(""),
     [reviewBody, setReviewBody] = useState(""),
@@ -399,6 +400,16 @@ export default function Storefront() {
               : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, maxPrice, sort]);
+  // Show a manageable catalogue page and reset to page one whenever filters change.
+  const pageSize = 8;
+  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  const pageProducts = shown.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => { setCurrentPage(1); }, [q, view, categoryFilter, stockOnly, maxPrice, sort]);
+  useEffect(() => { if (currentPage > pageCount) setCurrentPage(pageCount); }, [currentPage, pageCount]);
+  const changeCatalogPage = (next: number) => {
+    setCurrentPage(Math.min(pageCount, Math.max(1, next)));
+    window.setTimeout(() => document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  };
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -748,7 +759,7 @@ export default function Storefront() {
             </aside>
             <div className="product-grid">
               {shown.length ? (
-                shown.map((p) => (
+                pageProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -837,6 +848,18 @@ export default function Storefront() {
                 </p>
               )}
             </div>
+            {shown.length > pageSize && (
+              <nav className="catalog-pagination" aria-label="Product pages">
+                <button type="button" onClick={() => changeCatalogPage(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
+                <div className="catalog-page-numbers">
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                    <button type="button" key={page} className={page === currentPage ? "active" : ""} aria-current={page === currentPage ? "page" : undefined} onClick={() => changeCatalogPage(page)}>{page}</button>
+                  ))}
+                </div>
+                <span>Page {currentPage} of {pageCount} · {shown.length} products</span>
+                <button type="button" onClick={() => changeCatalogPage(currentPage + 1)} disabled={currentPage === pageCount}>Next</button>
+              </nav>
+            )}
           </div>
         </section>
       )}
