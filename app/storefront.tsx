@@ -127,6 +127,9 @@ export default function Storefront() {
     [checkoutMsg, setCheckoutMsg] = useState(""),
     [promoCode, setPromoCode] = useState(""),
     [publicCoupons, setPublicCoupons] = useState<any[]>([]),
+    [couponMessage, setCouponMessage] = useState(""),
+    [couponBusy, setCouponBusy] = useState(false),
+    [couponDiscount, setCouponDiscount] = useState(0),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -231,6 +234,31 @@ export default function Storefront() {
       setReviewTitle("");
       setReviewBody("");
       setRating(5);
+    }
+  }
+  async function applyCoupon() {
+    if (!promoCode.trim()) { setCouponMessage("Enter a coupon code first."); return; }
+    if (!cart.length) { setCouponMessage("Add a product to your cart first."); return; }
+    setCouponBusy(true);
+    setCouponMessage("Checking coupon...");
+    const { data: authData } = await supabase.auth.getSession();
+    const token = authData.session?.access_token;
+    if (!token) { setCouponBusy(false); setCouponMessage("Please sign in before applying a coupon."); return; }
+    try {
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ code: promoCode.trim(), items: cart.map((product) => ({ product_id: product.id, quantity: 1 })) }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Coupon could not be applied.");
+      setCouponDiscount(Number(result.discount_inr || 0));
+      setCouponMessage(result.message || "Coupon applied successfully.");
+    } catch (error) {
+      setCouponDiscount(0);
+      setCouponMessage(error instanceof Error ? error.message : "Coupon could not be applied.");
+    } finally {
+      setCouponBusy(false);
     }
   }
   async function placeOrder(e: FormEvent) {
@@ -1059,6 +1087,9 @@ export default function Storefront() {
             <section className="checkout-coupon">
               <div><b>Offers & coupon code</b><small>Enter a code to apply a valid discount to this order.</small></div>
               <label><span>Coupon code</span><input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Enter coupon code" /></label>
+              <button type="button" className="checkout-apply-coupon" onClick={applyCoupon} disabled={couponBusy}>{couponBusy ? "CHECKING..." : "APPLY COUPON"}</button>
+              {couponMessage && <p className={couponDiscount > 0 ? "coupon-feedback success" : "coupon-feedback"}>{couponMessage}</p>}
+              {couponDiscount > 0 && <p className="coupon-savings">You save {money(couponDiscount)} with this code.</p>}
               {publicCoupons.length > 0 && <div className="checkout-public-coupons"><small>Available offers</small>{publicCoupons.map((offer) => <button type="button" key={offer.id} onClick={() => setPromoCode(offer.code)}><b>{offer.code}</b><span>{offer.discount_type === "percentage" ? offer.discount_value + "% off" : "₹" + offer.discount_value + " off"}{Number(offer.min_order_inr || 0) > 0 ? " · Min. order ₹" + Number(offer.min_order_inr).toLocaleString("en-IN") : ""}</span></button>)}</div>}
             </section>
             <div className="checkout-products">
