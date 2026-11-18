@@ -36,6 +36,7 @@ patch(admin,
 patch(admin,
 `  async function updateOrder(id: string, order_status: string) {`,
 `  async function updateFulfilment(id: string, changes: Record<string, any>) {
+    if (guardPreviewWrite()) return;
     const { error } = await supabase.from("orders").update({ ...changes, updated_at: new Date().toISOString() }).eq("id", id);
     setNotice(error?.message || "Order fulfilment updated.");
     load();
