@@ -87,6 +87,13 @@ type Order = {
   order_status: string;
   created_at: string;
   order_items: OrderItem[];
+  courier_company_id?: string | null;
+  courier_name?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  courier_charge_inr?: number;
+  dispatch_date?: string | null;
+  expected_delivery_date?: string | null;
 };
 const blankCat = {
   name: "",
@@ -112,6 +119,19 @@ const blankProd = {
   badge: "",
   is_active: true,
   is_featured: false,
+  custom_shipping_enabled: false,
+  custom_shipping_charge_inr: 0,
+};
+const blankCourier = {
+  name: "", tracking_url_template: "", default_charge_inr: 0,
+  estimated_min_days: 3, estimated_max_days: 7, is_active: true,
+};
+const blankCoupon = {
+  code: "", discount_type: "percentage", discount_value: 10,
+  min_order_inr: 0, max_discount_inr: "", starts_at: "", ends_at: "",
+  max_uses: "", per_customer_limit: "", is_active: true,
+  is_public: true, show_on_dashboard: true, applies_to: "all",
+  product_ids: [] as string[], category_ids: [] as string[],
 };
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null),
@@ -137,7 +157,12 @@ export default function AdminDashboard() {
     [staffEmail, setStaffEmail] = useState(""),
     [staffInviteRole, setStaffInviteRole] = useState("orders"),
     [needsPasswordSetup, setNeedsPasswordSetup] = useState(false),
-    [newStaffPassword, setNewStaffPassword] = useState("");
+    [newStaffPassword, setNewStaffPassword] = useState(""),
+    [shippingCompanies, setShippingCompanies] = useState<any[]>([]),
+    [shippingSettings, setShippingSettings] = useState<any>({ id: 1, default_shipping_charge_inr: 0, free_shipping_enabled: false, free_shipping_threshold_inr: "", default_min_delivery_days: 3, default_max_delivery_days: 7 }),
+    [coupons, setCoupons] = useState<any[]>([]),
+    [courier, setCourier] = useState<any>(blankCourier),
+    [coupon, setCoupon] = useState<any>(blankCoupon);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -159,6 +184,11 @@ export default function AdminDashboard() {
     setAdminServiceConfigured(roleData.service_configured !== false);
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
+    if (roleData.is_primary_admin) {
+      setShippingCompanies(roleData.shipping_companies || []);
+      if (roleData.shipping_settings) setShippingSettings(roleData.shipping_settings);
+      setCoupons(roleData.coupons || []);
+    }
     const [a, b, c, d, o, u] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
@@ -224,6 +254,38 @@ export default function AdminDashboard() {
     setNotice(result.message || result.error || (response.ok ? "Done." : "Action failed."));
     if (response.ok) await load();
     return response.ok;
+  }
+  async function saveCourier() {
+    const ok = await runAdminAction("save_shipping_company", courier);
+    if (ok) setCourier(blankCourier);
+  }
+  async function deleteCourier(id: string) {
+    if (!window.confirm("Remove this courier company? Existing order tracking details will remain saved.")) return;
+    await runAdminAction("delete_shipping_company", { id });
+  }
+  async function saveShippingSettings() {
+    await runAdminAction("save_shipping_settings", shippingSettings);
+  }
+  async function saveCoupon(e?: FormEvent) {
+    e?.preventDefault();
+    const ok = await runAdminAction("save_coupon", coupon);
+    if (ok) setCoupon(blankCoupon);
+  }
+  async function deleteCoupon(id: string) {
+    if (!window.confirm("Delete this coupon? Existing order records will remain unchanged.")) return;
+    await runAdminAction("delete_coupon", { id });
+  }
+  async function saveOrderShipping(order: Order) {
+    await runAdminAction("save_order_shipping", {
+      id: order.id,
+      courier_company_id: order.courier_company_id || null,
+      courier_name: order.courier_name || "",
+      tracking_number: order.tracking_number || "",
+      tracking_url: order.tracking_url || "",
+      courier_charge_inr: order.courier_charge_inr || 0,
+      dispatch_date: order.dispatch_date || null,
+      expected_delivery_date: order.expected_delivery_date || null,
+    });
   }
   async function deleteAdminRecord(kind: "customer" | "order", id: string) {
     if (!isPrimaryAdmin) { setNotice("Only the primary main administrator can delete records."); return; }
@@ -505,6 +567,8 @@ export default function AdminDashboard() {
           )}
         </button>
         )}
+        {isPrimaryAdmin && <button className={tab === "shipping" ? "on" : ""} onClick={() => setTab("shipping")}><Package /> Shipping & Courier</button>}
+        {isPrimaryAdmin && <button className={tab === "coupons" ? "on" : ""} onClick={() => setTab("coupons")}><Star /> Coupons & Offers</button>}
         {["admin", "manager", "catalog"].includes(staffRole) && (<button
           className={tab === "categories" ? "on" : ""}
           onClick={() => setTab("categories")}
@@ -557,6 +621,10 @@ export default function AdminDashboard() {
                   ? "Staff & Permissions"
                 : tab === "customers"
                   ? "Customer Accounts"
+                : tab === "shipping"
+                  ? "Shipping & Courier Settings"
+                : tab === "coupons"
+                  ? "Coupons & Offers"
                 : tab === "categories"
                   ? "Categories & Subcategories"
                   : tab === "products"
@@ -707,6 +775,26 @@ export default function AdminDashboard() {
                       ₹{Number(o.total_inr).toLocaleString("en-IN")}
                     </strong>
                   </div>
+                  <details className="order-shipping-editor">
+                    <summary>Courier, dispatch & tracking details</summary>
+                    <div className="order-shipping-fields">
+                      <label>Courier company
+                        <select value={o.courier_company_id || ""} onChange={(e) => {
+                          const selected = shippingCompanies.find((x) => x.id === e.target.value);
+                          setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, courier_company_id: e.target.value, courier_name: selected?.name || "", courier_charge_inr: selected?.default_charge_inr ?? row.courier_charge_inr ?? 0 } : row));
+                        }}>
+                          <option value="">Select courier</option>
+                          {shippingCompanies.filter((x) => x.is_active).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                        </select>
+                      </label>
+                      <label>Tracking number<input value={o.tracking_number || ""} onChange={(e) => setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, tracking_number: e.target.value } : row))} /></label>
+                      <label>Tracking URL<input value={o.tracking_url || ""} onChange={(e) => setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, tracking_url: e.target.value } : row))} placeholder="https://..." /></label>
+                      <label>Courier charge ₹<input type="number" min="0" value={o.courier_charge_inr ?? 0} onChange={(e) => setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, courier_charge_inr: Number(e.target.value) } : row))} /></label>
+                      <label>Dispatch date<input type="date" value={o.dispatch_date || ""} onChange={(e) => setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, dispatch_date: e.target.value } : row))} /></label>
+                      <label>Expected delivery<input type="date" value={o.expected_delivery_date || ""} onChange={(e) => setOrders((rows) => rows.map((row) => row.id === o.id ? { ...row, expected_delivery_date: e.target.value } : row))} /></label>
+                      <button type="button" onClick={() => saveOrderShipping(o)}>Save & email customer</button>
+                    </div>
+                  </details>
                   <div className="order-actions">
                     <a
                       href={`https://wa.me/${o.phone.replace(/\D/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(`Hello ${o.customer_name}, your Shree Gauri order ${o.order_number} is ${o.order_status}.`)}`}
@@ -736,6 +824,70 @@ export default function AdminDashboard() {
                 <p>New website orders will appear here automatically.</p>
               </div>
             )}
+          </div>
+        )}
+        {tab === "shipping" && (
+          <div className="shipping-admin">
+            <section className="shipping-settings-card">
+              <div className="shipping-section-heading"><div><small>STORE-WIDE DELIVERY</small><h2>Shipping rules</h2></div></div>
+              <div className="shipping-form-grid">
+                <label>Default shipping charge (₹)<input type="number" min="0" value={shippingSettings.default_shipping_charge_inr ?? 0} onChange={(e) => setShippingSettings({ ...shippingSettings, default_shipping_charge_inr: e.target.value })} /></label>
+                <label>Free shipping above (₹)<input type="number" min="0" value={shippingSettings.free_shipping_threshold_inr ?? ""} onChange={(e) => setShippingSettings({ ...shippingSettings, free_shipping_threshold_inr: e.target.value })} /></label>
+                <label>Minimum delivery days<input type="number" min="0" value={shippingSettings.default_min_delivery_days ?? 3} onChange={(e) => setShippingSettings({ ...shippingSettings, default_min_delivery_days: e.target.value })} /></label>
+                <label>Maximum delivery days<input type="number" min="0" value={shippingSettings.default_max_delivery_days ?? 7} onChange={(e) => setShippingSettings({ ...shippingSettings, default_max_delivery_days: e.target.value })} /></label>
+              </div>
+              <label className="shipping-toggle"><input type="checkbox" checked={Boolean(shippingSettings.free_shipping_enabled)} onChange={(e) => setShippingSettings({ ...shippingSettings, free_shipping_enabled: e.target.checked })} /> Enable free shipping threshold</label>
+              <button type="button" className="admin-primary-action" onClick={saveShippingSettings}>Save shipping rules</button>
+            </section>
+            <section className="shipping-settings-card">
+              <div className="shipping-section-heading"><div><small>DELIVERY PARTNERS</small><h2>{courier.id ? "Edit courier company" : "Add courier company"}</h2></div></div>
+              <div className="shipping-form-grid">
+                <label>Company name<input value={courier.name} onChange={(e) => setCourier({ ...courier, name: e.target.value })} placeholder="e.g. Delhivery" /></label>
+                <label>Tracking URL template<input value={courier.tracking_url_template || ""} onChange={(e) => setCourier({ ...courier, tracking_url_template: e.target.value })} placeholder="Use {tracking_number} in the URL" /></label>
+                <label>Default courier charge (₹)<input type="number" min="0" value={courier.default_charge_inr ?? 0} onChange={(e) => setCourier({ ...courier, default_charge_inr: e.target.value })} /></label>
+                <label>Minimum delivery days<input type="number" min="0" value={courier.estimated_min_days ?? 3} onChange={(e) => setCourier({ ...courier, estimated_min_days: e.target.value })} /></label>
+                <label>Maximum delivery days<input type="number" min="0" value={courier.estimated_max_days ?? 7} onChange={(e) => setCourier({ ...courier, estimated_max_days: e.target.value })} /></label>
+              </div>
+              <label className="shipping-toggle"><input type="checkbox" checked={Boolean(courier.is_active)} onChange={(e) => setCourier({ ...courier, is_active: e.target.checked })} /> Available for new orders</label>
+              <div className="shipping-action-row"><button type="button" className="admin-primary-action" onClick={saveCourier}>Save courier</button><button type="button" onClick={() => setCourier(blankCourier)}>Clear</button></div>
+              <div className="shipping-company-list">
+                {shippingCompanies.map((item) => <article key={item.id}><div><b>{item.name}</b><small>₹{Number(item.default_charge_inr || 0).toLocaleString("en-IN")} · {item.estimated_min_days}–{item.estimated_max_days} days · {item.is_active ? "Active" : "Inactive"}</small></div><button type="button" onClick={() => setCourier(item)}>Edit</button><button type="button" className="shipping-delete" onClick={() => deleteCourier(item.id)}>Delete</button></article>)}
+                {!shippingCompanies.length && <p>No courier companies added yet.</p>}
+              </div>
+            </section>
+            <p className="shipping-note">Product-specific shipping can also be set in each product record. Order-level courier details are saved separately and do not overwrite the original order amount.</p>
+          </div>
+        )}
+        {tab === "coupons" && (
+          <div className="coupon-admin">
+            <form className="coupon-editor" onSubmit={saveCoupon}>
+              <div className="shipping-section-heading"><div><small>DISCOUNTS & PROMOTIONS</small><h2>{coupon.id ? "Edit coupon" : "Create a coupon"}</h2></div></div>
+              <div className="shipping-form-grid">
+                <label>Coupon code<input required maxLength={30} value={coupon.code} onChange={(e) => setCoupon({ ...coupon, code: e.target.value.toUpperCase().replace(/\s/g, "") })} placeholder="WELCOME10" /></label>
+                <label>Discount type<select value={coupon.discount_type} onChange={(e) => setCoupon({ ...coupon, discount_type: e.target.value })}><option value="percentage">Percentage (%)</option><option value="fixed">Fixed amount (₹)</option></select></label>
+                <label>Discount value<input required type="number" min="0.01" step="0.01" value={coupon.discount_value} onChange={(e) => setCoupon({ ...coupon, discount_value: e.target.value })} /></label>
+                <label>Minimum order (₹)<input type="number" min="0" value={coupon.min_order_inr ?? 0} onChange={(e) => setCoupon({ ...coupon, min_order_inr: e.target.value })} /></label>
+                <label>Maximum discount (₹)<input type="number" min="0" value={coupon.max_discount_inr ?? ""} onChange={(e) => setCoupon({ ...coupon, max_discount_inr: e.target.value })} /></label>
+                <label>Total usage limit<input type="number" min="1" value={coupon.max_uses ?? ""} onChange={(e) => setCoupon({ ...coupon, max_uses: e.target.value })} /></label>
+                <label>Per-customer limit<input type="number" min="1" value={coupon.per_customer_limit ?? ""} onChange={(e) => setCoupon({ ...coupon, per_customer_limit: e.target.value })} /></label>
+                <label>Starts at<input type="datetime-local" value={coupon.starts_at ? String(coupon.starts_at).slice(0,16) : ""} onChange={(e) => setCoupon({ ...coupon, starts_at: e.target.value ? new Date(e.target.value).toISOString() : "" })} /></label>
+                <label>Expires at<input type="datetime-local" value={coupon.ends_at ? String(coupon.ends_at).slice(0,16) : ""} onChange={(e) => setCoupon({ ...coupon, ends_at: e.target.value ? new Date(e.target.value).toISOString() : "" })} /></label>
+                <label>Applies to<select value={coupon.applies_to || "all"} onChange={(e) => setCoupon({ ...coupon, applies_to: e.target.value })}><option value="all">All products</option><option value="products">Selected products</option><option value="categories">Selected categories</option></select></label>
+              </div>
+              {coupon.applies_to === "products" && <label className="coupon-scope">Eligible products<select multiple value={coupon.product_ids || []} onChange={(e) => setCoupon({ ...coupon, product_ids: Array.from(e.target.selectedOptions).map((x) => x.value) })}>{products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
+              {coupon.applies_to === "categories" && <label className="coupon-scope">Eligible categories<select multiple value={coupon.category_ids || []} onChange={(e) => setCoupon({ ...coupon, category_ids: Array.from(e.target.selectedOptions).map((x) => x.value) })}>{cats.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>}
+              <div className="coupon-toggles">
+                <label><input type="checkbox" checked={Boolean(coupon.is_active)} onChange={(e) => setCoupon({ ...coupon, is_active: e.target.checked })} /> Enabled</label>
+                <label><input type="checkbox" checked={Boolean(coupon.is_public)} onChange={(e) => setCoupon({ ...coupon, is_public: e.target.checked })} /> Public coupon</label>
+                <label><input type="checkbox" checked={Boolean(coupon.show_on_dashboard)} onChange={(e) => setCoupon({ ...coupon, show_on_dashboard: e.target.checked })} /> Show on customer dashboard</label>
+              </div>
+              <div className="shipping-action-row"><button className="admin-primary-action" type="submit">Save coupon</button><button type="button" onClick={() => setCoupon(blankCoupon)}>Clear</button></div>
+            </form>
+            <section className="coupon-list">
+              <div className="shipping-section-heading"><div><small>YOUR PROMOTIONS</small><h2>Coupons & offers</h2></div><span>{coupons.length} total</span></div>
+              {coupons.map((item) => <article key={item.id}><div><b>{item.code}</b><small>{item.discount_type === "percentage" ? item.discount_value + "%" : "₹" + item.discount_value} off · Min ₹{Number(item.min_order_inr || 0).toLocaleString("en-IN")} · Used {item.usage_count || 0}{item.max_uses ? " / " + item.max_uses : ""}</small><em>{item.is_active ? "Active" : "Disabled"} · {item.is_public ? "Public" : "Private"} · {item.show_on_dashboard ? "Dashboard visible" : "Hidden"}</em></div><button type="button" onClick={() => setCoupon(item)}>Edit</button><button type="button" className="shipping-delete" onClick={() => deleteCoupon(item.id)}>Delete</button></article>)}
+              {!coupons.length && <p>No coupons created yet.</p>}
+            </section>
           </div>
         )}
         {tab === "categories" && (
@@ -984,6 +1136,10 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </label>
+              <div className="product-shipping-fields">
+                <label className="check"><input type="checkbox" checked={Boolean(prod.custom_shipping_enabled)} onChange={(e) => setProd({ ...prod, custom_shipping_enabled: e.target.checked })} /> Product-specific shipping charge</label>
+                <label>Extra shipping charge (₹)<input type="number" min="0" value={prod.custom_shipping_charge_inr ?? 0} onChange={(e) => setProd({ ...prod, custom_shipping_charge_inr: e.target.value })} /></label>
+              </div>
               <label>
                 Main Product Photo
                 <input
