@@ -1768,3 +1768,41 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+
+/* Compact, balanced hero calls-to-action on mobile. Keep buttons content-sized
+   instead of stretching them across the full hero width. */
+@media (max-width: 900px) {
+  .hero-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 9px !important;
+  }
+  .hero-buttons button {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    min-height: 38px !important;
+    margin: 8px 0 0 !important;
+    padding: 9px 13px !important;
+    border-radius: 5px;
+    font-size: 10px !important;
+    line-height: 1.25;
+    letter-spacing: .45px;
+    white-space: normal;
+  }
+}
+@media (max-width: 430px) {
+  .hero-buttons { gap: 8px !important; }
+  .hero-buttons button {
+    min-height: 36px !important;
+    padding: 8px 11px !important;
+    font-size: 9px !important;
+    letter-spacing: .25px;
+  }
+}
