@@ -501,12 +501,21 @@ export default function AdminDashboard() {
       setNotice("Your session is invalid or your role cannot manage products.");
       return;
     }
+    const productName = String(prod.name || "").trim();
+    const productDescription = String(prod.short_description || prod.description || "").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim();
+    const generatedSeoTitle = productName ? (productName + " | Shree Gauri").slice(0, 60) : "";
+    const generatedSeoDescription = (productDescription || (productName ? "Explore " + productName + " at Shree Gauri. Discover authentic products with secure ordering and convenient delivery across India." : "")).slice(0, 155);
+    const selectedCategoryNames = cats.filter((c) => (Array.isArray(prod.category_ids) ? prod.category_ids : []).includes(c.id) || c.id === prod.category_id).map((c) => c.name);
+    const detectedGoogleCategory = prod.google_product_category || (/(bracelet|mala|necklace|ring|pendant)/i.test(productName + " " + (prod.product_type || "")) ? "Apparel & Accessories > Jewelry" : /(pooja|puja|havan|tarpan)/i.test(productName + " " + (prod.product_type || "")) ? "Religious & Ceremonial" : selectedCategoryNames[0] || "");
     const data = {
       ...prod,
       brand: "Shree Gauri",
+      seo_title: prod.seo_title || generatedSeoTitle,
+      seo_description: prod.seo_description || generatedSeoDescription,
+      google_product_category: detectedGoogleCategory,
       slug:
         prod.slug ||
-        prod.name
+        productName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
