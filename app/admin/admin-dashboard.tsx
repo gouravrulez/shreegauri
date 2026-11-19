@@ -191,10 +191,40 @@ export default function AdminDashboard() {
       setLegacyLastSeen(0);
     }
   }, [session?.user?.id]);
+  async function signOutAdmin() {
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } finally {
+      // Clear the visible admin state even if the auth endpoint is temporarily unavailable.
+      setSession(null);
+      setStaffRole("loading");
+      setIsPrimaryAdmin(false);
+      setNeedsPasswordSetup(false);
+      setNotice("");
+      setError("");
+      setPassword("");
+      setEmail("");
+    }
+  }
   async function load() {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) return;
-    const roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${currentSession.access_token}` } });
+    let activeSession = currentSession;
+    let roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${activeSession.access_token}` } });
+    // A preview tab can keep an expired access token after sitting open. Refresh it once
+    // and retry permission verification before showing the user an access-denied screen.
+    if (roleResponse.status === 401) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshed.session && !refreshError) {
+        activeSession = refreshed.session;
+        setSession(refreshed.session);
+        roleResponse = await fetch("/api/admin/manage", { headers: { Authorization: `Bearer ${activeSession.access_token}` } });
+      } else {
+        await signOutAdmin();
+        setError("Your sign-in session has expired. Please sign in again.");
+        return;
+      }
+    }
     const roleData = await roleResponse.json().catch(() => ({}));
     if (!roleResponse.ok) { setStaffRole("unauthorized"); setNotice(roleData.error || "Admin access could not be verified."); return; }
     setStaffRole(roleData.role);
@@ -702,7 +732,7 @@ export default function AdminDashboard() {
       </main>
     );
   if (session && staffRole === "loading") return <main className="admin"><section className="admin-loading"><h1>Verifying staff access…</h1></section></main>;
-  if (session && staffRole === "unauthorized") return <main className="admin"><section className="admin-loading"><h1>Access denied</h1><p>{notice || "This account is not authorized for Shree Gauri administration."}</p><button onClick={() => supabase.auth.signOut()}>Sign out</button></section></main>;
+  if (session && staffRole === "unauthorized") return <main className="admin"><section className="admin-loading"><h1>Access denied</h1><p>{notice || "This account is not authorized for Shree Gauri administration."}</p><button onClick={signOutAdmin}>Sign out</button></section></main>;
   if (session && needsPasswordSetup) return (
     <main className="admin-login"><form onSubmit={saveStaffPassword}><div className="admin-login-brand"><img src="/shree-gauri-logo.png" alt="Shree Gauri" /><span>SHREE GAURI</span><small>STAFF ACCOUNT SETUP</small></div><h1>Create your password</h1><p>Use at least 12 characters. Keep this password private.</p><label>New password<input type="password" minLength={12} autoComplete="new-password" value={newStaffPassword} onChange={(e) => setNewStaffPassword(e.target.value)} required /></label>{notice && <p>{notice}</p>}<button>SET PASSWORD</button></form></main>
   );
@@ -775,7 +805,7 @@ export default function AdminDashboard() {
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
-          <button className="admin-logout-action" onClick={() => supabase.auth.signOut()}><LogOut /> Log Out</button>
+          <button className="admin-logout-action" onClick={signOutAdmin}><LogOut /> Log Out</button>
         </footer>
       </aside>
       <section>
