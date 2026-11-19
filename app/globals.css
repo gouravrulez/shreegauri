@@ -975,3 +975,26 @@ body {
   .login-art h2 { font-size: 29px !important; }
   .login-art p { max-width: 270px; font-size: 13px; }
 }
+
+
+/* Product page review and main-shop navigation refinements. */
+.sg-product-back{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:10px 14px;border:1px solid #d8c5aa;border-radius:5px;color:#4b1118;font-size:10px;font-weight:850;letter-spacing:.55px;text-decoration:none;white-space:nowrap}
+.sg-product-back:hover{background:#f8f0e5}
+.sg-product-reviews{margin-top:30px;padding-top:24px;border-top:1px solid #e7d9ca}
+.sg-product-reviews-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sg-product-reviews-heading h2{margin:0;color:#421015;font:25px Georgia,serif}
+.sg-product-reviews-heading>span,.sg-product-reviews article small,.sg-review-form>small{color:#85766b;font-size:11px}
+.sg-product-reviews article{padding:15px 0;border-bottom:1px solid #eee4da}
+.sg-product-reviews article p{margin:7px 0;color:#67564f;line-height:1.6}
+.sg-review-stars,.sg-review-rating{color:#c58b28;letter-spacing:2px}
+.sg-review-empty{color:#7d6d61;font-size:13px}
+.sg-review-form{display:grid;gap:10px;margin-top:20px;padding:18px;background:#faf4eb;border:1px solid #eee2d5;border-radius:7px}
+.sg-review-form h3{margin:0;color:#421015;font:20px Georgia,serif}
+.sg-review-rating{display:flex;gap:5px}
+.sg-review-rating button{border:0;background:transparent;color:#c9c0b5;font-size:25px;padding:0 3px;cursor:pointer}
+.sg-review-rating button.selected{color:#c58b28}
+.sg-review-form input,.sg-review-form textarea{width:100%;min-width:0;padding:12px;border:1px solid #dccfc3;border-radius:4px;background:#fff;color:#342822;font:13px Arial,sans-serif}
+.sg-review-form textarea{resize:vertical}
+.sg-review-form>button{min-height:44px;border:0;border-radius:4px;background:#4b1118;color:#fff;font-size:11px;font-weight:850;letter-spacing:.5px}
+.sg-review-form>button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:520px){.sg-product-back{min-height:36px;padding:8px 9px;font-size:9px;letter-spacing:0}.sg-product-reviews-heading h2{font-size:22px}.sg-review-form{padding:14px}}

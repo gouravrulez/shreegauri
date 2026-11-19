@@ -28,6 +28,12 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [reviews, setReviews] = useState<Array<{id:string; reviewer_name:string; rating:number; title:string; body:string; created_at:string}>>([]);
+  const [rating, setRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewBody, setReviewBody] = useState("");
+  const [reviewMsg, setReviewMsg] = useState("");
+  const [reviewBusy, setReviewBusy] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -47,6 +53,37 @@ export default function ProductPage() {
       });
     return () => { alive = false; };
   }, [slug]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    let alive = true;
+    supabase.from("product_reviews")
+      .select("id,reviewer_name,rating,title,body,created_at")
+      .eq("product_id", product.id).eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { if (alive && data) setReviews(data as typeof reviews); });
+    return () => { alive = false; };
+  }, [product?.id]);
+
+  async function submitReview() {
+    if (!product) return;
+    setReviewBusy(true);
+    setReviewMsg("Submitting your review...");
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      setReviewMsg("Please sign in to submit a review.");
+      setReviewBusy(false);
+      return;
+    }
+    const reviewerName = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Customer";
+    const { error } = await supabase.from("product_reviews").upsert({
+      product_id: product.id, user_id: data.user.id, reviewer_name: reviewerName,
+      rating, title: reviewTitle.trim(), body: reviewBody.trim(), is_approved: false,
+    }, { onConflict: "product_id,user_id" });
+    setReviewMsg(error?.message || "Thank you. Your review will appear after approval.");
+    if (!error) { setReviewTitle(""); setReviewBody(""); setRating(5); }
+    setReviewBusy(false);
+  }
 
   const images = useMemo(() => product ? Array.from(new Set([product.primary_image_url, ...(product.image_urls || [])].filter(Boolean))) as string[] : [], [product]);
   const money = (value: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
@@ -71,6 +108,7 @@ export default function ProductPage() {
     <main className="sg-product-page">
       <header className="sg-product-header">
         <a href="/" className="sg-product-brand"><span>SG</span><b>SHREE GAURI</b><small>DIVINE ENERGY. TIMELESS BEAUTY.</small></a>
+        <a href="/?shop=1" className="sg-product-back">← BACK TO MAIN SHOP</a>
         <a href="/?cart=1" className="sg-product-cart">VIEW CART</a>
       </header>
       <nav className="sg-product-breadcrumb"><a href="/">Home</a><span>/</span><a href="/?shop=1">Shop</a><span>/</span><b>{product.name}</b></nav>
@@ -99,6 +137,27 @@ export default function ProductPage() {
           {added && <p role="status">Added to your cart.</p>}
           <div className="sg-product-benefits"><span>✓ Carefully selected products</span><span>✓ Secure checkout</span><span>✓ Pan-India delivery</span></div>
           {product.description && <section className="sg-product-description"><h2>Product Details</h2><p>{product.description}</p></section>}
+          <section className="sg-product-reviews">
+            <div className="sg-product-reviews-heading"><h2>Customer Reviews</h2><span>{reviews.length ? `${reviews.length} verified review(s)` : "Be the first to review"}</span></div>
+            {reviews.length ? reviews.map((review) => (
+              <article key={review.id}>
+                <div className="sg-review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</div>
+                <b>{review.title}</b><p>{review.body}</p>
+                <small>{review.reviewer_name} · {new Date(review.created_at).toLocaleDateString("en-IN")}</small>
+              </article>
+            )) : <p className="sg-review-empty">No customer reviews yet. Share your experience with this product.</p>}
+            <div className="sg-review-form">
+              <h3>Write a Review</h3>
+              <div className="sg-review-rating" aria-label="Choose a rating">
+                {[1,2,3,4,5].map((value) => <button key={value} type="button" onClick={() => setRating(value)} aria-label={`${value} stars`} className={value <= rating ? "selected" : ""}>★</button>)}
+              </div>
+              <input value={reviewTitle} onChange={(event) => setReviewTitle(event.target.value)} placeholder="Review title" maxLength={100} />
+              <textarea value={reviewBody} onChange={(event) => setReviewBody(event.target.value)} placeholder="Tell other customers about your experience" rows={4} maxLength={2000} />
+              <button type="button" disabled={reviewBusy || reviewTitle.trim().length < 2 || reviewBody.trim().length < 5} onClick={submitReview}>{reviewBusy ? "SUBMITTING..." : "SUBMIT REVIEW"}</button>
+              {reviewMsg && <small role="status">{reviewMsg}</small>}
+              <small>Sign in is required. Reviews are published after approval.</small>
+            </div>
+          </section>
         </div>
       </section>
       <footer className="sg-product-footer"><span>SHREE GAURI</span><a href="/">Continue shopping</a><a href="/shipping-returns">Shipping & Returns</a><a href="/contact">Contact Us</a></footer>

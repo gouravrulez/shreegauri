@@ -146,39 +146,35 @@ export default function Storefront() {
       pincode: "",
     });
   useEffect(() => {
-    Promise.all([
-      supabase
-        .from("categories")
-        .select("id,name,slug,description,image_url,parent_id,collection_type")
-        .eq("is_active", true)
-        .order("sort_order"),
-      supabase
-        .from("products")
-        .select(
-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
-        )
-        .eq("is_active", true)
-        .order("created_at", { ascending: false }),
-      supabase.from("site_settings").select("*").eq("id", 1).single(),
-      supabase
-        .from("product_reviews")
-        .select("id,product_id,reviewer_name,rating,title,body,created_at")
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false }),
-    ]).then(([a, b, d, r]) => {
-      if (a.data) setCats(a.data as C[]);
-      if (b.data)
-        setProducts(
-          b.data.map((p: any) => ({
-            ...p,
-            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-          })) as P[],
-        );
-      if (d.data)
-        setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
-        if (Array.isArray((d.data as any).astrology_services)) setAstrologyServices((d.data as any).astrology_services);
-      if (r.data) setReviews(r.data as R[]);
-    });
+    let alive = true;
+    // Load the catalogue independently so a slow reviews/settings request cannot
+    // hold back products and category navigation.
+    supabase.from("categories")
+      .select("id,name,slug,description,image_url,parent_id,collection_type")
+      .eq("is_active", true).order("sort_order")
+      .then(({ data }) => { if (alive && data) setCats(data as C[]); });
+
+    supabase.from("products")
+      .select("id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
+      .eq("is_active", true).order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (alive && data) setProducts(data.map((p: any) => ({
+          ...p, image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+        })) as P[]);
+      });
+
+    supabase.from("site_settings").select("*").eq("id", 1).single()
+      .then(({ data }) => {
+        if (!alive || !data) return;
+        setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
+      });
+
+    supabase.from("product_reviews")
+      .select("id,product_id,reviewer_name,rating,title,body,created_at")
+      .eq("is_approved", true).order("created_at", { ascending: false })
+      .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
+    return () => { alive = false; };
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -626,11 +622,11 @@ export default function Storefront() {
             <div className="cat-grid">
               {cats
                 .filter((c) => !c.parent_id && c.collection_type === "category")
-                .map((c) => (
+                .map((c, categoryIndex) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading={categoryIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={categoryIndex < 4 ? "high" : "low"} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -796,7 +792,7 @@ export default function Storefront() {
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="product-grid">
               {shown.length ? (
-                visibleProducts.map((p) => (
+                visibleProducts.map((p, productIndex) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -841,9 +837,9 @@ export default function Storefront() {
                           "/shree-gauri-logo.png"
                         }
                         alt={p.name}
-                        loading="lazy"
+                        loading={productIndex < 4 ? "eager" : "lazy"}
                         decoding="async"
-                        fetchPriority="low"
+                        fetchPriority={productIndex < 4 ? "high" : "low"}
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
