@@ -35,6 +35,7 @@ type C = {
 type P = {
   id: string;
   category_id: string | null;
+  category_ids: string[];
   name: string;
   slug: string;
   short_description: string;
@@ -146,39 +147,44 @@ export default function Storefront() {
       pincode: "",
     });
   useEffect(() => {
-    Promise.all([
-      supabase
-        .from("categories")
-        .select("id,name,slug,description,image_url,parent_id,collection_type")
-        .eq("is_active", true)
-        .order("sort_order"),
-      supabase
-        .from("products")
-        .select(
-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
-        )
-        .eq("is_active", true)
-        .order("created_at", { ascending: false }),
-      supabase.from("site_settings").select("*").eq("id", 1).single(),
-      supabase
-        .from("product_reviews")
-        .select("id,product_id,reviewer_name,rating,title,body,created_at")
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false }),
-    ]).then(([a, b, d, r]) => {
-      if (a.data) setCats(a.data as C[]);
-      if (b.data)
-        setProducts(
-          b.data.map((p: any) => ({
-            ...p,
-            image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-          })) as P[],
-        );
-      if (d.data)
-        setS({ ...d.data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
-        if (Array.isArray((d.data as any).astrology_services)) setAstrologyServices((d.data as any).astrology_services);
-      if (r.data) setReviews(r.data as R[]);
-    });
+    let alive = true;
+    // Load the catalogue independently so a slow reviews/settings request cannot
+    // hold back products and category navigation.
+    supabase.from("categories")
+      .select("id,name,slug,description,image_url,parent_id,collection_type")
+      .eq("is_active", true).order("sort_order")
+      .then(({ data }) => { if (alive && data) setCats(data as C[]); });
+
+    supabase.from("products")
+      .select(
+        "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
+      )
+      .eq("is_active", true).order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (alive && data) setProducts(data.map((p: any) => ({
+          ...p,
+          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          category_ids:
+            Array.isArray(p.category_ids) && p.category_ids.length
+              ? p.category_ids
+              : p.category_id
+                ? [p.category_id]
+                : [],
+        })) as P[]);
+      });
+
+    supabase.from("site_settings").select("*").eq("id", 1).single()
+      .then(({ data }) => {
+        if (!alive || !data) return;
+        setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
+      });
+
+    supabase.from("product_reviews")
+      .select("id,product_id,reviewer_name,rating,title,body,created_at")
+      .eq("is_approved", true).order("created_at", { ascending: false })
+      .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
+    return () => { alive = false; };
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -198,11 +204,8 @@ export default function Storefront() {
     setView(v);
     setMenu(false);
     setItem(null);
-    setTimeout(
-      () =>
-        window.scrollTo({ top: v === "home" ? 0 : 560, behavior: "smooth" }),
-      20,
-    );
+    // Every in-app navigation starts at the top of the destination view.
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
   };
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
@@ -357,9 +360,12 @@ export default function Storefront() {
           view === "shop" ||
           view === "new" ||
           view === "best" ||
-          activeCategory === p.category_id) &&
+          activeCategory === p.category_id ||
+          (!!activeCategory && p.category_ids.includes(activeCategory))) &&
         (view !== "best" || p.is_featured) &&
-        (categoryFilter === "all" || p.category_id === categoryFilter) &&
+        (categoryFilter === "all" ||
+          p.category_id === categoryFilter ||
+          p.category_ids.includes(categoryFilter)) &&
         (!stockOnly || p.stock_quantity > 0)
     );
     return [...list].sort((a, b) =>
@@ -535,81 +541,12 @@ export default function Storefront() {
         </>
       )}
       {view === "astrology" && (
-        <section className="section" style={{padding:"clamp(28px,6vw,76px) 20px",background:"#fbf7ef",color:"#332a27"}}>
-          <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid #d8c8a8",borderRadius:18,padding:"clamp(22px,5vw,54px)",textAlign:"center",background:"#fffdf8",boxShadow:"0 18px 50px rgba(67,44,31,.08)"}}>
-            <div style={{fontSize:12,letterSpacing:".2em",color:"#7b1420",fontWeight:800}}>SHREE GAURI · ASTROLOGY SERVICES</div>
-            <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,52px)",lineHeight:1.12,margin:"16px auto",maxWidth:760,color:"#4a2927"}}>Personalized Vedic Astrology Consultation</h1>
-            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.8,color:"#403632",fontWeight:500}}>Professional consultations for birth-chart analysis and personalised gemstone recommendations.</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:900}}>
-              {astrologyServices.filter(service=>service.active).map((service,index)=>(
-                <article key={service.name} style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
-                  <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>{String(index+1).padStart(2,"0")} · SHREE GAURI SERVICE</div>
-                  <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>{service.name}</h2>
-                  <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>{service.description}</p>
-                </article>
-              ))}
-            </div>
-            <div style={{maxWidth:700,margin:"0 auto",textAlign:"left",padding:"clamp(20px,4vw,32px)",border:"1px solid #e3d7c4",borderRadius:14,background:"#ffffff"}}>
-              <h2 style={{fontFamily:"Georgia,serif",fontSize:27,color:"#4a2927",margin:"0 0 8px"}}>Request a consultation</h2>
-              <p style={{color:"#6b5d54",lineHeight:1.6,margin:"0 0 22px"}}>Share your details and our team will contact you directly.</p>
-              <form onSubmit={async(e)=>{e.preventDefault();if(astrologySubmitting)return;const form=e.currentTarget;setAstrologySubmitting(true);setAstrologyMessage("Submitting your enquiry…");const f=new FormData(form);const response=await fetch("/api/astrology/enquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({full_name:String(f.get("name")||""),mobile:String(f.get("phone")||""),email:String(f.get("email")||""),address:String(f.get("address")||""),service:String(f.get("service")||""),preferred_time:String(f.get("when")||""),details:String(f.get("details")||""),website:String(f.get("website")||"")})});const data=await response.json().catch(()=>({}));setAstrologySubmitting(false);if(!response.ok||!data?.ok){setAstrologyMessage(data?.error||"Unable to submit right now. Please try again.");return;}setAstrologyMessage(data.message||"Your enquiry has been received. Our team will contact you.");form.reset();}} style={{display:"grid",gap:14}}>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full name<input name="name" required minLength={2} maxLength={120} autoComplete="name" placeholder="Your name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Mobile number<input name="phone" required type="tel" minLength={7} maxLength={25} autoComplete="tel" placeholder="Your contact number" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Email address<input name="email" required type="email" maxLength={254} autoComplete="email" placeholder="you@example.com" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full address<textarea name="address" required minLength={5} maxLength={500} rows={2} autoComplete="street-address" placeholder="House / street, city, state, PIN code" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Consultation type<select name="service" required defaultValue="" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,background:"#fff",font:"inherit"}}><option value="" disabled>Select a service</option>{astrologyServices.filter(service=>service.active).map(service=><option key={service.name} value={service.name}>{service.name}</option>)}{astrologyServices.filter(service=>service.active).length>1&&<option value="Both consultations">Both consultations</option>}</select></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Preferred date / time (optional)<input name="when" maxLength={160} placeholder="Your preferred time" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Additional details (optional)<textarea name="details" rows={4} maxLength={2000} placeholder="Briefly share your questions or details" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
-                <label style={{position:"absolute",left:"-10000px"}} aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
-                <button type="submit" disabled={astrologySubmitting} style={{padding:"15px 22px",border:0,borderRadius:8,background:"#7b1420",color:"#fffdf8",fontWeight:800,fontSize:15,cursor:astrologySubmitting?"wait":"pointer",opacity:astrologySubmitting ? 0.7 : 1}}>{astrologySubmitting?"Submitting…":"Submit enquiry"}</button>
-                {astrologyMessage&&<p role="status" aria-live="polite" style={{margin:0,color:"#403632",lineHeight:1.6,fontWeight:600}}>{astrologyMessage}</p>}
-                <small style={{color:"#75675e",lineHeight:1.5}}>Your enquiry is securely recorded for our team. We will contact you using the details provided.</small>
-              </form>
-            </div>
-          </div>
-        </section>
-      )}
-      {view === "home" && (
-        <section className="section" style={{margin:"32px auto",maxWidth:1120,padding:"clamp(26px,4vw,48px)",background:"linear-gradient(135deg,#fffdf8 0%,#fbf1df 100%)",color:"#321316",textAlign:"center",border:"1px solid #d8bd8c",borderRadius:16,boxShadow:"0 12px 34px rgba(67,35,22,.08)"}}>
-          <small style={{display:"block",letterSpacing:".16em",color:"#7b1420",fontWeight:800,fontSize:12}}>PERSONALIZED VEDIC CONSULTATION</small>
-          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(25px,4.2vw,42px)",fontWeight:700,lineHeight:1.2,margin:"14px auto",maxWidth:780,padding:"0 8px",textWrap:"balance",overflowWrap:"anywhere",color:"#401016",textShadow:"none"}}>Kundali Analysis &amp; Gemstone Consultation</h2>
-          <p style={{maxWidth:640,margin:"0 auto 24px",lineHeight:1.75,fontSize:"clamp(15px,2vw,17px)",fontWeight:500,color:"#493936"}}>Choose a detailed birth-chart analysis or a personalised gemstone consultation.</p>
-          <button onClick={() => go("astrology")} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 25px",background:"#741923",color:"#ffffff",border:"1px solid #741923",borderRadius:7,fontWeight:800,letterSpacing:".04em",cursor:"pointer"}}>VIEW CONSULTATION OPTIONS <ChevronRight size={16} /></button>
-        </section>
-      )}
-
-      {view === "astrology" && (
-        <section className="section" style={{padding:"clamp(28px,6vw,76px) 20px",background:"#fbf7ef",color:"#332a27"}}>
-          <div style={{maxWidth:1040,margin:"0 auto",border:"1px solid #d8c8a8",borderRadius:18,padding:"clamp(22px,5vw,54px)",textAlign:"center",background:"#fffdf8",boxShadow:"0 18px 50px rgba(67,44,31,.08)"}}>
-            <div style={{fontSize:12,letterSpacing:".2em",color:"#7b1420",fontWeight:800}}>SHREE GAURI · ASTROLOGY SERVICES</div>
-            <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(30px,5vw,52px)",lineHeight:1.12,margin:"16px auto",maxWidth:760,color:"#4a2927"}}>Personalized Vedic Astrology Consultation</h1>
-            <p style={{maxWidth:650,margin:"0 auto 30px",fontSize:16,lineHeight:1.8,color:"#403632",fontWeight:500}}>Professional consultations for birth-chart analysis and personalised gemstone recommendations.</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,270px),1fr))",gap:16,textAlign:"left",margin:"0 auto 34px",maxWidth:900}}>
-              {astrologyServices.filter(service=>service.active).map((service,index)=>(
-                <article key={service.name} style={{border:"1px solid #cdb88f",borderRadius:12,padding:24,background:"#ffffff",color:"#241716",boxShadow:"0 6px 18px rgba(55,28,20,.06)"}}>
-                  <div style={{color:"#7b1420",fontSize:12,letterSpacing:".12em",fontWeight:800}}>{String(index+1).padStart(2,"0")} · SHREE GAURI SERVICE</div>
-                  <h2 style={{fontFamily:"Georgia,serif",fontSize:25,margin:"12px 0",color:"#4a2927"}}>{service.name}</h2>
-                  <p style={{color:"#403632",lineHeight:1.8,margin:0,fontWeight:500}}>{service.description}</p>
-                </article>
-              ))}
-            </div>
-            <div style={{maxWidth:700,margin:"0 auto",textAlign:"left",padding:"clamp(20px,4vw,32px)",border:"1px solid #e3d7c4",borderRadius:14,background:"#ffffff"}}>
-              <h2 style={{fontFamily:"Georgia,serif",fontSize:27,color:"#4a2927",margin:"0 0 8px"}}>Request a consultation</h2>
-              <p style={{color:"#6b5d54",lineHeight:1.6,margin:"0 0 22px"}}>Share your details and our team will contact you directly.</p>
-              <form onSubmit={async(e)=>{e.preventDefault();if(astrologySubmitting)return;const form=e.currentTarget;setAstrologySubmitting(true);setAstrologyMessage("Submitting your enquiry…");const f=new FormData(form);const response=await fetch("/api/astrology/enquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({full_name:String(f.get("name")||""),mobile:String(f.get("phone")||""),email:String(f.get("email")||""),address:String(f.get("address")||""),service:String(f.get("service")||""),preferred_time:String(f.get("when")||""),details:String(f.get("details")||""),website:String(f.get("website")||"")})});const data=await response.json().catch(()=>({}));setAstrologySubmitting(false);if(!response.ok||!data?.ok){setAstrologyMessage(data?.error||"Unable to submit right now. Please try again.");return;}setAstrologyMessage(data.message||"Your enquiry has been received. Our team will contact you.");form.reset();}} style={{display:"grid",gap:14}}>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full name<input name="name" required minLength={2} maxLength={120} autoComplete="name" placeholder="Your name" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Mobile number<input name="phone" required type="tel" minLength={7} maxLength={25} autoComplete="tel" placeholder="Your contact number" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Email address<input name="email" required type="email" maxLength={254} autoComplete="email" placeholder="you@example.com" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Full address<textarea name="address" required minLength={5} maxLength={500} rows={2} autoComplete="street-address" placeholder="House / street, city, state, PIN code" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Consultation type<select name="service" required defaultValue="" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,background:"#fff",font:"inherit"}}><option value="" disabled>Select a service</option>{astrologyServices.filter(service=>service.active).map(service=><option key={service.name} value={service.name}>{service.name}</option>)}{astrologyServices.filter(service=>service.active).length>1&&<option value="Both consultations">Both consultations</option>}</select></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Preferred date / time (optional)<input name="when" maxLength={160} placeholder="Your preferred time" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400}}/></label>
-                <label style={{display:"grid",gap:6,fontSize:14,fontWeight:700,color:"#4a2927"}}>Additional details (optional)<textarea name="details" rows={4} maxLength={2000} placeholder="Briefly share your questions or details" style={{width:"100%",boxSizing:"border-box",padding:13,border:"1px solid #d7cbbb",borderRadius:8,font:"inherit",fontWeight:400,resize:"vertical"}}/></label>
-                <label style={{position:"absolute",left:"-10000px"}} aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
-                <button type="submit" disabled={astrologySubmitting} style={{padding:"15px 22px",border:0,borderRadius:8,background:"#7b1420",color:"#fffdf8",fontWeight:800,fontSize:15,cursor:astrologySubmitting?"wait":"pointer",opacity:astrologySubmitting ? 0.7 : 1}}>{astrologySubmitting?"Submitting…":"Submit enquiry"}</button>
-                {astrologyMessage&&<p role="status" aria-live="polite" style={{margin:0,color:"#403632",lineHeight:1.6,fontWeight:600}}>{astrologyMessage}</p>}
-                <small style={{color:"#75675e",lineHeight:1.5}}>Your enquiry is securely recorded for our team. We will contact you using the details provided.</small>
-              </form>
-            </div>
+        <section className="section" style={{ padding: "clamp(28px,6vw,76px) 20px", background: "#fbf7ef", color: "#332a27", textAlign: "center" }}>
+          <div style={{ maxWidth: 760, margin: "0 auto", padding: "clamp(24px,5vw,48px)", background: "#fffdf8", border: "1px solid #d8c8a8", borderRadius: 18 }}>
+            <small className="kicker">SHREE GAURI · ASTROLOGY SERVICES</small>
+            <h1 style={{ fontFamily: "Georgia,serif", color: "#4a2927" }}>Personalized Vedic Astrology Consultation</h1>
+            <p style={{ lineHeight: 1.8 }}>Explore Kundali Analysis and Gemstone Consultation, then submit your details through our dedicated enquiry page.</p>
+            <a href="/astrology" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: 12, padding: "13px 24px", borderRadius: 999, background: "#7b1420", color: "#fff", fontWeight: 800, textDecoration: "none" }}>VIEW SERVICES & ENQUIRE</a>
           </div>
         </section>
       )}
@@ -962,6 +899,7 @@ export default function Storefront() {
           )}
         </section>
       )}
+      {(view === "home" || view === "about" || view === "contact") && (
       <section className="founder">
         <img
           src={s.founder_image_url || "/gourav-sharma-founder.jpeg"}
@@ -975,6 +913,7 @@ export default function Storefront() {
           <span>Founder, Shree Gauri</span>
         </div>
       </section>
+      )}
       <footer>
         <div>
           <h2>SHREE GAURI</h2>
