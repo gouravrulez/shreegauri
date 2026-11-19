@@ -107,14 +107,39 @@ const blankProd = {
   brand: "Shree Gauri",
   name: "",
   slug: "",
+  sku: "",
+  product_type: "",
   short_description: "",
   description: "",
   price_inr: 0,
   compare_at_price_inr: null,
   stock_quantity: 0,
   category_id: "",
+  category_ids: [] as string[],
   primary_image_url: "",
   image_urls: [] as string[],
+  gemstone_name: "",
+  material: "",
+  natural_lab_status: "",
+  origin: "",
+  treatment: "",
+  certification: "",
+  shape: "",
+  color: "",
+  weight_grams: null,
+  carat_weight: null,
+  is_one_of_one: false,
+  certificate_available: false,
+  certificate_price_inr: 0,
+  abhimantrit_available: false,
+  care_instructions: "",
+  delivery_notes: "",
+  return_notes: "",
+  seo_title: "",
+  seo_description: "",
+  google_product_category: "",
+  custom_shipping_enabled: false,
+  custom_shipping_charge_inr: null,
   badge: "",
   is_active: false,
   is_featured: false,
@@ -125,6 +150,7 @@ export default function AdminDashboard() {
     [password, setPassword] = useState(""),
     [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
+    [isSigningIn, setIsSigningIn] = useState(false),
     [tab, setTab] = useState("dashboard"),
     [catalogView, setCatalogView] = useState<"products" | "inventory">("products"),
     [cats, setCats] = useState<Cat[]>([]),
@@ -138,6 +164,7 @@ export default function AdminDashboard() {
     [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
+    [previewOnly, setPreviewOnly] = useState(true),
     [readActivityIds, setReadActivityIds] = useState<string[]>([]),
     [legacyLastSeen, setLegacyLastSeen] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
@@ -163,7 +190,15 @@ export default function AdminDashboard() {
     [selectedProductCategory, setSelectedProductCategory] = useState("all"),
     [productSort, setProductSort] = useState("newest"),
     [productPage, setProductPage] = useState(1),
-    [productPageSize, setProductPageSize] = useState(24);
+    [productPageSize, setProductPageSize] = useState(24),
+    [orderSearch, setOrderSearch] = useState(""),
+    [orderStatusFilter, setOrderStatusFilter] = useState("all"),
+    [customerSearch, setCustomerSearch] = useState("");
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/environment", { cache: "no-store" }).then((response) => response.json()).then((data) => { if (active) setPreviewOnly(Boolean(data.preview_only)); }).catch(() => { if (active) setPreviewOnly(true); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -284,6 +319,7 @@ export default function AdminDashboard() {
     setAstrologyServices(result.services || []);
   }
   async function updateAstrologyStatus(id: string, status: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"update_status", id, status }, headers:{ Authorization:`Bearer ${current.access_token}` } });
@@ -291,6 +327,7 @@ export default function AdminDashboard() {
     if (result?.ok) await loadAstrology(current.access_token);
   }
   async function saveAstrologyServices() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"save_services", services:astrologyServices }, headers:{ Authorization:`Bearer ${current.access_token}` } });
@@ -299,29 +336,43 @@ export default function AdminDashboard() {
   }
   async function login(e: FormEvent) {
     e.preventDefault();
+    if (isSigningIn) return;
     setError("");
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    if (signInError || !data.session) {
-      setError(signInError?.message || "Unable to start a secure session. Please try again.");
-      return;
-    }
-    const roleResponse = await fetch("/api/admin/manage", {
-      headers: { Authorization: "Bearer " + data.session.access_token },
-    });
-    const roleData = await roleResponse.json().catch(() => ({}));
-    const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
-    const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
-    if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
-      await supabase.auth.signOut();
-      setError(loginMode === "admin"
-        ? "This work email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
-        : "This work email does not have an active staff role. Ask the main administrator to invite or enable your access.");
+    setIsSigningIn(true);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (signInError || !data.session) {
+        setError(signInError?.message || "Unable to start a secure session. Please check your details and try again.");
+        return;
+      }
+      const roleResponse = await fetch("/api/admin/manage", {
+        cache: "no-store",
+        headers: { Authorization: "Bearer " + data.session.access_token },
+      });
+      const roleData = await roleResponse.json().catch(() => ({}));
+      const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
+      const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
+      if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
+        await supabase.auth.signOut({ scope: "local" });
+        setError(!roleResponse.ok
+          ? (roleData.error || "We could not verify your admin access. Please try again or contact the main administrator.")
+          : loginMode === "admin"
+            ? "This email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
+            : "This email does not have an active staff role. Ask the main administrator to enable your access.");
+        return;
+      }
+      setSession(data.session);
+    } catch {
+      setError("We couldn't complete sign-in because the server could not be reached. Please try again.");
+    } finally {
+      setIsSigningIn(false);
     }
   }
   async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return false; }
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) { setNotice("Your session expired. Please sign in again."); return false; }
     const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
@@ -392,6 +443,7 @@ export default function AdminDashboard() {
     setNotice(`${urls.length} additional image(s) ready. Save the product below.`);
   }
   async function moderateReview(id: string, is_approved: boolean) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase
       .from("product_reviews")
       .update({ is_approved })
@@ -419,6 +471,7 @@ export default function AdminDashboard() {
     setNotice("Image ready. Click Save All Website Settings.");
   }
   async function toggleCategoryVisibility(item: Cat) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const nextVisible = !item.is_active;
     setNotice((nextVisible ? "Making " : "Hiding ") + item.name + "...");
     const { error } = await supabase.from("categories").update({ is_active: nextVisible }).eq("id", item.id);
@@ -431,6 +484,7 @@ export default function AdminDashboard() {
     setNotice(item.name + (nextVisible ? " is now visible on the website." : " is now hidden from the website."));
   }
   async function saveCat() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const data = {
       ...cat,
       collection_type: cat.collection_type || "category",
@@ -454,22 +508,35 @@ export default function AdminDashboard() {
     }
   }
   async function saveProd() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
     if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
       setNotice("Your session is invalid or your role cannot manage products.");
       return;
     }
+    const productName = String(prod.name || "").trim();
+    const productDescription = String(prod.short_description || prod.description || "").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim();
+    const generatedSeoTitle = productName ? (productName + " | Shree Gauri").slice(0, 60) : "";
+    const generatedSeoDescription = (productDescription || (productName ? "Explore " + productName + " at Shree Gauri. Discover authentic products with secure ordering and convenient delivery across India." : "")).slice(0, 155);
+    const selectedCategoryNames = cats.filter((c) => (Array.isArray(prod.category_ids) ? prod.category_ids : []).includes(c.id) || c.id === prod.category_id).map((c) => c.name);
+    const detectedGoogleCategory = prod.google_product_category || (/(bracelet|mala|necklace|ring|pendant)/i.test(productName + " " + (prod.product_type || "")) ? "Apparel & Accessories > Jewelry" : /(pooja|puja|havan|tarpan)/i.test(productName + " " + (prod.product_type || "")) ? "Religious & Ceremonial" : selectedCategoryNames[0] || "");
     const data = {
       ...prod,
       brand: "Shree Gauri",
+      seo_title: prod.seo_title || generatedSeoTitle,
+      seo_description: prod.seo_description || generatedSeoDescription,
+      google_product_category: detectedGoogleCategory,
       slug:
         prod.slug ||
-        prod.name
+        productName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
       category_id: prod.category_id || null,
+      category_ids: Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])])),
+      custom_shipping_enabled: Boolean(prod.custom_shipping_enabled),
+      custom_shipping_charge_inr: prod.custom_shipping_enabled && prod.custom_shipping_charge_inr !== "" && prod.custom_shipping_charge_inr !== null ? Number(prod.custom_shipping_charge_inr) : null,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
@@ -488,6 +555,7 @@ export default function AdminDashboard() {
     await load();
   }
   async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); setQuickEdit(null); return; }
     const value = Number(rawValue);
     if (!Number.isFinite(value) || value < 0 || (field === "stock_quantity" && !Number.isInteger(value))) {
       setNotice(field === "price_inr" ? "Enter a valid price of ₹0 or more." : "Stock must be a whole number of 0 or more.");
@@ -500,6 +568,7 @@ export default function AdminDashboard() {
   }
 
   async function toggleProductVisibility(p: Prod) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const next = !p.is_active;
     const { error } = await supabase
       .from("products")
@@ -511,12 +580,14 @@ export default function AdminDashboard() {
   }
 
   async function remove(table: string, id: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!confirm("Delete this permanently?")) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
     setNotice(error?.message || "Deleted.");
     load();
   }
   async function saveSettings() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase
       .from("site_settings")
       .update({ ...settings, updated_at: new Date().toISOString() })
@@ -524,19 +595,27 @@ export default function AdminDashboard() {
     setNotice(error?.message || "Website content updated.");
   }
   async function saveCourierDetails(e: FormEvent<HTMLFormElement>, order: Order) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: tracking edits are disabled to protect live orders."); return; }
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const courier_name = String(form.get("courier_name") || "").trim();
+    const courier_company_id = String(form.get("courier_company_id") || "") || null;
+    const selectedCourier = shippingCompanies.find((company) => company.id === courier_company_id);
+    const courier_name = selectedCourier?.name || String(form.get("courier_name") || "").trim();
     const tracking_number = String(form.get("tracking_number") || "").trim();
-    const tracking_url = String(form.get("tracking_url") || "").trim();
+    let tracking_url = String(form.get("tracking_url") || "").trim();
+    if (!tracking_url && selectedCourier?.tracking_url_template && tracking_number) {
+      tracking_url = String(selectedCourier.tracking_url_template).replaceAll("{tracking_number}", encodeURIComponent(tracking_number));
+    }
+    const courier_charge_inr = selectedCourier ? Number(selectedCourier.default_charge_inr || 0) : Number(form.get("courier_charge_inr") || 0);
     const dispatch_date = String(form.get("dispatch_date") || "") || null;
     const expected_delivery_date = String(form.get("expected_delivery_date") || "") || null;
-    const { error } = await supabase.from("orders").update({ courier_name: courier_name || null, tracking_number: tracking_number || null, tracking_url: tracking_url || null, dispatch_date, expected_delivery_date, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", order.id);
+    const { error } = await supabase.from("orders").update({ courier_company_id, courier_name: courier_name || null, courier_charge_inr, tracking_number: tracking_number || null, tracking_url: tracking_url || null, dispatch_date, expected_delivery_date, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", order.id);
     if (error) { setNotice("Tracking details could not be saved: " + error.message); return; }
-    setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_name, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
+    setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_company_id, courier_name, courier_charge_inr, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
     setNotice("Courier and tracking details saved for " + order.order_number + ".");
   }
   async function saveShippingSettings(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const payload = {
       id: 1,
@@ -554,6 +633,7 @@ export default function AdminDashboard() {
     setNotice("Shipping charges and delivery rules saved.");
   }
   async function saveShippingCompany(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const payload = {
       name: String(shippingCompanyDraft.name || "").trim(),
@@ -577,19 +657,21 @@ export default function AdminDashboard() {
     setNotice("Courier / delivery partner saved.");
   }
   async function toggleShippingCompany(company: any) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase.from("shipping_companies").update({ is_active: !company.is_active, updated_at: new Date().toISOString() }).eq("id", company.id);
     if (error) { setNotice("Courier status could not be changed: " + error.message); return; }
     setShippingCompanies((current) => current.map((item) => item.id === company.id ? { ...item, is_active: !company.is_active } : item));
     setNotice(company.name + (company.is_active ? " paused." : " activated."));
   }
   async function saveCoupon(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const code = couponDraft.code.trim().toUpperCase().replace(/\\s+/g, "");
     if (!/^[A-Z0-9_-]{3,32}$/.test(code)) { setNotice("Coupon code must be 3–32 letters, numbers, hyphens or underscores."); return; }
     if (!Number.isFinite(Number(couponDraft.discount_value)) || Number(couponDraft.discount_value) <= 0 || (couponDraft.discount_type === "percentage" && Number(couponDraft.discount_value) > 100)) { setNotice("Enter a valid discount value (percentage must be 100 or less)."); return; }
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
-    const response = await fetch("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${current.access_token}` }, body: JSON.stringify({ action: "save", coupon: { ...couponDraft, code, discount_value: Number(couponDraft.discount_value), min_order_inr: Number(couponDraft.min_order_inr || 0), max_discount_inr: couponDraft.max_discount_inr === null || couponDraft.max_discount_inr === ("" as any) ? null : Number(couponDraft.max_discount_inr), max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null } }) });
+    const response = await fetch("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${current.access_token}` }, body: JSON.stringify({ action: "save", id: couponDraft.id || null, coupon: { ...couponDraft, code, discount_value: Number(couponDraft.discount_value), min_order_inr: Number(couponDraft.min_order_inr || 0), max_discount_inr: couponDraft.max_discount_inr === null || couponDraft.max_discount_inr === ("" as any) ? null : Number(couponDraft.max_discount_inr), max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null } }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { setNotice(result.error || "Coupon could not be saved."); return; }
     setCoupons(result.coupons || []);
@@ -597,6 +679,7 @@ export default function AdminDashboard() {
     setNotice("Coupon " + code + " saved and ready for checkout.");
   }
   async function toggleCoupon(coupon: Coupon) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!coupon.id) return;
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
@@ -607,6 +690,7 @@ export default function AdminDashboard() {
     setNotice(coupon.code + (coupon.is_active ? " paused." : " activated."));
   }
   async function deleteCoupon(coupon: Coupon) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!coupon.id || !window.confirm("Delete coupon " + coupon.code + "? This cannot be undone.")) return;
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
@@ -617,13 +701,14 @@ export default function AdminDashboard() {
     setNotice(coupon.code + " deleted.");
   }
   async function updateOrder(id: string, order_status: string) {
+    if (previewOnly) { setNotice("Read-only preview: status changes are disabled to protect live orders."); return; }
     setNotice(`Updating order to ${order_status}...`);
     const { data: authData } = await supabase.auth.getSession();
     const token = authData.session?.access_token;
     if (!token) { setNotice("Admin session expired. Please log in again."); return; }
-    const response = await fetch("https://hhtqnpxarrbagyvswqrj.supabase.co/functions/v1/order-status-email", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status }) });
+    const response = await fetch("/api/admin/order-status", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status }) });
     const data = await response.json().catch(() => ({}));
-    setNotice(data?.error || (data?.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`));
+    setNotice(data?.error || (data?.preview_only ? "Status changes are disabled in preview to protect live orders." : data?.email_sent ? `Order marked ${order_status}. Professional customer email sent.` : `Order marked ${order_status}. Email status: ${data?.warning || "not sent"}`));
     if (response.ok && !data?.error) load();
   }
   const activity = [
@@ -724,7 +809,7 @@ export default function AdminDashboard() {
                 <input type="password" name="sg-admin-password" autoComplete="new-password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </label>
               {error && <b className="admin-login-error" role="alert">{error}</b>}
-              <button className="admin-login-submit" type="submit">{loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">→</span></button>
+              <button className="admin-login-submit" type="submit" disabled={isSigningIn}>{isSigningIn ? "VERIFYING SECURE ACCESS…" : loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">{isSigningIn ? "…" : "→"}</span></button>
             </form>
             <div className="admin-login-panel-foot"><span className="admin-login-lock">◇</span><span>{loginMode === "admin" ? "Main administrator access" : "Role-based staff access"}</span><i /> <span>Shree Gauri</span></div>
           </section>
@@ -801,7 +886,7 @@ export default function AdminDashboard() {
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
-        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); setCouponDraft(blankCoupon); }}><Package /> Shipping & Coupons</button>}
+        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); }}><Package /> Shipping & Coupons</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -812,6 +897,7 @@ export default function AdminDashboard() {
         <header>
           <div>
             <small>ADMIN DASHBOARD</small>
+            {previewOnly && <div role="status" style={{ marginTop: 10, padding: "9px 12px", border: "1px solid #ead9bd", borderRadius: 8, background: "#fff8ec", color: "#765b35", fontSize: 12, fontWeight: 700 }}>PREVIEW MODE · Read-only · Saves, order updates and emails are disabled to protect the live store.</div>}
             <h1>
               {tab === "dashboard"
                 ? "Store Overview"
@@ -832,8 +918,10 @@ export default function AdminDashboard() {
                       : tab === "currency"
                         ? "Global Currency Rates"
                         : tab === "shipping-coupons"
-                          ? "Shipping & Coupons"
-                          : "Photos, Logo & Homepage"}
+                          ? (shippingTab === "shipping" ? "Courier & Delivery" : "Coupons & Offers")
+                          : tab === "add-product"
+                            ? (prod.id ? "Edit Product" : "Add New Product")
+                            : "Photos, Logo & Homepage"}
             </h1>
           </div>
           {notice && <p>{notice}</p>}
@@ -880,8 +968,12 @@ export default function AdminDashboard() {
               <div><small>REGISTERED ACCOUNTS</small><strong>{customers.filter((c) => c.auth_user_id).length}</strong></div>
               <div><small>CUSTOMERS WITH ORDERS</small><strong>{new Set(orders.map((o) => o.email?.toLowerCase()).filter(Boolean)).size}</strong></div>
             </div>
+            <div className="record-toolbar">
+              <input aria-label="Search customers" value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} placeholder="Search name, email or phone…" />
+              <span>{customers.filter((c) => [c.full_name,c.email,c.phone].some((v) => String(v || "").toLowerCase().includes(customerSearch.toLowerCase()))).length} customers</span>
+            </div>
             <div className="customer-admin-list">
-              {customers.length ? customers.map((c) => {
+              {customers.length ? customers.filter((c) => [c.full_name,c.email,c.phone].some((v) => String(v || "").toLowerCase().includes(customerSearch.toLowerCase()))).map((c) => {
                 const customerOrders = orders.filter((o) =>
                   (c.id && (o as any).customer_id === c.id) ||
                   (!!c.email && !!o.email && o.email.toLowerCase() === c.email.toLowerCase())
@@ -890,7 +982,14 @@ export default function AdminDashboard() {
                   .filter((o) => o.payment_status === "paid")
                   .reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
                 return (
-                  <article key={c.id} className="customer-admin-card">
+                  <details key={c.id} className="customer-admin-card customer-record-details">
+                    <summary className="customer-record-summary">
+                      <div><strong className="customer-record-name">{c.full_name || "Customer"}</strong><small>{c.email || c.phone || "No contact details"}</small></div>
+                      <span>{customerOrders.length} orders</span>
+                      <span>₹{spent.toLocaleString("en-IN")} paid</span>
+                      <b>View details⌄</b>
+                    </summary>
+                    <div className="customer-record-body">
                     <div className="customer-admin-head">
                       <div>
                         <span className={c.auth_user_id ? "account-live" : "account-guest"}>
@@ -929,7 +1028,8 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     {isPrimaryAdmin && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
-                  </article>
+                    </div>
+                  </details>
                 );
               }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
             </div>
@@ -937,9 +1037,19 @@ export default function AdminDashboard() {
         )}
         {tab === "orders" && (
           <div className="orders-admin">
+            <div className="record-toolbar order-record-toolbar">
+              <input aria-label="Search orders" value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} placeholder="Search order number, customer, email or phone…" />
+              <select aria-label="Filter orders by status" value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)}><option value="all">All statuses</option>{["pending","confirmed","processing","packed","shipped","delivered","cancelled"].map((status) => <option key={status} value={status}>{status === "shipped" ? "Dispatched" : status}</option>)}</select>
+              <span>{orders.filter((o) => (orderStatusFilter === "all" || o.order_status === orderStatusFilter) && [o.order_number,o.customer_name,o.email,o.phone].some((v) => String(v || "").toLowerCase().includes(orderSearch.toLowerCase()))).length} orders</span>
+            </div>
             {orders.length ? (
-              orders.map((o) => (
-                <article key={o.id} className={`order-card ${o.order_status}`}>
+              orders.filter((o) => (orderStatusFilter === "all" || o.order_status === orderStatusFilter) && [o.order_number,o.customer_name,o.email,o.phone].some((v) => String(v || "").toLowerCase().includes(orderSearch.toLowerCase()))).map((o) => (
+                <details key={o.id} className={`order-card order-record-details ${o.order_status}`}>
+                  <summary className="order-record-summary">
+                    <div><small>{new Date(o.created_at).toLocaleDateString("en-IN")}</small><strong>{o.order_number}</strong></div>
+                    <strong className="order-customer-name">{o.customer_name}</strong><span>₹{Number(o.total_inr).toLocaleString("en-IN")}</span><b>{o.order_status === "shipped" ? "DISPATCHED" : o.order_status.toUpperCase()}</b><i>View details⌄</i>
+                  </summary>
+                  <div className="order-record-body">
                   <div className="order-heading">
                     <div>
                       <small>
@@ -984,8 +1094,8 @@ export default function AdminDashboard() {
                     </strong>
                   </div>
                   <form className="order-tracking-editor" onSubmit={(e) => saveCourierDetails(e, o)} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, padding: 14, margin: "14px 0", border: "1px solid #eadfd4", borderRadius: 9, background: "#fffdf9" }}>
-                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>COURIER / DELIVERY PARTNER<input name="courier_name" defaultValue={(o as any).courier_name || ""} placeholder="e.g. Delhivery, Blue Dart" /></label>
-                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING NUMBER<input name="tracking_number" defaultValue={(o as any).tracking_number || ""} placeholder="AWB / tracking ID" /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>COURIER / DELIVERY PARTNER<select name="courier_company_id" defaultValue={(o as any).courier_company_id || shippingCompanies.find((company) => company.name === (o as any).courier_name)?.id || ""}><option value="">Select courier</option>{shippingCompanies.filter((company) => company.is_active).map((company) => <option key={company.id} value={company.id}>{company.name} · ₹{Number(company.default_charge_inr || 0).toLocaleString("en-IN")}</option>)}</select></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING NUMBER<input name="tracking_number" defaultValue={(o as any).tracking_number || ""} placeholder="Article / consignment / AWB number" /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING URL<input name="tracking_url" type="url" defaultValue={(o as any).tracking_url || ""} placeholder="https://…" /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>DISPATCH DATE<input name="dispatch_date" type="date" defaultValue={(o as any).dispatch_date || ""} /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>EXPECTED DELIVERY<input name="expected_delivery_date" type="date" defaultValue={(o as any).expected_delivery_date || ""} /></label>
@@ -1006,13 +1116,15 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
+                      <option value="packed">Packed</option>
+                      <option value="shipped">Dispatched</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
                     {isPrimaryAdmin && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
                   </div>
-                </article>
+                  </div>
+                </details>
               ))
             ) : (
               <div className="admin-empty">
@@ -1175,7 +1287,7 @@ export default function AdminDashboard() {
         )}
         {(tab === "products" && catalogView === "products" || tab === "add-product") && (
           <div className="admin-product-workspace">
-            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
+            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", alignItems: "start", gap: 12, maxWidth: 920, padding: 18 }}>
               <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
               <label>
                 Product Name
@@ -1210,6 +1322,43 @@ export default function AdminDashboard() {
                   }
                 />
               </label>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Gemstone & product specifications <span>Optional product details</span></summary>
+                <div className="product-extra-grid">
+                  <label>SKU / Product Code<input value={prod.sku || ""} placeholder="Enter unique stock code" onChange={(e) => setProd({ ...prod, sku: e.target.value })} /></label>
+                  <label>Product Type<input value={prod.product_type || ""} placeholder="Gemstone, bracelet, pooja service…" onChange={(e) => setProd({ ...prod, product_type: e.target.value })} /></label>
+                  <label>Gemstone Name<input value={prod.gemstone_name || ""} onChange={(e) => setProd({ ...prod, gemstone_name: e.target.value })} /></label>
+                  <label>Material<input value={prod.material || ""} onChange={(e) => setProd({ ...prod, material: e.target.value })} /></label>
+                  <label>Natural / Lab Status<select value={prod.natural_lab_status || ""} onChange={(e) => setProd({ ...prod, natural_lab_status: e.target.value })}><option value="">Not specified</option><option value="Natural">Natural</option><option value="Lab Grown">Lab Grown</option><option value="Synthetic">Synthetic</option><option value="Not Applicable">Not Applicable</option></select></label>
+                  <label>Origin<input value={prod.origin || ""} onChange={(e) => setProd({ ...prod, origin: e.target.value })} /></label>
+                  <label>Treatment<input value={prod.treatment || ""} onChange={(e) => setProd({ ...prod, treatment: e.target.value })} /></label>
+                  <label>Certification / Lab<input value={prod.certification || ""} onChange={(e) => setProd({ ...prod, certification: e.target.value })} /></label>
+                  <label>Shape<input value={prod.shape || ""} onChange={(e) => setProd({ ...prod, shape: e.target.value })} /></label>
+                  <label>Colour<input value={prod.color || ""} onChange={(e) => setProd({ ...prod, color: e.target.value })} /></label>
+                  <label>Weight (grams)<input type="number" min="0" step="0.001" value={prod.weight_grams ?? ""} onChange={(e) => setProd({ ...prod, weight_grams: e.target.value === "" ? null : e.target.value })} /></label>
+                  <label>Carat Weight<input type="number" min="0" step="0.01" value={prod.carat_weight ?? ""} onChange={(e) => setProd({ ...prod, carat_weight: e.target.value === "" ? null : e.target.value })} /></label>
+                </div>
+                <label className="check"><input type="checkbox" checked={Boolean(prod.is_one_of_one)} onChange={(e) => setProd({ ...prod, is_one_of_one: e.target.checked })} /> One-of-one / unique piece</label>
+              </details>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Certificate & product care <span>Customer-facing options</span></summary>
+                <div className="product-extra-grid">
+                  <label className="check"><input type="checkbox" checked={Boolean(prod.certificate_available)} onChange={(e) => setProd({ ...prod, certificate_available: e.target.checked })} /> Certificate available</label>
+                  {prod.certificate_available && <label>Certificate price (₹)<input type="number" min="0" step="1" value={prod.certificate_price_inr ?? 0} onChange={(e) => setProd({ ...prod, certificate_price_inr: e.target.value })} /></label>}
+                  <label className="check"><input type="checkbox" checked={Boolean(prod.abhimantrit_available)} onChange={(e) => setProd({ ...prod, abhimantrit_available: e.target.checked })} /> Abhimantrit option available</label>
+                  <label style={{ gridColumn: "1 / -1" }}>Care Instructions<textarea value={prod.care_instructions || ""} onChange={(e) => setProd({ ...prod, care_instructions: e.target.value })} /></label>
+                  <label>Delivery Notes<textarea value={prod.delivery_notes || ""} onChange={(e) => setProd({ ...prod, delivery_notes: e.target.value })} /></label>
+                  <label>Return Notes<textarea value={prod.return_notes || ""} onChange={(e) => setProd({ ...prod, return_notes: e.target.value })} /></label>
+                </div>
+              </details>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Search & Google listing <span>Optional discoverability settings</span></summary>
+                <div className="product-extra-grid">
+                  <label>SEO Title<input value={prod.seo_title || ""} onChange={(e) => setProd({ ...prod, seo_title: e.target.value })} /></label>
+                  <label>Google Product Category<input value={prod.google_product_category || ""} onChange={(e) => setProd({ ...prod, google_product_category: e.target.value })} /></label>
+                  <label style={{ gridColumn: "1 / -1" }}>SEO Description<textarea value={prod.seo_description || ""} onChange={(e) => setProd({ ...prod, seo_description: e.target.value })} /></label>
+                </div>
+              </details>
               <div className="two">
                 <label>
                   Selling Price ₹
@@ -1259,42 +1408,48 @@ export default function AdminDashboard() {
                   </select>
                 </label>
               </div>
-              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e5d9cb", borderRadius: 12, padding: 16, background: "#fffdf9", display: "grid", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div>
-                    <b style={{ display: "block", color: "#402126", fontSize: 15 }}>Product collections</b>
-                    <small style={{ color: "#817168" }}>Choose one or more categories, purposes and planets.</small>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "6px 10px" }}>{(prod.category_ids || (prod.category_id ? [prod.category_id] : [])).length} selected</span>
+              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e8ded3", borderRadius: 11, padding: 13, background: "#fffdf9", display: "grid", gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div><b style={{ display: "block", color: "#402126", fontSize: 14 }}>Product placement</b><small style={{ color: "#817168" }}>Choose the categories, purposes and planets where this product should appear.</small></div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "5px 9px" }}>{(Array.isArray(prod.category_ids) ? prod.category_ids : []).filter((id: string) => cats.some((c) => c.id === id)).length} selected</span>
                 </div>
-                <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search categories, purposes or planets…" style={{ width: "100%", maxWidth: 440, border: "1px solid #dfd2c4", borderRadius: 8, padding: "10px 12px", background: "#fff" }} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
-                  {(["category", "purpose", "planet"] as const).map((kind) => {
+                {(() => {
+                  const selectedIds = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
+                  const updateCollection = (kind: "category" | "purpose" | "planet", id: string, checked: boolean) => {
+                    const current = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
+                    const nextIds = checked ? Array.from(new Set([...current, id])) : current.filter((item: string) => item !== id);
+                    const categoryIds = nextIds.filter((item: string) => cats.some((cat) => cat.id === item && cat.collection_type === "category"));
+                    setProd({ ...prod, category_ids: nextIds, category_id: kind === "category" ? (checked ? (prod.category_id || id) : (prod.category_id === id ? (categoryIds[0] || "") : prod.category_id)) : (prod.category_id || categoryIds[0] || "") });
+                  };
+                  const categoryChoices = cats.filter((c) => c.is_active && c.collection_type === "category" && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                  const renderCollectionSelector = (kind: "category" | "purpose" | "planet", title: string) => {
                     const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
-                    const selectedIds = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
-                    const selectedItems = cats.filter((c) => selectedIds.includes(c.id) && c.collection_type === kind);
-                    const heading = kind === "category" ? "Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
-                    return (
-                      <div key={kind} style={{ border: "1px solid #ebe2d8", borderRadius: 9, background: "#fff", padding: 11, minWidth: 0 }}>
-                        <b style={{ display: "block", color: "#72513d", fontSize: 11, letterSpacing: ".04em", marginBottom: 8 }}>{heading}</b>
-                        <details className="collection-select">
-                          <summary>{selectedItems.length ? selectedItems.length + " selected" : "Select " + heading.toLowerCase()} <span aria-hidden="true">⌄</span></summary>
-                          <div className="collection-select-menu">
-                            {choices.length ? choices.map((c) => {
-                              const selected = selectedIds.includes(c.id);
-                              return <button type="button" key={c.id} className={selected ? "selected" : ""} onClick={() => {
-                                const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
-                                const category_ids = selected ? current.filter((id: string) => id !== c.id) : Array.from(new Set([...current, c.id]));
-                                setProd({ ...prod, category_ids, category_id: category_ids[0] || "" });
-                              }}><span>{c.name}</span><i>{selected ? "Selected" : "Add"}</i></button>;
-                            }) : <small className="collection-select-empty">No matching collections</small>}
-                          </div>
-                        </details>
-                        {selectedItems.length > 0 && <div className="collection-selected-tags">{selectedItems.map((item) => <span key={item.id}>{item.name}<button type="button" aria-label={"Remove " + item.name} onClick={() => { const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []); const category_ids = current.filter((id: string) => id !== item.id); setProd({ ...prod, category_ids, category_id: category_ids[0] || "" }); }}>×</button></span>)}</div>}
+                    const selectedCount = selectedIds.filter((id) => choices.some((c) => c.id === id)).length;
+                    return <details key={kind} className="product-collection-dropdown" style={{ border: "1px solid #e5d9cc", borderRadius: 9, background: "#fff", minWidth: 0 }}>
+                      <summary style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 14px", cursor: "pointer", listStyle: "none", color: "#402126", fontWeight: 750 }}>
+                        <span>{title}</span><span style={{ color: "#806d60", fontSize: 12, fontWeight: 650 }}>{selectedCount ? selectedCount + " selected" : "Select"}　⌄</span>
+                      </summary>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, padding: "4px 14px 14px", borderTop: "1px solid #f0e8df" }}>
+                        {choices.map((c) => <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, padding: "7px 8px", borderRadius: 6, background: selectedIds.includes(c.id) ? "#f8f0e7" : "#fff", color: "#493a33", fontSize: 13 }}>
+                          <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection(kind, c.id, e.target.checked)} /><span>{c.name}</span>
+                        </label>)}
+                        {!choices.length && <small style={{ color: "#817168" }}>No active options available.</small>}
                       </div>
-                    );
-                  })}
+                    </details>;
+                  };
+                  return <div className="product-placement-controls" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
+                    {renderCollectionSelector("category", "Shop by Category")}
+                    {renderCollectionSelector("purpose", "Shop by Purpose")}
+                    {renderCollectionSelector("planet", "Shop by Planet")}
+                  </div>;
+                })()}
+              </section>
+              <section style={{ gridColumn: "1 / -1", border: "1px solid #e8ded3", borderRadius: 10, padding: 12, background: "#fff" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div><b style={{ color: "#402126", fontSize: 13 }}>Delivery charges</b><small style={{ display: "block", color: "#817168", marginTop: 3 }}>Enable this only when this product should carry a delivery fee.</small></div>
+                  <label className="check" style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}><input type="checkbox" checked={Boolean(prod.custom_shipping_enabled)} onChange={(e) => setProd({ ...prod, custom_shipping_enabled: e.target.checked, custom_shipping_charge_inr: e.target.checked ? (prod.custom_shipping_charge_inr ?? "") : null })} /> Apply delivery charge</label>
                 </div>
+                {prod.custom_shipping_enabled && <label style={{ display: "grid", gap: 5, maxWidth: 260, marginTop: 10 }}>Product delivery charge (₹)<input type="number" min="0" step="1" value={prod.custom_shipping_charge_inr ?? ""} onChange={(e) => setProd({ ...prod, custom_shipping_charge_inr: e.target.value })} placeholder="Leave blank to use standard courier rate" /></label>}
               </section>
               <label>
                 Main Product Photo

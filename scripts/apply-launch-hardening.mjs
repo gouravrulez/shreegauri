@@ -2,6 +2,9 @@ import fs from "node:fs";
 function patch(path, needle, replacement, label) {
   let text=fs.readFileSync(path,"utf8");
   if(text.includes(replacement)) return;
+  if (label === "fulfilment updater" && text.includes("async function updateFulfilment")) return;
+  if (label === "tracking fields" && text.includes('className="order-tracking-editor"') && text.includes('name="tracking_number"')) return;
+  if (label === "fulfilment statuses" && text.includes('<option value="packed">Packed</option>')) return;
   if(!text.includes(needle)) throw new Error(`Launch hardening patch failed (${label}) in ${path}`);
   fs.writeFileSync(path,text.replace(needle,replacement));
 }

@@ -3,6 +3,9 @@ import fs from "node:fs";
 function patch(path, needle, replacement, label) {
   let text = fs.readFileSync(path, "utf8");
   if (text.includes(replacement)) return;
+  if (label === "blank product fields" && text.includes("custom_shipping_enabled: false") && text.includes("category_ids: [] as string[]")) return;
+  if (label === "save premium fields" && text.includes("sku: prod.sku?.trim()") && text.includes("seo_title: prod.seo_title?.trim()")) return;
+  if (label === "premium product form" && text.includes("product-collection-picker") && text.includes("custom_shipping_enabled")) return;
   if (!text.includes(needle)) {
     throw new Error(`Premium product manager patch failed (${label}) in ${path}.`);
   }
@@ -80,8 +83,6 @@ patch(
       carat_weight: prod.carat_weight ? Number(prod.carat_weight) : null,
       chakras: Array.isArray(prod.chakras) ? prod.chakras : [],
       zodiac_signs: Array.isArray(prod.zodiac_signs) ? prod.zodiac_signs : [],
-      seo_title: prod.seo_title?.trim() || null,
-      seo_description: prod.seo_description?.trim() || null,
       price_inr: Number(prod.price_inr),`,
   "save premium fields",
 );

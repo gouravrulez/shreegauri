@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     if ("response" in auth) return auth.response;
     const body = await request.json().catch(() => ({}));
     const action = String(body?.action || "");
-    const id = String(body?.id || "");
+    const id = String(body?.id || body?.coupon?.id || "");
 
     if (action === "delete") {
       if (!id) return NextResponse.json({ error: "Coupon ID is required." }, { status: 400 });
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
     if (action !== "save") return NextResponse.json({ error: "Unsupported coupon action." }, { status: 400 });
     const input = body?.coupon || {};
-    const code = String(input.code || "").trim().toUpperCase().replace(/\\s+/g, "");
+    const code = String(input.code || "").trim().toUpperCase().replace(/\s+/g, "");
     const discountType = input.discount_type === "fixed" ? "fixed" : "percentage";
     const discountValue = Number(input.discount_value);
     const minOrder = Number(input.min_order_inr || 0);
