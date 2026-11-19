@@ -1049,3 +1049,21 @@ body {
 .product-purpose-planet-picker>b{display:block;color:#72513d;font-size:11px;letter-spacing:.04em;margin-bottom:7px}
 .product-purpose-planet-picker>div{display:flex;flex-wrap:wrap;gap:3px 9px;max-height:125px;overflow-y:auto}
 @media(max-width:760px){.product-placement-controls{grid-template-columns:1fr}.catalog-pagination{justify-content:space-between}.catalog-page-buttons button{min-width:38px;height:38px}}
+
+
+/* Compact, collapsible essential product fields; keep the main editor uncluttered. */
+.product-extra-fields{grid-column:1/-1;border:1px solid #e8ded3;border-radius:10px;background:#fffdf9;overflow:hidden}
+.product-extra-fields>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;color:#4b292d;font-size:13px;font-weight:750;cursor:pointer;list-style:none}
+.product-extra-fields>summary::-webkit-details-marker{display:none}
+.product-extra-fields>summary:after{content:"+";font-size:18px;color:#8a684b}
+.product-extra-fields[open]>summary{border-bottom:1px solid #eee4da}
+.product-extra-fields[open]>summary:after{content:"−"}
+.product-extra-fields>summary span{margin-left:auto;color:#8b7b70;font-size:11px;font-weight:500}
+.product-extra-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;padding:14px}
+.product-extra-grid label{display:grid;gap:5px;min-width:0;color:#67564c;font-size:11px;font-weight:700}
+.product-extra-grid input,.product-extra-grid select,.product-extra-grid textarea{width:100%;min-width:0}
+.product-extra-grid textarea{min-height:76px;resize:vertical}
+.product-extra-grid label.check{display:flex;align-items:center;gap:8px}
+.product-extra-grid label.check input{width:auto}
+.product-extra-fields>.check{display:flex;align-items:center;gap:8px;padding:0 14px 14px;color:#67564c;font-size:12px;font-weight:650}
+@media(max-width:600px){.product-extra-fields>summary{align-items:flex-start;flex-wrap:wrap}.product-extra-fields>summary span{margin-left:0;width:100%}.product-extra-grid{grid-template-columns:1fr}}
