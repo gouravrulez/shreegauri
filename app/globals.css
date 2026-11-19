@@ -815,3 +815,7 @@ body {
  .sg-product-benefits{grid-template-columns:1fr;font-size:11px}
  .sg-product-footer{gap:14px;padding:22px 14px}
 }
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  .catalog .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
