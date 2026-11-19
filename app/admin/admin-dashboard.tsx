@@ -189,7 +189,10 @@ export default function AdminDashboard() {
     [selectedProductCategory, setSelectedProductCategory] = useState("all"),
     [productSort, setProductSort] = useState("newest"),
     [productPage, setProductPage] = useState(1),
-    [productPageSize, setProductPageSize] = useState(24);
+    [productPageSize, setProductPageSize] = useState(24),
+    [orderSearch, setOrderSearch] = useState(""),
+    [orderStatusFilter, setOrderStatusFilter] = useState("all"),
+    [customerSearch, setCustomerSearch] = useState("");
   useEffect(() => {
     let active = true;
     fetch("/api/admin/environment", { cache: "no-store" }).then((response) => response.json()).then((data) => { if (active) setPreviewOnly(Boolean(data.preview_only)); }).catch(() => { if (active) setPreviewOnly(true); });
@@ -942,8 +945,12 @@ export default function AdminDashboard() {
               <div><small>REGISTERED ACCOUNTS</small><strong>{customers.filter((c) => c.auth_user_id).length}</strong></div>
               <div><small>CUSTOMERS WITH ORDERS</small><strong>{new Set(orders.map((o) => o.email?.toLowerCase()).filter(Boolean)).size}</strong></div>
             </div>
+            <div className="record-toolbar">
+              <input aria-label="Search customers" value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} placeholder="Search name, email or phone…" />
+              <span>{customers.filter((c) => [c.full_name,c.email,c.phone].some((v) => String(v || "").toLowerCase().includes(customerSearch.toLowerCase()))).length} customers</span>
+            </div>
             <div className="customer-admin-list">
-              {customers.length ? customers.map((c) => {
+              {customers.length ? customers.filter((c) => [c.full_name,c.email,c.phone].some((v) => String(v || "").toLowerCase().includes(customerSearch.toLowerCase()))).map((c) => {
                 const customerOrders = orders.filter((o) =>
                   (c.id && (o as any).customer_id === c.id) ||
                   (!!c.email && !!o.email && o.email.toLowerCase() === c.email.toLowerCase())
@@ -952,7 +959,14 @@ export default function AdminDashboard() {
                   .filter((o) => o.payment_status === "paid")
                   .reduce((sum, o) => sum + Number(o.total_inr || 0), 0);
                 return (
-                  <article key={c.id} className="customer-admin-card">
+                  <details key={c.id} className="customer-admin-card customer-record-details">
+                    <summary className="customer-record-summary">
+                      <div><strong>{c.full_name || "Customer"}</strong><small>{c.email || c.phone || "No contact details"}</small></div>
+                      <span>{customerOrders.length} orders</span>
+                      <span>₹{spent.toLocaleString("en-IN")} paid</span>
+                      <b>View details⌄</b>
+                    </summary>
+                    <div className="customer-record-body">
                     <div className="customer-admin-head">
                       <div>
                         <span className={c.auth_user_id ? "account-live" : "account-guest"}>
@@ -991,7 +1005,8 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     {isPrimaryAdmin && <div className="customer-admin-actions"><button className="delete" onClick={() => deleteAdminRecord("customer", c.id)}><Trash2 /> DELETE CUSTOMER DATA</button></div>}
-                  </article>
+                    </div>
+                  </details>
                 );
               }) : <div className="admin-empty"><Users/><p>No customers yet.</p></div>}
             </div>
@@ -999,9 +1014,19 @@ export default function AdminDashboard() {
         )}
         {tab === "orders" && (
           <div className="orders-admin">
+            <div className="record-toolbar order-record-toolbar">
+              <input aria-label="Search orders" value={orderSearch} onChange={(e) => setOrderSearch(e.target.value)} placeholder="Search order number, customer, email or phone…" />
+              <select aria-label="Filter orders by status" value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)}><option value="all">All statuses</option>{["pending","confirmed","processing","packed","shipped","delivered","cancelled"].map((status) => <option key={status} value={status}>{status === "shipped" ? "Dispatched" : status}</option>)}</select>
+              <span>{orders.filter((o) => (orderStatusFilter === "all" || o.order_status === orderStatusFilter) && [o.order_number,o.customer_name,o.email,o.phone].some((v) => String(v || "").toLowerCase().includes(orderSearch.toLowerCase()))).length} orders</span>
+            </div>
             {orders.length ? (
-              orders.map((o) => (
-                <article key={o.id} className={`order-card ${o.order_status}`}>
+              orders.filter((o) => (orderStatusFilter === "all" || o.order_status === orderStatusFilter) && [o.order_number,o.customer_name,o.email,o.phone].some((v) => String(v || "").toLowerCase().includes(orderSearch.toLowerCase()))).map((o) => (
+                <details key={o.id} className={`order-card order-record-details ${o.order_status}`}>
+                  <summary className="order-record-summary">
+                    <div><small>{new Date(o.created_at).toLocaleDateString("en-IN")}</small><strong>{o.order_number}</strong></div>
+                    <span>{o.customer_name}</span><span>₹{Number(o.total_inr).toLocaleString("en-IN")}</span><b>{o.order_status === "shipped" ? "DISPATCHED" : o.order_status.toUpperCase()}</b><i>View details⌄</i>
+                  </summary>
+                  <div className="order-record-body">
                   <div className="order-heading">
                     <div>
                       <small>
@@ -1075,7 +1100,8 @@ export default function AdminDashboard() {
                     </select>
                     {isPrimaryAdmin && <button className="delete order-delete-button" onClick={() => deleteAdminRecord("order", o.id)}><Trash2 /> DELETE ORDER</button>}
                   </div>
-                </article>
+                  </div>
+                </details>
               ))
             ) : (
               <div className="admin-empty">
