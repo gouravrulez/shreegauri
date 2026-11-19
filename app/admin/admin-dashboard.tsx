@@ -1422,19 +1422,25 @@ export default function AdminDashboard() {
                     setProd({ ...prod, category_ids: nextIds, category_id: kind === "category" ? (checked ? (prod.category_id || id) : (prod.category_id === id ? (categoryIds[0] || "") : prod.category_id)) : (prod.category_id || categoryIds[0] || "") });
                   };
                   const categoryChoices = cats.filter((c) => c.is_active && c.collection_type === "category" && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
-                  return <div className="product-placement-controls">
-                    <div className="product-purpose-planet-picker product-category-picker">
-                      <b>Shop by Category <span>{selectedIds.filter((id) => cats.some((c) => c.id === id && c.collection_type === "category")).length} selected</span></b>
-                      <div>{categoryChoices.map((c) => <label key={c.id}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection("category", c.id, e.target.checked)} /><span>{c.name}</span></label>)}</div>
-                      {!categoryChoices.length && <small>No active categories available.</small>}
-                    </div>
-                    {(["purpose", "planet"] as const).map((kind) => {
-                      const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
-                      return <div key={kind} className="product-purpose-planet-picker">
-                        <b>{kind === "purpose" ? "Shop by Purpose" : "Shop by Planet"} <span>{selectedIds.filter((id) => choices.some((c) => c.id === id)).length} selected</span></b>
-                        <div>{choices.map((c) => <label key={c.id}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection(kind, c.id, e.target.checked)} /><span>{c.name}</span></label>)}</div>
-                      </div>;
-                    })}
+                  const renderCollectionSelector = (kind: "category" | "purpose" | "planet", title: string) => {
+                    const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                    const selectedCount = selectedIds.filter((id) => choices.some((c) => c.id === id)).length;
+                    return <details key={kind} className="product-collection-dropdown" style={{ border: "1px solid #e5d9cc", borderRadius: 9, background: "#fff", minWidth: 0 }}>
+                      <summary style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 14px", cursor: "pointer", listStyle: "none", color: "#402126", fontWeight: 750 }}>
+                        <span>{title}</span><span style={{ color: "#806d60", fontSize: 12, fontWeight: 650 }}>{selectedCount ? selectedCount + " selected" : "Select"}　⌄</span>
+                      </summary>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, padding: "4px 14px 14px", borderTop: "1px solid #f0e8df" }}>
+                        {choices.map((c) => <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, padding: "7px 8px", borderRadius: 6, background: selectedIds.includes(c.id) ? "#f8f0e7" : "#fff", color: "#493a33", fontSize: 13 }}>
+                          <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection(kind, c.id, e.target.checked)} /><span>{c.name}</span>
+                        </label>)}
+                        {!choices.length && <small style={{ color: "#817168" }}>No active options available.</small>}
+                      </div>
+                    </details>;
+                  };
+                  return <div className="product-placement-controls" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
+                    {renderCollectionSelector("category", "Shop by Category")}
+                    {renderCollectionSelector("purpose", "Shop by Purpose")}
+                    {renderCollectionSelector("planet", "Shop by Planet")}
                   </div>;
                 })()}
               </section>
