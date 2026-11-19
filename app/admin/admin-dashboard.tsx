@@ -838,10 +838,7 @@ export default function AdminDashboard() {
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
-        {isPrimaryAdmin && <>
-          <button className={tab === "shipping-coupons" && shippingTab === "shipping" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); }}><Package /> Courier & Shipping</button>
-          <button className={tab === "shipping-coupons" && shippingTab === "coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("coupons"); setCouponDraft(blankCoupon); }}><Package /> Coupons & Offers</button>
-        </>}
+        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); }}><Package /> Shipping & Coupons</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -1308,31 +1305,34 @@ export default function AdminDashboard() {
                   <div><b style={{ display: "block", color: "#402126", fontSize: 14 }}>Product placement</b><small style={{ color: "#817168" }}>Choose the categories, purposes and planets where this product should appear.</small></div>
                   <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "5px 9px" }}>{(Array.isArray(prod.category_ids) ? prod.category_ids : []).filter((id: string) => cats.some((c) => c.id === id)).length} selected</span>
                 </div>
-                <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search collections…" style={{ width: "100%", maxWidth: 360, border: "1px solid #dfd2c4", borderRadius: 7, padding: "9px 11px", background: "#fff" }} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(205px,1fr))", gap: 9 }}>
-                  {(["category", "purpose", "planet"] as const).map((kind) => {
-                    const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
-                    const selectedIds = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
-                    const heading = kind === "category" ? "Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
-                    return <div key={kind} style={{ border: "1px solid #ebe2d8", borderRadius: 8, background: "#fff", padding: 10, minWidth: 0 }}>
-                      <b style={{ display: "block", color: "#72513d", fontSize: 11, letterSpacing: ".04em", marginBottom: 7 }}>{heading}</b>
-                      <div style={{ display: "grid", gap: 5, maxHeight: 150, overflowY: "auto" }}>
-                        {choices.length ? choices.map((c) => {
-                          const selected = selectedIds.includes(c.id);
-                          return <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#49372f", fontWeight: 600, cursor: "pointer", padding: "4px 2px" }}>
-                            <input type="checkbox" checked={selected} onChange={(e) => {
-                              const current = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
-                              const nextIds = e.target.checked ? Array.from(new Set([...current, c.id])) : current.filter((id: string) => id !== c.id);
-                              const categoryIds = nextIds.filter((id: string) => cats.some((item) => item.id === id && item.collection_type === "category"));
-                              setProd({ ...prod, category_ids: nextIds, category_id: kind === "category" ? (e.target.checked ? (prod.category_id || c.id) : (prod.category_id === c.id ? (categoryIds[0] || "") : prod.category_id)) : (prod.category_id || categoryIds[0] || "") });
-                            }} />
-                            <span>{c.name}</span>
-                          </label>;
-                        }) : <small style={{ color: "#9a8d82" }}>No matching options</small>}
+                {(() => {
+                  const selectedIds = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
+                  const updateCollection = (kind: "category" | "purpose" | "planet", id: string, checked: boolean) => {
+                    const current = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
+                    const nextIds = checked ? Array.from(new Set([...current, id])) : current.filter((item: string) => item !== id);
+                    const categoryIds = nextIds.filter((item: string) => cats.some((cat) => cat.id === item && cat.collection_type === "category"));
+                    setProd({ ...prod, category_ids: nextIds, category_id: kind === "category" ? (checked ? (prod.category_id || id) : (prod.category_id === id ? (categoryIds[0] || "") : prod.category_id)) : (prod.category_id || categoryIds[0] || "") });
+                  };
+                  const categoryChoices = cats.filter((c) => c.is_active && c.collection_type === "category" && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                  return <div className="product-placement-controls">
+                    <details className="product-category-dropdown">
+                      <summary><span>Categories</span><b>{selectedIds.filter((id) => cats.some((c) => c.id === id && c.collection_type === "category")).length} selected</b></summary>
+                      <div className="product-category-dropdown-panel">
+                        <input aria-label="Search categories" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search categories…" />
+                        <div className="product-category-scroll">
+                          {categoryChoices.length ? categoryChoices.map((c) => <label key={c.id}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection("category", c.id, e.target.checked)} /><span>{c.name}</span></label>) : <small>No matching categories</small>}
+                        </div>
                       </div>
-                    </div>;
-                  })}
-                </div>
+                    </details>
+                    {(["purpose", "planet"] as const).map((kind) => {
+                      const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                      return <div key={kind} className="product-purpose-planet-picker">
+                        <b>{kind === "purpose" ? "Shop by Purpose" : "Shop by Planet"}</b>
+                        <div>{choices.map((c) => <label key={c.id}><input type="checkbox" checked={selectedIds.includes(c.id)} onChange={(e) => updateCollection(kind, c.id, e.target.checked)} /><span>{c.name}</span></label>)}</div>
+                      </div>;
+                    })}
+                  </div>;
+                })()}
               </section>
               <section style={{ gridColumn: "1 / -1", border: "1px solid #e8ded3", borderRadius: 10, padding: 12, background: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
