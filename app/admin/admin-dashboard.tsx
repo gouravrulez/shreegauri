@@ -152,6 +152,11 @@ export default function AdminDashboard() {
     [astrologyServices, setAstrologyServices] = useState<AstrologyService[]>([]),
     [coupons, setCoupons] = useState<Coupon[]>([]),
     [couponDraft, setCouponDraft] = useState<Coupon>(blankCoupon),
+    [shippingTab, setShippingTab] = useState<"shipping" | "coupons">("shipping"),
+    [shippingSettings, setShippingSettings] = useState<any>({ id: 1, default_shipping_charge_inr: 0, free_shipping_enabled: false, free_shipping_threshold_inr: null, default_min_delivery_days: 3, default_max_delivery_days: 7 }),
+    [shippingCompanies, setShippingCompanies] = useState<any[]>([]),
+    [shippingCompanyDraft, setShippingCompanyDraft] = useState<any>({ name: "", tracking_url_template: "", default_charge_inr: 0, estimated_min_days: 3, estimated_max_days: 7, is_active: true }),
+    [collectionSearch, setCollectionSearch] = useState(""),
     [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
     [productQuery, setProductQuery] = useState(""),
     [productFilter, setProductFilter] = useState("all"),
@@ -230,6 +235,12 @@ export default function AdminDashboard() {
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
     if (u.data) setCustomers(u.data as Customer[]);
+    const [shippingSettingsResponse, shippingCompaniesResponse] = await Promise.all([
+      supabase.from("shipping_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("shipping_companies").select("*").order("name"),
+    ]);
+    if (shippingSettingsResponse.data) setShippingSettings(shippingSettingsResponse.data);
+    if (shippingCompaniesResponse.data) setShippingCompanies(shippingCompaniesResponse.data);
     const couponResponse = await fetch("/api/admin/coupons", { headers: { Authorization: `Bearer ${currentSession.access_token}` } });
     const couponResult = await couponResponse.json().catch(() => ({}));
     if (couponResponse.ok && Array.isArray(couponResult.coupons)) setCoupons(couponResult.coupons as Coupon[]);
@@ -495,6 +506,52 @@ export default function AdminDashboard() {
     setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_name, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
     setNotice("Courier and tracking details saved for " + order.order_number + ".");
   }
+  async function saveShippingSettings(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const payload = {
+      id: 1,
+      default_shipping_charge_inr: Math.max(0, Number(shippingSettings.default_shipping_charge_inr || 0)),
+      free_shipping_enabled: Boolean(shippingSettings.free_shipping_enabled),
+      free_shipping_threshold_inr: shippingSettings.free_shipping_enabled && shippingSettings.free_shipping_threshold_inr !== "" && shippingSettings.free_shipping_threshold_inr !== null ? Math.max(0, Number(shippingSettings.free_shipping_threshold_inr)) : null,
+      default_min_delivery_days: Math.max(0, Math.floor(Number(shippingSettings.default_min_delivery_days || 0))),
+      default_max_delivery_days: Math.max(0, Math.floor(Number(shippingSettings.default_max_delivery_days || 0))),
+      updated_at: new Date().toISOString(),
+    };
+    if (payload.default_max_delivery_days < payload.default_min_delivery_days) { setNotice("Maximum delivery days must be at least the minimum."); return; }
+    const { error } = await supabase.from("shipping_settings").upsert(payload, { onConflict: "id" });
+    if (error) { setNotice("Shipping settings could not be saved: " + error.message); return; }
+    setShippingSettings(payload);
+    setNotice("Shipping charges and delivery rules saved.");
+  }
+  async function saveShippingCompany(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const payload = {
+      name: String(shippingCompanyDraft.name || "").trim(),
+      tracking_url_template: String(shippingCompanyDraft.tracking_url_template || "").trim() || null,
+      default_charge_inr: Math.max(0, Number(shippingCompanyDraft.default_charge_inr || 0)),
+      estimated_min_days: Math.max(0, Math.floor(Number(shippingCompanyDraft.estimated_min_days || 0))),
+      estimated_max_days: Math.max(0, Math.floor(Number(shippingCompanyDraft.estimated_max_days || 0))),
+      is_active: Boolean(shippingCompanyDraft.is_active),
+      updated_at: new Date().toISOString(),
+    };
+    if (!payload.name) { setNotice("Enter a courier or delivery partner name."); return; }
+    if (payload.estimated_max_days < payload.estimated_min_days) { setNotice("Courier maximum delivery days must be at least the minimum."); return; }
+    const query = shippingCompanyDraft.id
+      ? supabase.from("shipping_companies").update(payload).eq("id", shippingCompanyDraft.id)
+      : supabase.from("shipping_companies").insert(payload);
+    const { error } = await query;
+    if (error) { setNotice("Courier could not be saved: " + error.message); return; }
+    setShippingCompanyDraft({ name: "", tracking_url_template: "", default_charge_inr: 0, estimated_min_days: 3, estimated_max_days: 7, is_active: true });
+    const { data } = await supabase.from("shipping_companies").select("*").order("name");
+    if (data) setShippingCompanies(data);
+    setNotice("Courier / delivery partner saved.");
+  }
+  async function toggleShippingCompany(company: any) {
+    const { error } = await supabase.from("shipping_companies").update({ is_active: !company.is_active, updated_at: new Date().toISOString() }).eq("id", company.id);
+    if (error) { setNotice("Courier status could not be changed: " + error.message); return; }
+    setShippingCompanies((current) => current.map((item) => item.id === company.id ? { ...item, is_active: !company.is_active } : item));
+    setNotice(company.name + (company.is_active ? " paused." : " activated."));
+  }
   async function saveCoupon(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const code = couponDraft.code.trim().toUpperCase().replace(/\\s+/g, "");
@@ -714,7 +771,7 @@ export default function AdminDashboard() {
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
-        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setCouponDraft(blankCoupon); }}><Package /> Shipping & Coupons</button>}
+        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); setCouponDraft(blankCoupon); }}><Package /> Shipping & Coupons</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -938,6 +995,39 @@ export default function AdminDashboard() {
         )}
         {tab === "shipping-coupons" && isPrimaryAdmin && (
           <div className="shipping-coupon-workspace" style={{ display: "grid", gap: 22, maxWidth: 1120 }}>
+            <div className="shipping-coupon-tabs" role="tablist" aria-label="Shipping and coupon management">
+              <button type="button" role="tab" aria-selected={shippingTab === "shipping"} className={shippingTab === "shipping" ? "active" : ""} onClick={() => setShippingTab("shipping")}>Shipping & Delivery</button>
+              <button type="button" role="tab" aria-selected={shippingTab === "coupons"} className={shippingTab === "coupons" ? "active" : ""} onClick={() => setShippingTab("coupons")}>Coupons & Offers</button>
+            </div>
+            {shippingTab === "shipping" && <>
+              <section className="shipping-settings-card">
+                <div><small>DELIVERY RULES</small><h2>Shipping charges & free delivery</h2><p>Set the default shipping charge and decide when customers qualify for free shipping.</p></div>
+                <form onSubmit={saveShippingSettings} className="shipping-settings-form">
+                  <label>Default shipping charge (₹)<input type="number" min="0" step="1" value={shippingSettings.default_shipping_charge_inr ?? 0} onChange={(e) => setShippingSettings({ ...shippingSettings, default_shipping_charge_inr: e.target.value })} /></label>
+                  <label className="shipping-toggle"><input type="checkbox" checked={Boolean(shippingSettings.free_shipping_enabled)} onChange={(e) => setShippingSettings({ ...shippingSettings, free_shipping_enabled: e.target.checked })} /> Enable free shipping above a cart value</label>
+                  <label>Free shipping threshold (₹)<input type="number" min="0" step="1" disabled={!shippingSettings.free_shipping_enabled} value={shippingSettings.free_shipping_threshold_inr ?? ""} onChange={(e) => setShippingSettings({ ...shippingSettings, free_shipping_threshold_inr: e.target.value })} placeholder="e.g. 1499" /></label>
+                  <label>Estimated minimum delivery (days)<input type="number" min="0" step="1" value={shippingSettings.default_min_delivery_days ?? 3} onChange={(e) => setShippingSettings({ ...shippingSettings, default_min_delivery_days: e.target.value })} /></label>
+                  <label>Estimated maximum delivery (days)<input type="number" min="0" step="1" value={shippingSettings.default_max_delivery_days ?? 7} onChange={(e) => setShippingSettings({ ...shippingSettings, default_max_delivery_days: e.target.value })} /></label>
+                  <div className="shipping-form-actions"><button type="submit">SAVE SHIPPING SETTINGS</button></div>
+                </form>
+              </section>
+              <section className="shipping-settings-card">
+                <div><small>DELIVERY PARTNERS</small><h2>Courier & shipping companies</h2><p>Add courier services, default courier charges and tracking URL templates for order dispatch.</p></div>
+                <form onSubmit={saveShippingCompany} className="shipping-settings-form">
+                  <label>Courier / delivery partner<input required value={shippingCompanyDraft.name} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, name: e.target.value })} placeholder="e.g. Delhivery, Blue Dart, India Post" /></label>
+                  <label>Tracking URL template<input value={shippingCompanyDraft.tracking_url_template || ""} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, tracking_url_template: e.target.value })} placeholder="https://tracking.example/track?awb={tracking_number}" /></label>
+                  <label>Default courier charge (₹)<input type="number" min="0" value={shippingCompanyDraft.default_charge_inr ?? 0} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, default_charge_inr: e.target.value })} /></label>
+                  <label>Minimum delivery days<input type="number" min="0" value={shippingCompanyDraft.estimated_min_days ?? 3} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, estimated_min_days: e.target.value })} /></label>
+                  <label>Maximum delivery days<input type="number" min="0" value={shippingCompanyDraft.estimated_max_days ?? 7} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, estimated_max_days: e.target.value })} /></label>
+                  <label className="shipping-toggle"><input type="checkbox" checked={Boolean(shippingCompanyDraft.is_active)} onChange={(e) => setShippingCompanyDraft({ ...shippingCompanyDraft, is_active: e.target.checked })} /> Active for order dispatch</label>
+                  <div className="shipping-form-actions"><button type="submit">{shippingCompanyDraft.id ? "UPDATE DELIVERY PARTNER" : "ADD DELIVERY PARTNER"}</button>{shippingCompanyDraft.id && <button type="button" className="secondary" onClick={() => setShippingCompanyDraft({ name: "", tracking_url_template: "", default_charge_inr: 0, estimated_min_days: 3, estimated_max_days: 7, is_active: true })}>CANCEL EDIT</button>}</div>
+                </form>
+                <div className="shipping-company-list">
+                  {shippingCompanies.length ? shippingCompanies.map((company) => <article key={company.id}><div><b>{company.name}</b><small>{company.is_active ? "ACTIVE" : "PAUSED"} · ₹{Number(company.default_charge_inr || 0).toLocaleString("en-IN")} courier charge · {company.estimated_min_days}–{company.estimated_max_days} days</small>{company.tracking_url_template && <small className="tracking-template">{company.tracking_url_template}</small>}</div><div><button type="button" onClick={() => setShippingCompanyDraft(company)}>EDIT</button><button type="button" onClick={() => toggleShippingCompany(company)}>{company.is_active ? "PAUSE" : "ACTIVATE"}</button></div></article>) : <p className="shipping-empty">No delivery partners added yet. Add your courier services above.</p>}
+                </div>
+              </section>
+            </>}
+            {shippingTab === "coupons" && <>
             <section style={{ padding: 22, border: "1px solid #e7ddd2", borderRadius: 12, background: "#fffdf9" }}>
               <small style={{ color: "#9a8057", letterSpacing: 2, fontWeight: 800 }}>PROMOTIONS</small>
               <h2 style={{ margin: "7px 0", font: "27px Georgia,serif", color: "#421015" }}>{couponDraft.id ? "Edit Coupon" : "Create Coupon"}</h2>
@@ -964,6 +1054,7 @@ export default function AdminDashboard() {
                 <div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => setCouponDraft(c)} style={{ border: "1px solid #ded1c3", borderRadius: 6, padding: "9px 13px", background: "#fff" }}>EDIT</button><button type="button" onClick={() => toggleCoupon(c)} style={{ border: 0, borderRadius: 6, padding: "9px 13px", background: c.is_active ? "#f4e8e5" : "#e9f2e9", color: "#4a111a", fontWeight: 800 }}>{c.is_active ? "PAUSE" : "ACTIVATE"}</button><button type="button" onClick={() => deleteCoupon(c)} style={{ border: "1px solid #e6c9c7", borderRadius: 6, padding: "9px 13px", background: "#fff", color: "#9b2d2d", fontWeight: 800 }}>DELETE</button></div>
               </article>) : <p style={{ padding: 20, background: "#fff", border: "1px dashed #d9cbbd", borderRadius: 8, color: "#81766d" }}>No coupons created yet.</p>}
             </section>
+            </>}
           </div>
         )}
         {tab === "categories" && (
@@ -1138,36 +1229,42 @@ export default function AdminDashboard() {
                   </select>
                 </label>
               </div>
-              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e5d9cb", borderRadius: 12, padding: 18, background: "#fffdf9" }}>
-                <div style={{ marginBottom: 14 }}>
-                  <b style={{ display: "block", color: "#402126", fontSize: 15 }}>Collections — choose categories, purposes and planets</b>
-                  <small style={{ color: "#817168", lineHeight: 1.5 }}>A product can belong to more than one collection. For example, select both Sun and Moon, and any relevant purposes.</small>
+              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e5d9cb", borderRadius: 12, padding: 16, background: "#fffdf9", display: "grid", gap: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <b style={{ display: "block", color: "#402126", fontSize: 15 }}>Product collections</b>
+                    <small style={{ color: "#817168" }}>Choose one or more categories, purposes and planets.</small>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "6px 10px" }}>{(prod.category_ids || (prod.category_id ? [prod.category_id] : [])).length} selected</span>
                 </div>
-                {(["category", "purpose", "planet"] as const).map((kind) => {
-                  const choices = cats.filter((c) => c.is_active && c.collection_type === kind);
-                  if (!choices.length) return null;
-                  const heading = kind === "category" ? "Product Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
-                  return (
-                    <div key={kind} style={{ marginTop: 14 }}>
-                      <b style={{ display: "block", marginBottom: 8, color: "#72513d", fontSize: 12, letterSpacing: ".06em" }}>{heading}</b>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 8 }}>
-                        {choices.map((c) => {
-                          const selected = (prod.category_ids || []).includes(c.id);
-                          return (
-                            <label key={c.id} className="check" style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, border: selected ? "1px solid #b38a4b" : "1px solid #e9e1d8", borderRadius: 7, padding: "10px 11px", background: selected ? "#fbf3e5" : "#fff", color: "#49362f" }}>
-                              <input type="checkbox" checked={selected} onChange={(e) => {
+                <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search categories, purposes or planets…" style={{ width: "100%", maxWidth: 440, border: "1px solid #dfd2c4", borderRadius: 8, padding: "10px 12px", background: "#fff" }} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
+                  {(["category", "purpose", "planet"] as const).map((kind) => {
+                    const choices = cats.filter((c) => c.is_active && c.collection_type === kind && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                    const selectedIds = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
+                    const selectedItems = cats.filter((c) => selectedIds.includes(c.id) && c.collection_type === kind);
+                    const heading = kind === "category" ? "Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
+                    return (
+                      <div key={kind} style={{ border: "1px solid #ebe2d8", borderRadius: 9, background: "#fff", padding: 11, minWidth: 0 }}>
+                        <b style={{ display: "block", color: "#72513d", fontSize: 11, letterSpacing: ".04em", marginBottom: 8 }}>{heading}</b>
+                        <details className="collection-select">
+                          <summary>{selectedItems.length ? selectedItems.length + " selected" : "Select " + heading.toLowerCase()} <span aria-hidden="true">⌄</span></summary>
+                          <div className="collection-select-menu">
+                            {choices.length ? choices.map((c) => {
+                              const selected = selectedIds.includes(c.id);
+                              return <button type="button" key={c.id} className={selected ? "selected" : ""} onClick={() => {
                                 const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
-                                const category_ids = e.target.checked ? Array.from(new Set([...current, c.id])) : current.filter((id: string) => id !== c.id);
+                                const category_ids = selected ? current.filter((id: string) => id !== c.id) : Array.from(new Set([...current, c.id]));
                                 setProd({ ...prod, category_ids, category_id: category_ids[0] || "" });
-                              }} />
-                              <span style={{ overflowWrap: "anywhere" }}>{c.name}</span>
-                            </label>
-                          );
-                        })}
+                              }}><span>{c.name}</span><i>{selected ? "Selected" : "Add"}</i></button>;
+                            }) : <small className="collection-select-empty">No matching collections</small>}
+                          </div>
+                        </details>
+                        {selectedItems.length > 0 && <div className="collection-selected-tags">{selectedItems.map((item) => <span key={item.id}>{item.name}<button type="button" aria-label={"Remove " + item.name} onClick={() => { const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []); const category_ids = current.filter((id: string) => id !== item.id); setProd({ ...prod, category_ids, category_id: category_ids[0] || "" }); }}>×</button></span>)}</div>}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </section>
               <label>
                 Main Product Photo
