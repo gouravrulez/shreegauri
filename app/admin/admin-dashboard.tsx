@@ -107,6 +107,8 @@ const blankProd = {
   brand: "Shree Gauri",
   name: "",
   slug: "",
+  sku: "",
+  product_type: "",
   short_description: "",
   description: "",
   price_inr: 0,
@@ -116,6 +118,26 @@ const blankProd = {
   category_ids: [] as string[],
   primary_image_url: "",
   image_urls: [] as string[],
+  gemstone_name: "",
+  material: "",
+  natural_lab_status: "",
+  origin: "",
+  treatment: "",
+  certification: "",
+  shape: "",
+  color: "",
+  weight_grams: null,
+  carat_weight: null,
+  is_one_of_one: false,
+  certificate_available: false,
+  certificate_price_inr: 0,
+  abhimantrit_available: false,
+  care_instructions: "",
+  delivery_notes: "",
+  return_notes: "",
+  seo_title: "",
+  seo_description: "",
+  google_product_category: "",
   custom_shipping_enabled: false,
   custom_shipping_charge_inr: null,
   badge: "",
@@ -1251,6 +1273,49 @@ export default function AdminDashboard() {
                   }
                 />
               </label>
+              <label>
+                SKU / Product Code
+                <input value={prod.sku || ""} placeholder="Enter unique stock code" onChange={(e) => setProd({ ...prod, sku: e.target.value })} />
+              </label>
+              <label>
+                Product Type
+                <input value={prod.product_type || ""} placeholder="Gemstone, bracelet, pooja service…" onChange={(e) => setProd({ ...prod, product_type: e.target.value })} />
+              </label>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Gemstone & product specifications <span>Optional product details</span></summary>
+                <div className="product-extra-grid">
+                  <label>Gemstone Name<input value={prod.gemstone_name || ""} onChange={(e) => setProd({ ...prod, gemstone_name: e.target.value })} /></label>
+                  <label>Material<input value={prod.material || ""} onChange={(e) => setProd({ ...prod, material: e.target.value })} /></label>
+                  <label>Natural / Lab Status<select value={prod.natural_lab_status || ""} onChange={(e) => setProd({ ...prod, natural_lab_status: e.target.value })}><option value="">Not specified</option><option value="Natural">Natural</option><option value="Lab Grown">Lab Grown</option><option value="Synthetic">Synthetic</option><option value="Not Applicable">Not Applicable</option></select></label>
+                  <label>Origin<input value={prod.origin || ""} onChange={(e) => setProd({ ...prod, origin: e.target.value })} /></label>
+                  <label>Treatment<input value={prod.treatment || ""} onChange={(e) => setProd({ ...prod, treatment: e.target.value })} /></label>
+                  <label>Certification / Lab<input value={prod.certification || ""} onChange={(e) => setProd({ ...prod, certification: e.target.value })} /></label>
+                  <label>Shape<input value={prod.shape || ""} onChange={(e) => setProd({ ...prod, shape: e.target.value })} /></label>
+                  <label>Colour<input value={prod.color || ""} onChange={(e) => setProd({ ...prod, color: e.target.value })} /></label>
+                  <label>Weight (grams)<input type="number" min="0" step="0.001" value={prod.weight_grams ?? ""} onChange={(e) => setProd({ ...prod, weight_grams: e.target.value === "" ? null : e.target.value })} /></label>
+                  <label>Carat Weight<input type="number" min="0" step="0.01" value={prod.carat_weight ?? ""} onChange={(e) => setProd({ ...prod, carat_weight: e.target.value === "" ? null : e.target.value })} /></label>
+                </div>
+                <label className="check"><input type="checkbox" checked={Boolean(prod.is_one_of_one)} onChange={(e) => setProd({ ...prod, is_one_of_one: e.target.checked })} /> One-of-one / unique piece</label>
+              </details>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Certificate & product care <span>Customer-facing options</span></summary>
+                <div className="product-extra-grid">
+                  <label className="check"><input type="checkbox" checked={Boolean(prod.certificate_available)} onChange={(e) => setProd({ ...prod, certificate_available: e.target.checked })} /> Certificate available</label>
+                  {prod.certificate_available && <label>Certificate price (₹)<input type="number" min="0" step="1" value={prod.certificate_price_inr ?? 0} onChange={(e) => setProd({ ...prod, certificate_price_inr: e.target.value })} /></label>}
+                  <label className="check"><input type="checkbox" checked={Boolean(prod.abhimantrit_available)} onChange={(e) => setProd({ ...prod, abhimantrit_available: e.target.checked })} /> Abhimantrit option available</label>
+                  <label style={{ gridColumn: "1 / -1" }}>Care Instructions<textarea value={prod.care_instructions || ""} onChange={(e) => setProd({ ...prod, care_instructions: e.target.value })} /></label>
+                  <label>Delivery Notes<textarea value={prod.delivery_notes || ""} onChange={(e) => setProd({ ...prod, delivery_notes: e.target.value })} /></label>
+                  <label>Return Notes<textarea value={prod.return_notes || ""} onChange={(e) => setProd({ ...prod, return_notes: e.target.value })} /></label>
+                </div>
+              </details>
+              <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
+                <summary>Search & Google listing <span>Optional discoverability settings</span></summary>
+                <div className="product-extra-grid">
+                  <label>SEO Title<input value={prod.seo_title || ""} onChange={(e) => setProd({ ...prod, seo_title: e.target.value })} /></label>
+                  <label>Google Product Category<input value={prod.google_product_category || ""} onChange={(e) => setProd({ ...prod, google_product_category: e.target.value })} /></label>
+                  <label style={{ gridColumn: "1 / -1" }}>SEO Description<textarea value={prod.seo_description || ""} onChange={(e) => setProd({ ...prod, seo_description: e.target.value })} /></label>
+                </div>
+              </details>
               <div className="two">
                 <label>
                   Selling Price ₹
