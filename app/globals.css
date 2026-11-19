@@ -741,3 +741,77 @@ body {
   .pagination-controls { gap: 5px; }
   .pagination-controls button { min-width: 34px; min-height: 36px; padding: 7px 9px; }
 }
+
+
+/* Dedicated Shree Gauri product detail page */
+.sg-product-page{min-height:100vh;background:#fffaf4;color:#2d1c1b}
+.sg-product-header{height:auto;min-height:82px;padding:13px clamp(16px,5vw,72px);display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #eadfd3}
+.sg-product-brand{display:grid;grid-template-columns:42px auto;grid-template-rows:auto auto;column-gap:10px;align-items:center;color:#481015}
+.sg-product-brand>span{grid-row:1/3;width:42px;height:42px;border:1px solid #bd9657;border-radius:50%;display:grid;place-items:center;font:700 16px Georgia,serif;color:#8a642d}
+.sg-product-brand>b{font:700 18px Georgia,serif;letter-spacing:1.5px}
+.sg-product-brand>small{font-size:8px;letter-spacing:1.5px;color:#9a7a4d}
+.sg-product-cart{border:1px solid #4b1118;border-radius:5px;padding:11px 17px;color:#4b1118;font-size:11px;font-weight:800;letter-spacing:.7px}
+.sg-product-breadcrumb{max-width:1360px;margin:0 auto;padding:22px clamp(16px,4vw,40px);display:flex;gap:9px;flex-wrap:wrap;color:#907f74;font-size:12px}
+.sg-product-breadcrumb a:hover{color:#781d25}
+.sg-product-breadcrumb b{color:#4c2526;font-weight:700}
+.sg-product-detail-layout{max-width:1360px;margin:0 auto;padding:10px clamp(16px,4vw,40px) 70px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:clamp(28px,5vw,72px);align-items:start}
+.sg-product-gallery{display:grid;grid-template-columns:76px minmax(0,1fr);gap:14px;position:sticky;top:20px}
+.sg-product-thumbnails{display:flex;flex-direction:column;gap:10px}
+.sg-product-thumbnails button{width:76px;height:76px;border:1px solid #e2d5c7;border-radius:6px;background:#fff;padding:4px;overflow:hidden}
+.sg-product-thumbnails button.active{border:2px solid #a77a3b}
+.sg-product-thumbnails img{width:100%;height:100%;object-fit:cover}
+.sg-product-image-stage{position:relative;min-height:460px;aspect-ratio:1/1;background:#f5eee5;border:1px solid #e7dccc;border-radius:8px;display:grid;place-items:center;overflow:hidden}
+.sg-product-image-stage>img{width:100%;height:100%;max-height:680px;object-fit:contain;mix-blend-mode:multiply}
+.sg-product-badge{position:absolute;top:16px;left:16px;z-index:1;background:#4b1118;color:#fff;padding:7px 11px;border-radius:3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px}
+.sg-product-details{min-width:0;padding:8px 0}
+.sg-product-eyebrow{font-size:10px;letter-spacing:2px;color:#9a6e32;font-weight:800}
+.sg-product-details h1{font:clamp(30px,3.2vw,43px)/1.15 Georgia,serif;color:#421015;margin:13px 0}
+.sg-product-short{font-size:15px;line-height:1.75;color:#75645c;margin:0 0 18px}
+.sg-product-price{font-size:30px;font-weight:800;color:#3d1117;display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.sg-product-price del{font-size:17px;font-weight:500;color:#9c8c82}
+.sg-product-tax{display:block;margin-top:5px;color:#897a70;font-size:11px}
+.sg-product-stock{margin:19px 0 22px;color:#24734b;font-size:13px;font-weight:700}
+.sg-product-stock.out{color:#a52a2a}
+.sg-product-quantity{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-top:1px solid #eadfd3;border-bottom:1px solid #eadfd3;color:#614d46;font-size:13px}
+.sg-product-quantity>div{display:flex;align-items:center;border:1px solid #d9c9b9;border-radius:5px;overflow:hidden;background:#fff}
+.sg-product-quantity button{width:38px;height:38px;border:0;background:#fff;color:#4a1118;font-size:21px}
+.sg-product-quantity button:disabled{opacity:.3;cursor:not-allowed}
+.sg-product-quantity b{min-width:35px;text-align:center;font-size:14px}
+.sg-product-actions{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:20px 0}
+.sg-product-actions button{min-height:50px;border:1px solid #4b1118;border-radius:5px;background:#fff;color:#4b1118;font-size:12px;font-weight:850;letter-spacing:.7px}
+.sg-product-actions button:last-child{background:#4b1118;color:#fff}
+.sg-product-actions button:disabled{opacity:.45;cursor:not-allowed}
+.sg-product-benefits{display:grid;grid-template-columns:1fr 1fr;gap:10px;color:#79675d;font-size:12px;padding:16px;background:#f6efe6;border-radius:6px}
+.sg-product-description{margin-top:26px;padding-top:21px;border-top:1px solid #eadfd3}
+.sg-product-description h2{font:25px Georgia,serif;color:#421015;margin:0 0 12px}
+.sg-product-description p{white-space:pre-line;font-size:14px;line-height:1.85;color:#67564f}
+.sg-product-footer{display:flex;justify-content:center;align-items:center;gap:26px;flex-wrap:wrap;padding:25px 16px;background:#2b060b;color:#f2e4d3;font-size:11px}
+.sg-product-footer span{font:700 15px Georgia,serif;letter-spacing:2px;color:#dfbd7e}
+.sg-product-loading{max-width:700px;margin:100px auto;padding:30px;text-align:center;background:#fff;border:1px solid #e6d9ca;border-radius:10px;color:#6d5b53}
+.sg-product-loading h1{font:32px Georgia,serif;color:#421015}
+.sg-product-loading a{display:inline-block;margin-top:10px;padding:12px 18px;background:#4b1118;color:#fff;border-radius:5px}
+@media(max-width:850px){
+ .sg-product-detail-layout{grid-template-columns:1fr;gap:28px;padding-bottom:42px}
+ .sg-product-gallery{position:static;grid-template-columns:62px minmax(0,1fr);gap:10px}
+ .sg-product-thumbnails{gap:8px}.sg-product-thumbnails button{width:62px;height:62px}
+ .sg-product-image-stage{min-height:0}
+ .sg-product-details{padding:0}
+}
+@media(max-width:520px){
+ .sg-product-header{min-height:68px;padding:10px 14px}
+ .sg-product-brand{grid-template-columns:35px auto;column-gap:8px}
+ .sg-product-brand>span{width:35px;height:35px;font-size:14px}
+ .sg-product-brand>b{font-size:15px;letter-spacing:1px}
+ .sg-product-brand>small{font-size:7px;letter-spacing:.8px}
+ .sg-product-cart{padding:9px 11px;font-size:9px}
+ .sg-product-breadcrumb{padding:15px 14px;font-size:11px}
+ .sg-product-detail-layout{padding:5px 14px 35px}
+ .sg-product-gallery{grid-template-columns:52px minmax(0,1fr);gap:8px}
+ .sg-product-thumbnails button{width:52px;height:52px}
+ .sg-product-details h1{font-size:29px}
+ .sg-product-price{font-size:27px}
+ .sg-product-actions{gap:8px}
+ .sg-product-actions button{min-height:48px;font-size:10px;padding:8px 5px}
+ .sg-product-benefits{grid-template-columns:1fr;font-size:11px}
+ .sg-product-footer{gap:14px;padding:22px 14px}
+}
