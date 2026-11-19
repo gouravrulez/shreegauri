@@ -1120,3 +1120,45 @@ body {
 .product-purpose-planet-picker>b{grid-column:1/-1;margin-bottom:0}
 .product-purpose-planet-picker>div{align-content:start;max-height:150px}
 @media(max-width:760px){.product-placement-controls{grid-template-columns:1fr}.product-purpose-planet-picker{grid-template-columns:1fr}}
+
+
+/* Admin sign-in v2: deliberately override legacy .admin-login-shell form rules. */
+.admin-login-premium{display:grid!important;min-height:100svh!important;width:100%;padding:clamp(18px,3vw,42px)!important;place-items:center!important;background:linear-gradient(135deg,#2b080d 0%,#4a111a 48%,#7a3030 100%)!important}
+.admin-login-shell{display:grid!important;width:min(1440px,100%)!important;max-width:1440px!important;height:auto!important;min-height:min(780px,calc(100svh - 48px))!important;grid-template-columns:minmax(0,1.12fr) minmax(420px,.88fr)!important;overflow:hidden!important;border:1px solid rgba(207,174,112,.55)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 32px 90px rgba(10,0,0,.38)!important}
+.admin-login-art{min-width:0;padding:clamp(32px,5vw,76px)!important;background:linear-gradient(145deg,rgba(43,8,13,.78),rgba(43,8,13,.92)),url('/maa-lakshmi-hero-fast.webp') center/cover!important}
+.admin-login-art-brand{display:flex;align-items:center;gap:14px}
+.admin-login-art-brand img{width:58px;height:58px;object-fit:contain;background:#fff;border-radius:50%;padding:6px}
+.admin-login-art-brand div{display:grid;gap:5px}
+.admin-login-art-brand div span{font-size:17px;font-weight:800;letter-spacing:2px;color:#fff}
+.admin-login-art-brand div small{font-size:10px;letter-spacing:2.5px;color:#e6c78b}
+.admin-login-return{align-self:flex-start;color:#f8ead7!important;font-size:12px;font-weight:650}
+.admin-login-art-copy{max-width:600px;margin:auto 0!important}
+.admin-login-art-copy h2{font:clamp(42px,5vw,68px)/1.08 Georgia,serif!important;color:#f3d9a5!important;letter-spacing:-1px}
+.admin-login-art-copy p{max-width:470px;color:#f6eee6!important;font-size:15px;line-height:1.8}
+.admin-login-kicker{font-size:10px;letter-spacing:3px}
+.admin-login-art-foot{display:flex;align-items:center;gap:12px;color:#ead4b0}
+.admin-login-art-foot span{font-size:11px;font-weight:800;letter-spacing:2px}
+.admin-login-art-foot i,.admin-login-panel-foot i{width:4px;height:4px;border-radius:50%;background:#bd985c}
+.admin-login-art-foot small{font-size:9px;letter-spacing:1.6px;color:#ead4b0}
+.admin-login-panel{min-width:0;padding:clamp(30px,5vw,76px)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;background:#fffdf9!important}
+.admin-login-panel-top{margin-bottom:22px!important}
+.admin-login-panel h1{font:clamp(32px,3.2vw,42px)/1.15 Georgia,serif!important;color:#401018!important}
+.admin-login-intro{font-size:13px!important;line-height:1.7!important}
+.admin-login-mode{margin-bottom:22px!important}
+.admin-login-shell form.admin-login-fields{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:16px!important;padding:0!important;margin:0!important;background:transparent!important}
+.admin-login-shell form.admin-login-fields label{display:flex!important;flex-direction:column!important;gap:8px!important;padding:0!important;color:#503b35!important;font-size:12px!important}
+.admin-login-shell form.admin-login-fields input{width:100%!important;min-height:52px!important;padding:13px 15px!important;border:1px solid #ded1c4!important;border-radius:8px!important;background:#fff!important;color:#392923!important;font:14px Arial,Helvetica,sans-serif!important}
+.admin-login-shell form.admin-login-fields .admin-login-submit{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;min-height:54px!important;margin-top:5px!important;padding:14px 18px!important;border:0!important;border-radius:8px!important;background:linear-gradient(110deg,#4a111a,#762631)!important;color:#fff!important;font-size:11px!important;font-weight:850!important;letter-spacing:1px!important}
+.admin-login-shell form.admin-login-fields .admin-login-submit:disabled{opacity:.7;cursor:wait}
+.admin-login-panel-foot{margin-top:26px!important}
+@media(max-width:850px){
+ .admin-login-premium{padding:0!important;min-height:100svh!important}
+ .admin-login-shell{width:100%!important;min-height:100svh!important;grid-template-columns:1fr!important;grid-template-rows:minmax(210px,30svh) 1fr!important;border:0!important;border-radius:0!important}
+ .admin-login-art{padding:22px 24px!important}
+ .admin-login-art-copy{margin:18px 0!important}
+ .admin-login-art-copy h2{font-size:34px!important}
+ .admin-login-art-copy p{font-size:12px!important;margin:8px 0 0!important}
+ .admin-login-art-foot{display:none!important}
+ .admin-login-panel{padding:28px 24px 38px!important}
+}
+@media(max-width:420px){.admin-login-shell{grid-template-rows:minmax(190px,27svh) 1fr!important}.admin-login-art-copy h2{font-size:29px!important}.admin-login-panel{padding:24px 19px 32px!important}}
