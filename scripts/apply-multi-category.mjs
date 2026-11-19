@@ -178,8 +178,8 @@ patch(
 /* STOREFRONT: request category_ids from Supabase */
 patch(
   store,
-  `"id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",`,
-  `"id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",`,
+  `"id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",`,
+  `"id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",`,
   "store select",
 );
 
