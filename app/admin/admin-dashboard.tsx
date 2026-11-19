@@ -1240,7 +1240,7 @@ export default function AdminDashboard() {
                 <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search categories, purposes or planets…" style={{ width: "100%", maxWidth: 440, border: "1px solid #dfd2c4", borderRadius: 8, padding: "10px 12px", background: "#fff" }} />
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
                   {(["category", "purpose", "planet"] as const).map((kind) => {
-                    const choices = cats.filter((c) => c.is_active && c.collection_type === kind && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
+                    const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
                     const selectedIds = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
                     const selectedItems = cats.filter((c) => selectedIds.includes(c.id) && c.collection_type === kind);
                     const heading = kind === "category" ? "Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
