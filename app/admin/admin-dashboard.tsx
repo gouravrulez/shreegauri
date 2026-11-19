@@ -76,7 +76,7 @@ type Customer = {
   created_at: string;
   updated_at: string;
 };
-type Coupon = { id?: string; code: string; discount_type: "percentage" | "fixed"; discount_value: number; min_order_inr: number; max_discount_inr: number | null; starts_at: string | null; ends_at: string | null; max_uses: number | null; per_customer_limit: number | null; usage_count: number; is_active: boolean; is_public: boolean; show_on_dashboard: boolean; applies_to: "all" | "products" | "categories"; product_ids: string[]; category_ids: string[] };
+type Coupon = { id?: string; code: string; discount_type: "percentage" | "fixed"; discount_value: number; min_order_inr: number; max_discount_inr: number | null; starts_at: string | null; ends_at: string | null; max_uses: number | null; usage_count: number; is_active: boolean; is_public: boolean; show_on_dashboard: boolean };
 type AstrologyEnquiry = { id:string; full_name:string; mobile:string; email:string; address:string; service:string; preferred_time:string|null; details:string|null; status:string; email_status:string; created_at:string };
 type AstrologyService = { name:string; description:string; active:boolean };
 type Order = {
@@ -92,7 +92,7 @@ type Order = {
   created_at: string;
   order_items: OrderItem[];
 };
-const blankCoupon: Coupon = { code: "", discount_type: "percentage", discount_value: 10, min_order_inr: 0, max_discount_inr: null, starts_at: null, ends_at: null, max_uses: null, per_customer_limit: null, usage_count: 0, is_active: true, is_public: true, show_on_dashboard: true, applies_to: "all", product_ids: [], category_ids: [] };
+const blankCoupon: Coupon = { code: "", discount_type: "percentage", discount_value: 10, min_order_inr: 0, max_discount_inr: null, starts_at: null, ends_at: null, max_uses: null, usage_count: 0, is_active: true, is_public: true, show_on_dashboard: true };
 const blankCat = {
   name: "",
   slug: "",
@@ -502,7 +502,7 @@ export default function AdminDashboard() {
     if (!Number.isFinite(Number(couponDraft.discount_value)) || Number(couponDraft.discount_value) <= 0 || (couponDraft.discount_type === "percentage" && Number(couponDraft.discount_value) > 100)) { setNotice("Enter a valid discount value (percentage must be 100 or less)."); return; }
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
-    const response = await fetch("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${current.access_token}` }, body: JSON.stringify({ action: "save", coupon: { ...couponDraft, code, discount_value: Number(couponDraft.discount_value), min_order_inr: Number(couponDraft.min_order_inr || 0), max_discount_inr: couponDraft.max_discount_inr === null || couponDraft.max_discount_inr === ("" as any) ? null : Number(couponDraft.max_discount_inr), max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null, per_customer_limit: couponDraft.per_customer_limit ? Number(couponDraft.per_customer_limit) : null } }) });
+    const response = await fetch("/api/admin/coupons", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${current.access_token}` }, body: JSON.stringify({ action: "save", coupon: { ...couponDraft, code, discount_value: Number(couponDraft.discount_value), min_order_inr: Number(couponDraft.min_order_inr || 0), max_discount_inr: couponDraft.max_discount_inr === null || couponDraft.max_discount_inr === ("" as any) ? null : Number(couponDraft.max_discount_inr), max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null } }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { setNotice(result.error || "Coupon could not be saved."); return; }
     setCoupons(result.coupons || []);
@@ -949,10 +949,8 @@ export default function AdminDashboard() {
                 <label>Minimum Order (₹)<input type="number" min="0" value={couponDraft.min_order_inr} onChange={(e) => setCouponDraft({ ...couponDraft, min_order_inr: Number(e.target.value) })} /></label>
                 <label>Maximum Discount (₹)<input type="number" min="0" value={couponDraft.max_discount_inr ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, max_discount_inr: e.target.value === "" ? null : Number(e.target.value) })} /></label>
                 <label>Usage Limit<input type="number" min="1" value={couponDraft.max_uses ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, max_uses: e.target.value ? Number(e.target.value) : null })} /></label>
-                <label>Per Customer Limit<input type="number" min="1" value={couponDraft.per_customer_limit ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, per_customer_limit: e.target.value ? Number(e.target.value) : null })} /></label>
                 <label>Starts At<input type="datetime-local" value={couponDraft.starts_at ? new Date(couponDraft.starts_at).toISOString().slice(0,16) : ""} onChange={(e) => setCouponDraft({ ...couponDraft, starts_at: e.target.value ? new Date(e.target.value).toISOString() : null })} /></label>
-                <label>Expires At<input type="datetime-local" value={couponDraft.ends_at ? new Date(couponDraft.expires_at).toISOString().slice(0,16) : ""} onChange={(e) => setCouponDraft({ ...couponDraft, ends_at: e.target.value ? new Date(e.target.value).toISOString() : null })} /></label>
-                <label>Applies To<select value={couponDraft.applies_to} onChange={(e) => setCouponDraft({ ...couponDraft, applies_to: e.target.value as Coupon["applies_to"] })}><option value="all">All products</option><option value="products">Selected products</option><option value="categories">Selected categories</option></select></label>
+                <label>Expires At<input type="datetime-local" value={couponDraft.ends_at ? new Date(couponDraft.ends_at).toISOString().slice(0,16) : ""} onChange={(e) => setCouponDraft({ ...couponDraft, ends_at: e.target.value ? new Date(e.target.value).toISOString() : null })} /></label>
                 <label className="check"><input type="checkbox" checked={couponDraft.is_active} onChange={(e) => setCouponDraft({ ...couponDraft, is_active: e.target.checked })} /> Active</label>
                 <label className="check"><input type="checkbox" checked={couponDraft.is_public} onChange={(e) => setCouponDraft({ ...couponDraft, is_public: e.target.checked })} /> Public coupon</label>
                 <label className="check"><input type="checkbox" checked={couponDraft.show_on_dashboard} onChange={(e) => setCouponDraft({ ...couponDraft, show_on_dashboard: e.target.checked })} /> Show in customer dashboard</label>
@@ -962,7 +960,7 @@ export default function AdminDashboard() {
             <section style={{ display: "grid", gap: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}><h2 style={{ margin: 0, font: "26px Georgia,serif", color: "#421015" }}>Existing Coupons</h2><span style={{ color: "#81766d", fontSize: 12 }}>{coupons.length} coupon(s)</span></div>
               {coupons.length ? coupons.map((c) => <article key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap", padding: 16, border: "1px solid #e7ddd2", borderRadius: 10, background: "#fff" }}>
-                <div><b style={{ color: "#4a111a", letterSpacing: 1 }}>{c.code}</b><p style={{ margin: "5px 0", color: "#6f6058", fontSize: 12 }}>{c.discount_type === "percentage" ? c.discount_value + "% off" : "₹" + c.discount_value + " off"} · Min. order ₹{Number(c.min_order_inr || 0).toLocaleString("en-IN")} · Used {c.usage_count || 0}{c.max_uses ? " / " + c.usage_limit : ""}</p><small style={{ color: "#8a7a70" }}>{c.is_active ? "ACTIVE" : "PAUSED"} · {c.is_public ? "PUBLIC" : "PRIVATE"}</small></div>
+                <div><b style={{ color: "#4a111a", letterSpacing: 1 }}>{c.code}</b><p style={{ margin: "5px 0", color: "#6f6058", fontSize: 12 }}>{c.discount_type === "percentage" ? c.discount_value + "% off" : "₹" + c.discount_value + " off"} · Min. order ₹{Number(c.min_order_inr || 0).toLocaleString("en-IN")} · Used {c.usage_count || 0}{c.max_uses ? " / " + c.max_uses : ""}</p><small style={{ color: "#8a7a70" }}>{c.is_active ? "ACTIVE" : "PAUSED"} · {c.is_public ? "PUBLIC" : "PRIVATE"}</small></div>
                 <div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => setCouponDraft(c)} style={{ border: "1px solid #ded1c3", borderRadius: 6, padding: "9px 13px", background: "#fff" }}>EDIT</button><button type="button" onClick={() => toggleCoupon(c)} style={{ border: 0, borderRadius: 6, padding: "9px 13px", background: c.is_active ? "#f4e8e5" : "#e9f2e9", color: "#4a111a", fontWeight: 800 }}>{c.is_active ? "PAUSE" : "ACTIVATE"}</button><button type="button" onClick={() => deleteCoupon(c)} style={{ border: "1px solid #e6c9c7", borderRadius: 6, padding: "9px 13px", background: "#fff", color: "#9b2d2d", fontWeight: 800 }}>DELETE</button></div>
               </article>) : <p style={{ padding: 20, background: "#fff", border: "1px dashed #d9cbbd", borderRadius: 8, color: "#81766d" }}>No coupons created yet.</p>}
             </section>
