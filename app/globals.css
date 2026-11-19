@@ -1023,3 +1023,29 @@ body {
  .sg-product-header-links{flex-direction:column;align-items:stretch}
  .sg-continue-shopping,.sg-product-cart{text-align:center}
 }
+
+
+/* Restore the full-size catalogue pagination controls from the live admin layout. */
+.catalog-pagination{min-height:62px;padding:12px 14px;margin:8px 0 14px;gap:14px}
+.catalog-pagination>label{font-size:14px;gap:9px}
+.catalog-pagination select{min-width:92px;min-height:40px;padding:8px 30px 8px 12px;font-size:14px;border-radius:8px}
+.catalog-page-count{font-size:13px}
+.catalog-page-buttons{gap:6px}
+.catalog-page-buttons button{min-width:40px;height:40px;padding:0 11px;font-size:14px;border-radius:8px}
+.catalog-page-ellipsis{font-size:14px;padding:0 4px}
+.product-placement-controls{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(280px,1.4fr);gap:10px;align-items:start}
+.product-category-dropdown{position:relative;min-width:0}
+.product-category-dropdown>summary{min-height:43px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #dfd2c4;border-radius:8px;background:#fff;color:#4b3529;font-size:13px;font-weight:700;cursor:pointer;list-style:none}
+.product-category-dropdown>summary::-webkit-details-marker{display:none}
+.product-category-dropdown>summary:after{content:"⌄";color:#8b6a4d;font-size:16px}
+.product-category-dropdown>summary b{font-size:11px;color:#80634d;background:#f4eadb;border-radius:20px;padding:4px 8px}
+.product-category-dropdown[open]>summary{border-color:#b99670;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.product-category-dropdown-panel{padding:9px;border:1px solid #dfd2c4;border-top:0;border-radius:0 0 8px 8px;background:#fff}
+.product-category-dropdown-panel>input{width:100%;padding:8px 10px;border:1px solid #e4d9cf;border-radius:6px;margin-bottom:7px;font-size:12px}
+.product-category-scroll{max-height:178px;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:2px;padding-right:4px}
+.product-category-scroll label,.product-purpose-planet-picker label{display:flex;align-items:center;gap:8px;padding:6px 5px;border-radius:5px;color:#49372f;font-size:12px;font-weight:600;cursor:pointer}
+.product-category-scroll label:hover,.product-purpose-planet-picker label:hover{background:#faf5ef}
+.product-purpose-planet-picker{min-width:0;border:1px solid #ebe2d8;border-radius:8px;background:#fff;padding:10px}
+.product-purpose-planet-picker>b{display:block;color:#72513d;font-size:11px;letter-spacing:.04em;margin-bottom:7px}
+.product-purpose-planet-picker>div{display:flex;flex-wrap:wrap;gap:3px 9px;max-height:125px;overflow-y:auto}
+@media(max-width:760px){.product-placement-controls{grid-template-columns:1fr}.catalog-pagination{justify-content:space-between}.catalog-page-buttons button{min-width:38px;height:38px}}
