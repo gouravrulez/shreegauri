@@ -3,9 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const allowed = new Set(["pending", "confirmed", "processing", "packed", "shipped", "delivered", "cancelled"]);
 
-const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+const htmlEntities: Record<string, string> = {
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-}[character] || character));
+};
+const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (character) => htmlEntities[character] || character);
 
 const statusCopy: Record<string, { title: string; message: string }> = {
   pending: { title: "Order update", message: "Your order is currently awaiting confirmation." },
