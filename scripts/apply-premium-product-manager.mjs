@@ -83,8 +83,6 @@ patch(
       carat_weight: prod.carat_weight ? Number(prod.carat_weight) : null,
       chakras: Array.isArray(prod.chakras) ? prod.chakras : [],
       zodiac_signs: Array.isArray(prod.zodiac_signs) ? prod.zodiac_signs : [],
-      seo_title: prod.seo_title?.trim() || null,
-      seo_description: prod.seo_description?.trim() || null,
       price_inr: Number(prod.price_inr),`,
   "save premium fields",
 );
