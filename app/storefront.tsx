@@ -180,6 +180,14 @@ export default function Storefront() {
       if (r.data) setReviews(r.data as R[]);
     });
   }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("cart") === "1") {
+      setView("cart");
+      window.history.replaceState({}, "", "/");
+    }
+  }, []);
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
