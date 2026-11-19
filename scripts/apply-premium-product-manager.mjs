@@ -4,6 +4,7 @@ function patch(path, needle, replacement, label) {
   let text = fs.readFileSync(path, "utf8");
   if (text.includes(replacement)) return;
   if (label === "blank product fields" && text.includes("custom_shipping_enabled: false") && text.includes("category_ids: [] as string[]")) return;
+  if (label === "save premium fields" && text.includes("sku: prod.sku?.trim()") && text.includes("seo_title: prod.seo_title?.trim()")) return;
   if (label === "premium product form" && text.includes("product-collection-picker") && text.includes("custom_shipping_enabled")) return;
   if (!text.includes(needle)) {
     throw new Error(`Premium product manager patch failed (${label}) in ${path}.`);
