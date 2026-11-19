@@ -1162,3 +1162,8 @@ body {
  .admin-login-panel{padding:28px 24px 38px!important}
 }
 @media(max-width:420px){.admin-login-shell{grid-template-rows:minmax(190px,27svh) 1fr!important}.admin-login-art-copy h2{font-size:29px!important}.admin-login-panel{padding:24px 19px 32px!important}}
+
+
+/* Make customer names as easy to scan as order numbers in both registers. */
+.order-record-summary>div strong,.order-record-summary>.order-customer-name{font-size:16px!important;font-weight:800!important;color:#4b1114!important}
+.customer-record-summary .customer-record-name{font-size:16px!important;font-weight:800!important;color:#4b1114!important}
