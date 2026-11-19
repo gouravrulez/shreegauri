@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { supabase } from "./lib/supabase";
 import {
   Menu,
@@ -204,9 +204,15 @@ export default function Storefront() {
     setView(v);
     setMenu(false);
     setItem(null);
-    // Every in-app navigation starts at the top of the destination view.
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
   };
+  // Scroll only after React has committed the destination view. Scrolling in
+  // the click handler can run before the new Home DOM is mounted, leaving the
+  // previous catalogue position visible above the hero.
+  useLayoutEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    }
+  }, [view]);
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
   const ratingFor = (id: string) => {
