@@ -1663,3 +1663,108 @@ body {
   header > .head-actions a,
   header > .head-actions button { width: 29px; min-width: 29px; max-width: 29px; }
 }
+
+
+/* Final mobile corrections requested: keep currency controls below the header,
+   never over the Lakshmi hero artwork, and show exactly two product cards per row. */
+@media (max-width: 900px) {
+  main > header,
+  header {
+    position: relative !important;
+    height: 154px !important;
+    min-height: 154px !important;
+    padding-bottom: 0 !important;
+  }
+  main > header [class*="currency" i],
+  main > header [id*="currency" i],
+  main > header [data-currency],
+  header [class*="currency" i],
+  header [id*="currency" i],
+  header [data-currency] {
+    position: absolute !important;
+    top: 116px !important;
+    right: 12px !important;
+    left: auto !important;
+    bottom: auto !important;
+    z-index: 25 !important;
+    display: inline-flex !important;
+    align-items: center;
+    width: auto !important;
+    max-width: min(48vw, 190px) !important;
+    min-height: 30px;
+    margin: 0 !important;
+    transform: none !important;
+    background: #fff !important;
+    border: 1px solid #e7ddd3 !important;
+    border-radius: 7px !important;
+    box-shadow: 0 2px 8px #00000010 !important;
+  }
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 11px !important;
+  }
+  .product-grid .info h3 { font-size: clamp(13px, 3.5vw, 16px) !important; }
+  .product-grid .info p { display: block !important; }
+  .product-grid .info div button,
+  .product-grid .info div a { font-size: 11px !important; }
+  .product-full-description {
+    margin: 12px 0 16px;
+    padding-top: 10px;
+    border-top: 1px solid #eee5dc;
+  }
+  .product-full-description .description-expanded {
+    margin: 0 0 10px;
+    padding: 12px 13px;
+    border-radius: 9px;
+    background: #faf7f3;
+  }
+  .product-full-description .description-heading {
+    display: block;
+    margin-bottom: 7px;
+    color: #4d2926;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .product-full-description .description-text {
+    color: #554840;
+    font-size: 13px;
+    line-height: 1.75;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .product-full-description .description-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #e4d5c7;
+    border-radius: 8px;
+    background: #fff;
+    color: #741b25;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: left;
+  }
+  .product-full-description .description-toggle span {
+    flex: 0 0 auto;
+    font-size: 19px;
+    line-height: 1;
+  }
+}
+@media (max-width: 560px) {
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+}
+@media (max-width: 360px) {
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
