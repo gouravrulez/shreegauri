@@ -205,6 +205,7 @@ export default function Storefront() {
     setMenu(false);
     setItem(null);
   };
+  // Scroll only after React has committed the destination view.
   // Re-mount the storefront surface on view changes and reset both document
   // scroll roots after the new view has painted. This prevents a category
   // catalogue from remaining visually above the Home hero after navigation.
