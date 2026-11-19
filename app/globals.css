@@ -1125,7 +1125,7 @@ body {
 /* Admin sign-in v2: deliberately override legacy .admin-login-shell form rules. */
 .admin-login-premium{display:grid!important;min-height:100svh!important;width:100%;padding:clamp(18px,3vw,42px)!important;place-items:center!important;background:linear-gradient(135deg,#2b080d 0%,#4a111a 48%,#7a3030 100%)!important}
 .admin-login-shell{display:grid!important;width:min(1440px,100%)!important;max-width:1440px!important;height:auto!important;min-height:min(780px,calc(100svh - 48px))!important;grid-template-columns:minmax(0,1.12fr) minmax(420px,.88fr)!important;overflow:hidden!important;border:1px solid rgba(207,174,112,.55)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 32px 90px rgba(10,0,0,.38)!important}
-.admin-login-art{min-width:0;padding:clamp(32px,5vw,76px)!important;background:linear-gradient(145deg,rgba(43,8,13,.78),rgba(43,8,13,.92)),url('/maa-lakshmi-hero-fast.webp') center/cover!important}
+.admin-login-art{min-width:0;padding:clamp(32px,5vw,76px)!important;background:radial-gradient(ellipse at 78% 22%,rgba(184,139,76,.18),transparent 34%),radial-gradient(ellipse at 18% 82%,rgba(123,42,50,.32),transparent 42%),linear-gradient(145deg,#351018 0%,#4a111a 52%,#26070d 100%)!important}
 .admin-login-art-brand{display:flex;align-items:center;gap:14px}
 .admin-login-art-brand img{width:58px;height:58px;object-fit:contain;background:#fff;border-radius:50%;padding:6px}
 .admin-login-art-brand div{display:grid;gap:5px}
