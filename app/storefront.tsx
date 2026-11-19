@@ -192,6 +192,11 @@ export default function Storefront() {
     if (params.get("cart") === "1") {
       setView("cart");
       window.history.replaceState({}, "", "/");
+    } else if (params.get("home") === "1") {
+      // A Home navigation uses a fresh document so no previous catalogue
+      // state, category view, or saved scroll position can survive the return.
+      window.history.replaceState({}, "", "/");
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
   }, []);
   const money = (n: number) =>
@@ -201,6 +206,12 @@ export default function Storefront() {
       maximumFractionDigits: 0,
     }).format(n);
   const go = (v: string) => {
+    if (v === "home") {
+      // Return Home through a clean document navigation. This clears the
+      // previous category catalogue DOM instead of reusing its scroll/layout.
+      window.location.assign("/?home=1");
+      return;
+    }
     setView(v);
     setMenu(false);
     setItem(null);
