@@ -1468,3 +1468,198 @@ body {
   .checkout-modal h2 { font-size: 30px; }
   footer { gap: 20px 12px; padding-left: 15px; padding-right: 15px; }
 }
+
+
+
+/* Follow-up mobile corrections: currency/header separation, contained pagination and denser product grid. */
+@media (max-width: 900px) {
+  header {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    column-gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    overflow: visible;
+  }
+  header > .hamb { grid-column: 1; grid-row: 1; }
+  header > .brand {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  header > .brand > span { min-width: 0; overflow: hidden; }
+  header > .brand b { font-size: clamp(12px, 3.7vw, 17px); letter-spacing: 0; }
+  header > .brand small { font-size: clamp(6px, 1.7vw, 8px); letter-spacing: 0; }
+  header > .search { top: 68px; }
+  header > .head-actions {
+    grid-column: 3;
+    grid-row: 1;
+    gap: 2px;
+    justify-self: end;
+  }
+  header > .head-actions a,
+  header > .head-actions button {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    padding: 3px;
+  }
+  /* Currency controls added by the site's shared header are never allowed to
+     occupy the same row/position as the brand. */
+  header [class*="currency" i],
+  header [id*="currency" i],
+  header [data-currency] {
+    position: absolute !important;
+    top: calc(100% + 48px) !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    z-index: 22 !important;
+    transform: none !important;
+    float: none !important;
+    max-width: min(46vw, 180px) !important;
+    min-width: 0 !important;
+    white-space: nowrap;
+    background: #fff !important;
+    border: 1px solid #e7ddd3;
+    border-radius: 6px;
+    box-shadow: 0 3px 12px #00000012;
+  }
+
+  .catalog-pagination {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 1 !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0;
+    margin: 16px 0 4px !important;
+    padding: 14px 12px !important;
+    gap: 10px !important;
+    overflow: hidden;
+    background: #fff !important;
+    color: #4b3529 !important;
+    border: 1px solid #e8ddd2;
+    border-radius: 10px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .catalog-pagination .pagination-summary {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    color: #705e54;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .catalog-pagination .pagination-controls {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .catalog-pagination .pagination-controls button {
+    flex: 0 0 auto;
+    min-width: 36px;
+    min-height: 38px;
+    padding: 7px 10px;
+    margin: 0;
+    border: 1px solid #ded1c3;
+    border-radius: 7px;
+    background: #fff;
+    color: #482326;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .catalog-pagination .pagination-controls button.active {
+    background: #64171c;
+    border-color: #64171c;
+    color: #fff;
+  }
+  .catalog-pagination .pagination-controls button:disabled { opacity: .42; }
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100%;
+    max-width: 100%;
+  }
+  .product-grid article { min-width: 0; overflow: hidden; }
+  .product-grid .photo {
+    width: 100%;
+    height: auto !important;
+    aspect-ratio: 1 / 1.08;
+    min-height: 0;
+  }
+  .product-grid .photo img { width: 100%; height: 100%; object-fit: contain !important; }
+  .product-grid .info { min-width: 0; padding: 8px; }
+  .product-grid .info h3 {
+    font-size: clamp(11px, 2.7vw, 15px);
+    line-height: 1.25;
+    margin: 5px 0;
+    overflow-wrap: anywhere;
+  }
+  .product-grid .info b,
+  .product-grid .info strong { font-size: clamp(11px, 2.8vw, 14px); }
+  .product-grid .info del { font-size: 10px; margin-left: 3px; }
+  .product-grid .info > div { grid-template-columns: minmax(0, 1fr) !important; gap: 5px; margin-top: 9px; }
+  .product-grid .info div button,
+  .product-grid .info div a { min-width: 0; padding: 8px 4px; font-size: 10px; }
+  .product-full-description { margin: 8px 0 12px; }
+  .product-full-description .description-text {
+    max-height: none;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    line-height: 1.65;
+  }
+  .product-full-description button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 0;
+    color: #7b1420;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .product-short-description p {
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+  }
+}
+@media (max-width: 560px) {
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .product-grid .info { padding: 7px 6px; }
+  .product-grid .info h3 { font-size: 12px; }
+  .product-grid .info p { display: none; }
+  .product-grid .info div button { font-size: 9px; padding: 8px 3px; }
+  .catalog-pagination .pagination-controls { gap: 5px; }
+  .catalog-pagination .pagination-controls button { min-width: 34px; min-height: 36px; padding: 6px 8px; }
+}
+@media (max-width: 360px) {
+  .product-grid,
+  .catalog-layout .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  header > .brand { justify-self: start; }
+  header > .head-actions a,
+  header > .head-actions button { width: 29px; min-width: 29px; max-width: 29px; }
+}
