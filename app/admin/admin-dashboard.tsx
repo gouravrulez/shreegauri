@@ -984,7 +984,7 @@ export default function AdminDashboard() {
                 return (
                   <details key={c.id} className="customer-admin-card customer-record-details">
                     <summary className="customer-record-summary">
-                      <div><strong>{c.full_name || "Customer"}</strong><small>{c.email || c.phone || "No contact details"}</small></div>
+                      <div><strong className="customer-record-name">{c.full_name || "Customer"}</strong><small>{c.email || c.phone || "No contact details"}</small></div>
                       <span>{customerOrders.length} orders</span>
                       <span>₹{spent.toLocaleString("en-IN")} paid</span>
                       <b>View details⌄</b>
@@ -1047,7 +1047,7 @@ export default function AdminDashboard() {
                 <details key={o.id} className={`order-card order-record-details ${o.order_status}`}>
                   <summary className="order-record-summary">
                     <div><small>{new Date(o.created_at).toLocaleDateString("en-IN")}</small><strong>{o.order_number}</strong></div>
-                    <span>{o.customer_name}</span><span>₹{Number(o.total_inr).toLocaleString("en-IN")}</span><b>{o.order_status === "shipped" ? "DISPATCHED" : o.order_status.toUpperCase()}</b><i>View details⌄</i>
+                    <strong className="order-customer-name">{o.customer_name}</strong><span>₹{Number(o.total_inr).toLocaleString("en-IN")}</span><b>{o.order_status === "shipped" ? "DISPATCHED" : o.order_status.toUpperCase()}</b><i>View details⌄</i>
                   </summary>
                   <div className="order-record-body">
                   <div className="order-heading">
@@ -1322,17 +1322,11 @@ export default function AdminDashboard() {
                   }
                 />
               </label>
-              <label>
-                SKU / Product Code
-                <input value={prod.sku || ""} placeholder="Enter unique stock code" onChange={(e) => setProd({ ...prod, sku: e.target.value })} />
-              </label>
-              <label>
-                Product Type
-                <input value={prod.product_type || ""} placeholder="Gemstone, bracelet, pooja service…" onChange={(e) => setProd({ ...prod, product_type: e.target.value })} />
-              </label>
               <details className="product-extra-fields" style={{ gridColumn: "1 / -1" }}>
                 <summary>Gemstone & product specifications <span>Optional product details</span></summary>
                 <div className="product-extra-grid">
+                  <label>SKU / Product Code<input value={prod.sku || ""} placeholder="Enter unique stock code" onChange={(e) => setProd({ ...prod, sku: e.target.value })} /></label>
+                  <label>Product Type<input value={prod.product_type || ""} placeholder="Gemstone, bracelet, pooja service…" onChange={(e) => setProd({ ...prod, product_type: e.target.value })} /></label>
                   <label>Gemstone Name<input value={prod.gemstone_name || ""} onChange={(e) => setProd({ ...prod, gemstone_name: e.target.value })} /></label>
                   <label>Material<input value={prod.material || ""} onChange={(e) => setProd({ ...prod, material: e.target.value })} /></label>
                   <label>Natural / Lab Status<select value={prod.natural_lab_status || ""} onChange={(e) => setProd({ ...prod, natural_lab_status: e.target.value })}><option value="">Not specified</option><option value="Natural">Natural</option><option value="Lab Grown">Lab Grown</option><option value="Synthetic">Synthetic</option><option value="Not Applicable">Not Applicable</option></select></label>
