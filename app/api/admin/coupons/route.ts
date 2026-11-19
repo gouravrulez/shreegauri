@@ -20,7 +20,7 @@ async function authorize(request: Request) {
   return { admin, user: data.user };
 }
 
-async function listCoupons(admin: ReturnType<typeof createClient>) {
+async function listCoupons(admin: any) {
   const { data, error } = await admin.from("promo_codes").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data || [];
