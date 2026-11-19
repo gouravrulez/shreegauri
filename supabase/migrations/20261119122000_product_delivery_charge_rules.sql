@@ -46,6 +46,10 @@ begin
   select coalesce(default_shipping_charge_inr,0), coalesce(free_shipping_enabled,false), free_shipping_threshold_inr
     into v_default_shipping, v_free_shipping_enabled, v_free_shipping_threshold
     from public.shipping_settings where id=1;
+  if v_default_shipping=0 then
+    select coalesce(min(default_charge_inr),0) into v_default_shipping
+      from public.shipping_companies where is_active=true;
+  end if;
 
   for v_item in select * from jsonb_array_elements(v_items) loop
     v_product_id:=nullif(v_item->>'product_id','')::uuid;
