@@ -4,7 +4,7 @@ function patch(path, needle, replacement, label) {
   let text = fs.readFileSync(path, "utf8");
   if (text.includes(replacement)) return;
   if (!text.includes(needle)) {
-    if (label === "admin category picker" && text.includes("Product Category")) return;
+    if (label === "admin category picker" && text.includes("Collections — choose categories, purposes and planets")) return;
     throw new Error(`Multi-category patch failed (${label}) in ${path}.`);
   }
   text = text.replace(needle, replacement);
