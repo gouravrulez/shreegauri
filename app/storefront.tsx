@@ -1207,15 +1207,19 @@ export default function Storefront() {
                 </span>
                 <span>{ratingFor(item.id).count} review(s)</span>
               </div>
-              <div className="product-short-description">
-                <b>About this item</b>
-                <p>{item.short_description || item.description}</p>
-              </div>
-              {item.description && item.description !== item.short_description && (
+              {(item.short_description || item.description) && (
+                <div className="product-short-description">
+                  <b>About this item</b>
+                  <p>{item.short_description || (descriptionOpen ? item.description : `${item.description.slice(0, 150).trim()}...`)}</p>
+                </div>
+              )}
+              {item.description && (
                 <div className={`product-full-description ${descriptionOpen ? "open" : ""}`}>
-                  <div className="description-text">{item.description}</div>
-                  <button type="button" onClick={() => setDescriptionOpen((v) => !v)}>
-                    {descriptionOpen ? "SHOW LESS" : "LOAD MORE"}
+                  {descriptionOpen && (
+                    <div className="description-text">{item.description}</div>
+                  )}
+                  <button type="button" aria-expanded={descriptionOpen} onClick={() => setDescriptionOpen((v) => !v)}>
+                    {descriptionOpen ? "Read less" : "Read more"}
                   </button>
                 </div>
               )}

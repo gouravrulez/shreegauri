@@ -1169,3 +1169,497 @@ body {
 /* Make customer names as easy to scan as order numbers in both registers. */
 .order-record-summary>div strong,.order-record-summary>.order-customer-name{font-size:16px!important;font-weight:800!important;color:#4b1114!important}
 .customer-record-summary .customer-record-name{font-size:16px!important;font-weight:800!important;color:#4b1114!important}
+
+
+
+/* Shree Gauri mobile refinement — scoped to small screens; desktop styling remains unchanged. */
+@media (max-width: 900px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  .topbar {
+    min-height: 30px;
+    height: auto;
+    padding: 7px 12px;
+    line-height: 1.4;
+    text-align: center;
+    justify-content: center;
+  }
+  .topbar > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .topbar > span:last-child { display: none; }
+
+  /* Keep the brand, menu and action icons in separate, non-overlapping columns. */
+  body > main > header,
+  main > header {
+    width: 100%;
+    min-width: 0;
+    height: 68px;
+    padding: 0 12px;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    column-gap: 8px;
+    align-items: center;
+    overflow: visible;
+  }
+  main > header .hamb {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 44px;
+    padding: 0;
+    margin: 0;
+  }
+  main > header .brand {
+    justify-self: center;
+    min-width: 0;
+    max-width: 100%;
+    width: max-content;
+    gap: 8px;
+    padding: 0;
+    white-space: nowrap;
+    overflow: visible;
+  }
+  main > header .brand .sg-mark {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    font-size: 13px;
+  }
+  main > header .brand > span { min-width: 0; }
+  main > header .brand b {
+    display: block;
+    font-size: clamp(13px, 3.8vw, 17px);
+    line-height: 1.1;
+    letter-spacing: .5px;
+    white-space: nowrap;
+  }
+  main > header .brand small {
+    display: block;
+    margin-top: 3px;
+    font-size: 7px;
+    line-height: 1.2;
+    letter-spacing: .2px;
+    white-space: nowrap;
+  }
+  main > header .search {
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 46px;
+    min-width: 0;
+    padding: 0 14px;
+    border-radius: 0;
+    z-index: 10;
+  }
+  main > header .head-actions {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+  main > header .head-actions a,
+  main > header .head-actions button {
+    width: 36px;
+    min-width: 36px;
+    height: 42px;
+    padding: 4px;
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+  main > header .head-actions svg { width: 19px; height: 19px; }
+  main > header .head-actions span { display: none; }
+  main > header .head-actions em {
+    position: absolute;
+    top: 1px;
+    right: 0;
+    min-width: 15px;
+    padding: 2px 4px;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  /* If a currency selector is injected into the header, keep it out of the brand row. */
+  main > header .currency-switcher,
+  main > header .currency-selector,
+  main > header .currency-dropdown,
+  main > header [data-currency-switcher] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    max-width: 100%;
+    min-width: 0;
+    grid-column: 1 / -1;
+  }
+
+  .hero-v2 { min-height: 560px; }
+  .hero-copy-v2 { width: 100%; max-width: 100%; padding: 34px 20px; }
+  .hero-copy-v2 h1 { font-size: clamp(34px, 10vw, 48px); line-height: 1.05; }
+  .hero-copy-v2 h2 { font-size: clamp(20px, 5.5vw, 27px); line-height: 1.25; }
+  .hero-copy-v2 p { max-width: 100%; font-size: 14px; line-height: 1.65; }
+  .hero-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+  .hero-buttons button { min-height: 44px; margin: 0; padding: 12px 14px; }
+
+  .trust { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+  .trust > div { min-width: 0; }
+  .section { padding: 42px 16px; }
+  .section h2 { line-height: 1.15; }
+  .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .cat-grid > button { min-width: 0; }
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .product-grid > article { min-width: 0; }
+  .photo { width: 100%; height: auto; aspect-ratio: 1 / 1.12; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .info { min-width: 0; padding: 11px; }
+  .info h3 { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+  .info > div { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .info div button { min-height: 40px; }
+  .catalog-toolbar { flex-wrap: wrap; }
+  .catalog-toolbar select { max-width: 100%; }
+  .catalog-layout .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drawer { width: min(340px, 88vw); right: auto; overflow-y: auto; padding: 20px; }
+  .drawer > button, .drawer > a { min-height: 48px; }
+  .wa { right: 12px; bottom: 12px; }
+
+  /* Product detail is a single clean vertical flow on phones. */
+  .backdrop:has(.product-detail) {
+    display: block;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+  }
+  .product-detail {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .product-detail .close {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: 10px;
+    z-index: 100;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e5d8c8;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 12px #0002;
+    transform: none;
+  }
+  .product-detail .product-gallery,
+  .product-detail .amazon-gallery {
+    order: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 12px 12px 8px;
+    gap: 10px;
+  }
+  .product-detail .gallery-stage {
+    order: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  .product-detail .gallery-zoom-trigger { width: 100%; }
+  .product-detail .gallery-main {
+    width: 100%;
+    height: min(78vw, 420px);
+    min-height: 260px;
+    max-height: 420px;
+    object-fit: contain;
+  }
+  .product-detail .gallery-thumbs {
+    order: 1;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 4px 2px 8px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .product-detail .gallery-thumbs button {
+    flex: 0 0 58px;
+    width: 58px;
+    height: 58px;
+  }
+  .product-detail .gallery-thumbs img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .product-detail .product-copy {
+    order: 1;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 22px 18px calc(34px + env(safe-area-inset-bottom));
+  }
+  .product-detail .product-copy h2 {
+    font-size: clamp(27px, 7vw, 36px);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+  .product-detail .product-copy p { line-height: 1.65; }
+  .product-detail .purchase-promises { flex-direction: column; gap: 10px; }
+  .product-detail .purchase-promises span { min-height: 24px; }
+  .product-detail .product-copy button,
+  .product-detail .product-copy a { max-width: 100%; }
+  .product-detail .quantity { flex-wrap: wrap; }
+  .product-detail .buy { grid-template-columns: 1fr; gap: 9px; }
+  .product-detail .review-form { padding: 14px; }
+  .product-detail .review-form input,
+  .product-detail .review-form textarea { width: 100%; min-width: 0; }
+  .image-zoom-modal { padding: 58px 8px 12px; }
+  .image-zoom-modal > img { max-width: 100%; max-height: calc(100dvh - 76px); }
+
+  .checkout-modal { width: 100%; max-width: 100%; min-height: 100dvh; max-height: 100dvh; border-radius: 0; padding: 28px 18px calc(24px + env(safe-area-inset-bottom)); }
+  .checkout-grid { grid-template-columns: minmax(0, 1fr); }
+  .checkout-grid .wide { grid-column: auto; }
+  footer { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; padding: 38px 18px 24px; }
+  footer > div { min-width: 0; overflow-wrap: anywhere; }
+  footer > div:first-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 420px) {
+  main > header { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding: 0 8px; }
+  main > header .hamb { width: 34px; }
+  main > header .brand { gap: 6px; }
+  main > header .brand .sg-mark { flex-basis: 34px; width: 34px; height: 34px; }
+  main > header .brand b { font-size: 13px; letter-spacing: 0; }
+  main > header .brand small { font-size: 6px; letter-spacing: 0; }
+  main > header .head-actions { gap: 1px; }
+  main > header .head-actions a,
+  main > header .head-actions button { width: 32px; min-width: 32px; }
+  .hero-v2 { min-height: 520px; }
+  .hero-copy-v2 { padding: 28px 16px; }
+  .hero-buttons { flex-direction: column; align-items: stretch; }
+  .hero-buttons button { width: 100%; }
+  .trust { gap: 12px 8px; padding: 16px 12px; }
+  .trust b { font-size: 11px; }
+  .cat-grid, .product-grid, .catalog-layout .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .photo { aspect-ratio: 1 / 1.15; }
+  .info { padding: 9px; }
+  .info h3 { font-size: 14px; }
+  .product-detail .gallery-main { height: 76vw; min-height: 240px; }
+  .product-detail .product-copy { padding-left: 15px; padding-right: 15px; }
+  .product-detail .product-copy h2 { font-size: 27px; }
+  .checkout-modal h2 { font-size: 30px; }
+  footer { gap: 20px 12px; padding-left: 15px; padding-right: 15px; }
+}
+
+
+
+/* Follow-up mobile corrections: currency/header separation, contained pagination and denser product grid. */
+@media (max-width: 900px) {
+  header {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    column-gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    overflow: visible;
+  }
+  header > .hamb { grid-column: 1; grid-row: 1; }
+  header > .brand {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+  header > .brand > span { min-width: 0; overflow: hidden; }
+  header > .brand b { font-size: clamp(12px, 3.7vw, 17px); letter-spacing: 0; }
+  header > .brand small { font-size: clamp(6px, 1.7vw, 8px); letter-spacing: 0; }
+  header > .search { top: 68px; }
+  header > .head-actions {
+    grid-column: 3;
+    grid-row: 1;
+    gap: 2px;
+    justify-self: end;
+  }
+  header > .head-actions a,
+  header > .head-actions button {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    padding: 3px;
+  }
+  /* Currency controls added by the site's shared header are never allowed to
+     occupy the same row/position as the brand. */
+  header [class*="currency" i],
+  header [id*="currency" i],
+  header [data-currency] {
+    position: absolute !important;
+    top: calc(100% + 48px) !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    z-index: 22 !important;
+    transform: none !important;
+    float: none !important;
+    max-width: min(46vw, 180px) !important;
+    min-width: 0 !important;
+    white-space: nowrap;
+    background: #fff !important;
+    border: 1px solid #e7ddd3;
+    border-radius: 6px;
+    box-shadow: 0 3px 12px #00000012;
+  }
+
+  .catalog-pagination {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 1 !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0;
+    margin: 16px 0 4px !important;
+    padding: 14px 12px !important;
+    gap: 10px !important;
+    overflow: hidden;
+    background: #fff !important;
+    color: #4b3529 !important;
+    border: 1px solid #e8ddd2;
+    border-radius: 10px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .catalog-pagination .pagination-summary {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    color: #705e54;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .catalog-pagination .pagination-controls {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .catalog-pagination .pagination-controls button {
+    flex: 0 0 auto;
+    min-width: 36px;
+    min-height: 38px;
+    padding: 7px 10px;
+    margin: 0;
+    border: 1px solid #ded1c3;
+    border-radius: 7px;
+    background: #fff;
+    color: #482326;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .catalog-pagination .pagination-controls button.active {
+    background: #64171c;
+    border-color: #64171c;
+    color: #fff;
+  }
+  .catalog-pagination .pagination-controls button:disabled { opacity: .42; }
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100%;
+    max-width: 100%;
+  }
+  .product-grid article { min-width: 0; overflow: hidden; }
+  .product-grid .photo {
+    width: 100%;
+    height: auto !important;
+    aspect-ratio: 1 / 1.08;
+    min-height: 0;
+  }
+  .product-grid .photo img { width: 100%; height: 100%; object-fit: contain !important; }
+  .product-grid .info { min-width: 0; padding: 8px; }
+  .product-grid .info h3 {
+    font-size: clamp(11px, 2.7vw, 15px);
+    line-height: 1.25;
+    margin: 5px 0;
+    overflow-wrap: anywhere;
+  }
+  .product-grid .info b,
+  .product-grid .info strong { font-size: clamp(11px, 2.8vw, 14px); }
+  .product-grid .info del { font-size: 10px; margin-left: 3px; }
+  .product-grid .info > div { grid-template-columns: minmax(0, 1fr) !important; gap: 5px; margin-top: 9px; }
+  .product-grid .info div button,
+  .product-grid .info div a { min-width: 0; padding: 8px 4px; font-size: 10px; }
+  .product-full-description { margin: 8px 0 12px; }
+  .product-full-description .description-text {
+    max-height: none;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    line-height: 1.65;
+  }
+  .product-full-description button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 0;
+    color: #7b1420;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .product-short-description p {
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+  }
+}
+@media (max-width: 560px) {
+  .product-grid,
+  .catalog-layout .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .product-grid .info { padding: 7px 6px; }
+  .product-grid .info h3 { font-size: 12px; }
+  .product-grid .info p { display: none; }
+  .product-grid .info div button { font-size: 9px; padding: 8px 3px; }
+  .catalog-pagination .pagination-controls { gap: 5px; }
+  .catalog-pagination .pagination-controls button { min-width: 34px; min-height: 36px; padding: 6px 8px; }
+}
+@media (max-width: 360px) {
+  .product-grid,
+  .catalog-layout .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  header > .brand { justify-self: start; }
+  header > .head-actions a,
+  header > .head-actions button { width: 29px; min-width: 29px; max-width: 29px; }
+}
