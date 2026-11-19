@@ -141,6 +141,7 @@ export default function AdminDashboard() {
     [categorySearch, setCategorySearch] = useState(""),
     [prod, setProd] = useState<any>(blankProd),
     [notice, setNotice] = useState(""),
+    [previewOnly, setPreviewOnly] = useState(true),
     [readActivityIds, setReadActivityIds] = useState<string[]>([]),
     [legacyLastSeen, setLegacyLastSeen] = useState(0),
     [staffRole, setStaffRole] = useState<string>("loading"),
@@ -167,6 +168,11 @@ export default function AdminDashboard() {
     [productSort, setProductSort] = useState("newest"),
     [productPage, setProductPage] = useState(1),
     [productPageSize, setProductPageSize] = useState(24);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/environment", { cache: "no-store" }).then((response) => response.json()).then((data) => { if (active) setPreviewOnly(Boolean(data.preview_only)); }).catch(() => { if (active) setPreviewOnly(true); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
@@ -287,6 +293,7 @@ export default function AdminDashboard() {
     setAstrologyServices(result.services || []);
   }
   async function updateAstrologyStatus(id: string, status: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"update_status", id, status }, headers:{ Authorization:`Bearer ${current.access_token}` } });
@@ -294,6 +301,7 @@ export default function AdminDashboard() {
     if (result?.ok) await loadAstrology(current.access_token);
   }
   async function saveAstrologyServices() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const current = (await supabase.auth.getSession()).data.session;
     if (!current) { setNotice("Your session expired. Please sign in again."); return; }
     const { data: result, error } = await supabase.functions.invoke("astrology-admin", { body:{ action:"save_services", services:astrologyServices }, headers:{ Authorization:`Bearer ${current.access_token}` } });
@@ -325,6 +333,7 @@ export default function AdminDashboard() {
     }
   }
   async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return false; }
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) { setNotice("Your session expired. Please sign in again."); return false; }
     const response = await fetch("/api/admin/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${currentSession.access_token}` }, body: JSON.stringify({ action, ...payload }) });
@@ -395,6 +404,7 @@ export default function AdminDashboard() {
     setNotice(`${urls.length} additional image(s) ready. Save the product below.`);
   }
   async function moderateReview(id: string, is_approved: boolean) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase
       .from("product_reviews")
       .update({ is_approved })
@@ -422,6 +432,7 @@ export default function AdminDashboard() {
     setNotice("Image ready. Click Save All Website Settings.");
   }
   async function toggleCategoryVisibility(item: Cat) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const nextVisible = !item.is_active;
     setNotice((nextVisible ? "Making " : "Hiding ") + item.name + "...");
     const { error } = await supabase.from("categories").update({ is_active: nextVisible }).eq("id", item.id);
@@ -434,6 +445,7 @@ export default function AdminDashboard() {
     setNotice(item.name + (nextVisible ? " is now visible on the website." : " is now hidden from the website."));
   }
   async function saveCat() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const data = {
       ...cat,
       collection_type: cat.collection_type || "category",
@@ -457,6 +469,7 @@ export default function AdminDashboard() {
     }
   }
   async function saveProd() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     setNotice("Saving product...");
     const { data: authData, error: authError } = await supabase.auth.refreshSession();
     if (authError || !["admin", "manager", "catalog"].includes(staffRole)) {
@@ -494,6 +507,7 @@ export default function AdminDashboard() {
     await load();
   }
   async function saveQuickProductField(id: string, field: "price_inr" | "stock_quantity", rawValue: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); setQuickEdit(null); return; }
     const value = Number(rawValue);
     if (!Number.isFinite(value) || value < 0 || (field === "stock_quantity" && !Number.isInteger(value))) {
       setNotice(field === "price_inr" ? "Enter a valid price of ₹0 or more." : "Stock must be a whole number of 0 or more.");
@@ -506,6 +520,7 @@ export default function AdminDashboard() {
   }
 
   async function toggleProductVisibility(p: Prod) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const next = !p.is_active;
     const { error } = await supabase
       .from("products")
@@ -517,12 +532,14 @@ export default function AdminDashboard() {
   }
 
   async function remove(table: string, id: string) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!confirm("Delete this permanently?")) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
     setNotice(error?.message || "Deleted.");
     load();
   }
   async function saveSettings() {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase
       .from("site_settings")
       .update({ ...settings, updated_at: new Date().toISOString() })
@@ -530,6 +547,7 @@ export default function AdminDashboard() {
     setNotice(error?.message || "Website content updated.");
   }
   async function saveCourierDetails(e: FormEvent<HTMLFormElement>, order: Order) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: tracking edits are disabled to protect live orders."); return; }
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const courier_company_id = String(form.get("courier_company_id") || "") || null;
@@ -549,6 +567,7 @@ export default function AdminDashboard() {
     setNotice("Courier and tracking details saved for " + order.order_number + ".");
   }
   async function saveShippingSettings(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const payload = {
       id: 1,
@@ -566,6 +585,7 @@ export default function AdminDashboard() {
     setNotice("Shipping charges and delivery rules saved.");
   }
   async function saveShippingCompany(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const payload = {
       name: String(shippingCompanyDraft.name || "").trim(),
@@ -589,12 +609,14 @@ export default function AdminDashboard() {
     setNotice("Courier / delivery partner saved.");
   }
   async function toggleShippingCompany(company: any) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     const { error } = await supabase.from("shipping_companies").update({ is_active: !company.is_active, updated_at: new Date().toISOString() }).eq("id", company.id);
     if (error) { setNotice("Courier status could not be changed: " + error.message); return; }
     setShippingCompanies((current) => current.map((item) => item.id === company.id ? { ...item, is_active: !company.is_active } : item));
     setNotice(company.name + (company.is_active ? " paused." : " activated."));
   }
   async function saveCoupon(e: FormEvent<HTMLFormElement>) {
+    if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     e.preventDefault();
     const code = couponDraft.code.trim().toUpperCase().replace(/\\s+/g, "");
     if (!/^[A-Z0-9_-]{3,32}$/.test(code)) { setNotice("Coupon code must be 3–32 letters, numbers, hyphens or underscores."); return; }
@@ -609,6 +631,7 @@ export default function AdminDashboard() {
     setNotice("Coupon " + code + " saved and ready for checkout.");
   }
   async function toggleCoupon(coupon: Coupon) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!coupon.id) return;
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
@@ -619,6 +642,7 @@ export default function AdminDashboard() {
     setNotice(coupon.code + (coupon.is_active ? " paused." : " activated."));
   }
   async function deleteCoupon(coupon: Coupon) {
+    if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
     if (!coupon.id || !window.confirm("Delete coupon " + coupon.code + "? This cannot be undone.")) return;
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current) { setNotice("Your admin session expired. Please sign in again."); return; }
@@ -629,6 +653,7 @@ export default function AdminDashboard() {
     setNotice(coupon.code + " deleted.");
   }
   async function updateOrder(id: string, order_status: string) {
+    if (previewOnly) { setNotice("Read-only preview: status changes are disabled to protect live orders."); return; }
     setNotice(`Updating order to ${order_status}...`);
     const { data: authData } = await supabase.auth.getSession();
     const token = authData.session?.access_token;
@@ -827,6 +852,7 @@ export default function AdminDashboard() {
         <header>
           <div>
             <small>ADMIN DASHBOARD</small>
+            {previewOnly && <div role="status" style={{ marginTop: 10, padding: "9px 12px", border: "1px solid #ead9bd", borderRadius: 8, background: "#fff8ec", color: "#765b35", fontSize: 12, fontWeight: 700 }}>PREVIEW MODE · Read-only · Saves, order updates and emails are disabled to protect the live store.</div>}
             <h1>
               {tab === "dashboard"
                 ? "Store Overview"
