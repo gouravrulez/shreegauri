@@ -52,8 +52,10 @@ replaceOnce(
 "product-detail cart confirmation"
 );
 
-const mainAnchor = `    <main>`;
-const mainReplacement = `    <main>
+const mainAnchor = text.includes(`    <main key={view}>`)
+  ? `    <main key={view}>`
+  : `    <main>`;
+const mainReplacement = `${mainAnchor}
       {cartNotice && (
         <div className="sg-cart-toast" role="status" aria-live="polite">
           <span>✓</span>
