@@ -3,6 +3,11 @@ import fs from "node:fs";
 function patch(path, needle, replacement, label) {
   let text = fs.readFileSync(path, "utf8");
   if (text.includes(replacement)) return;
+  if (
+    label === "store normalize categories" &&
+    text.includes("category_ids:") &&
+    text.includes("image_urls: Array.isArray(p.image_urls)")
+  ) return;
   if (!text.includes(needle)) {
     if (label === "admin category picker" && (text.includes("Collections — choose categories, purposes and planets") || text.includes("className=\"product-collection-picker\""))) return;
     throw new Error(`Multi-category patch failed (${label}) in ${path}.`);
