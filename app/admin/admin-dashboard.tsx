@@ -115,6 +115,9 @@ const blankProd = {
   category_id: "",
   primary_image_url: "",
   image_urls: [] as string[],
+  category_ids: [] as string[],
+  custom_shipping_enabled: false,
+  custom_shipping_charge_inr: null,
   badge: "",
   is_active: false,
   is_featured: false,
@@ -470,6 +473,9 @@ export default function AdminDashboard() {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, ""),
       category_id: prod.category_id || null,
+      category_ids: Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])])),
+      custom_shipping_enabled: Boolean(prod.custom_shipping_enabled),
+      custom_shipping_charge_inr: prod.custom_shipping_enabled && prod.custom_shipping_charge_inr !== "" && prod.custom_shipping_charge_inr !== null ? Number(prod.custom_shipping_charge_inr) : null,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
@@ -526,14 +532,20 @@ export default function AdminDashboard() {
   async function saveCourierDetails(e: FormEvent<HTMLFormElement>, order: Order) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const courier_name = String(form.get("courier_name") || "").trim();
+    const courier_company_id = String(form.get("courier_company_id") || "") || null;
+    const selectedCourier = shippingCompanies.find((company) => company.id === courier_company_id);
+    const courier_name = selectedCourier?.name || String(form.get("courier_name") || "").trim();
     const tracking_number = String(form.get("tracking_number") || "").trim();
-    const tracking_url = String(form.get("tracking_url") || "").trim();
+    let tracking_url = String(form.get("tracking_url") || "").trim();
+    if (!tracking_url && selectedCourier?.tracking_url_template && tracking_number) {
+      tracking_url = String(selectedCourier.tracking_url_template).replaceAll("{tracking_number}", encodeURIComponent(tracking_number));
+    }
+    const courier_charge_inr = selectedCourier ? Number(selectedCourier.default_charge_inr || 0) : Number(form.get("courier_charge_inr") || 0);
     const dispatch_date = String(form.get("dispatch_date") || "") || null;
     const expected_delivery_date = String(form.get("expected_delivery_date") || "") || null;
-    const { error } = await supabase.from("orders").update({ courier_name: courier_name || null, tracking_number: tracking_number || null, tracking_url: tracking_url || null, dispatch_date, expected_delivery_date, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", order.id);
+    const { error } = await supabase.from("orders").update({ courier_company_id, courier_name: courier_name || null, courier_charge_inr, tracking_number: tracking_number || null, tracking_url: tracking_url || null, dispatch_date, expected_delivery_date, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", order.id);
     if (error) { setNotice("Tracking details could not be saved: " + error.message); return; }
-    setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_name, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
+    setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_company_id, courier_name, courier_charge_inr, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
     setNotice("Courier and tracking details saved for " + order.order_number + ".");
   }
   async function saveShippingSettings(e: FormEvent<HTMLFormElement>) {
@@ -621,9 +633,9 @@ export default function AdminDashboard() {
     const { data: authData } = await supabase.auth.getSession();
     const token = authData.session?.access_token;
     if (!token) { setNotice("Admin session expired. Please log in again."); return; }
-    const response = await fetch("https://hhtqnpxarrbagyvswqrj.supabase.co/functions/v1/order-status-email", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status }) });
+    const response = await fetch("/api/admin/order-status", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: id, order_status }) });
     const data = await response.json().catch(() => ({}));
-    setNotice(data?.error || (data?.email_sent ? `Order marked ${order_status}. Customer email sent.` : `Order marked ${order_status}.`));
+    setNotice(data?.error || (data?.preview_only ? "Status changes are disabled in preview to protect live orders." : data?.email_sent ? `Order marked ${order_status}. Professional customer email sent.` : `Order marked ${order_status}. Email status: ${data?.warning || "not sent"}`));
     if (response.ok && !data?.error) load();
   }
   const activity = [
@@ -801,7 +813,10 @@ export default function AdminDashboard() {
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
-        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); setCouponDraft(blankCoupon); }}><Package /> Shipping & Coupons</button>}
+        {isPrimaryAdmin && <>
+          <button className={tab === "shipping-coupons" && shippingTab === "shipping" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("shipping"); }}><Package /> Courier & Shipping</button>
+          <button className={tab === "shipping-coupons" && shippingTab === "coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setShippingTab("coupons"); setCouponDraft(blankCoupon); }}><Package /> Coupons & Offers</button>
+        </>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -832,8 +847,10 @@ export default function AdminDashboard() {
                       : tab === "currency"
                         ? "Global Currency Rates"
                         : tab === "shipping-coupons"
-                          ? "Shipping & Coupons"
-                          : "Photos, Logo & Homepage"}
+                          ? (shippingTab === "shipping" ? "Courier & Delivery" : "Coupons & Offers")
+                          : tab === "add-product"
+                            ? (prod.id ? "Edit Product" : "Add New Product")
+                            : "Photos, Logo & Homepage"}
             </h1>
           </div>
           {notice && <p>{notice}</p>}
@@ -984,8 +1001,8 @@ export default function AdminDashboard() {
                     </strong>
                   </div>
                   <form className="order-tracking-editor" onSubmit={(e) => saveCourierDetails(e, o)} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, padding: 14, margin: "14px 0", border: "1px solid #eadfd4", borderRadius: 9, background: "#fffdf9" }}>
-                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>COURIER / DELIVERY PARTNER<input name="courier_name" defaultValue={(o as any).courier_name || ""} placeholder="e.g. Delhivery, Blue Dart" /></label>
-                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING NUMBER<input name="tracking_number" defaultValue={(o as any).tracking_number || ""} placeholder="AWB / tracking ID" /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>COURIER / DELIVERY PARTNER<select name="courier_company_id" defaultValue={(o as any).courier_company_id || shippingCompanies.find((company) => company.name === (o as any).courier_name)?.id || ""}><option value="">Select courier</option>{shippingCompanies.filter((company) => company.is_active).map((company) => <option key={company.id} value={company.id}>{company.name} · ₹{Number(company.default_charge_inr || 0).toLocaleString("en-IN")}</option>)}</select></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING NUMBER<input name="tracking_number" defaultValue={(o as any).tracking_number || ""} placeholder="Article / consignment / AWB number" /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING URL<input name="tracking_url" type="url" defaultValue={(o as any).tracking_url || ""} placeholder="https://…" /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>DISPATCH DATE<input name="dispatch_date" type="date" defaultValue={(o as any).dispatch_date || ""} /></label>
                     <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>EXPECTED DELIVERY<input name="expected_delivery_date" type="date" defaultValue={(o as any).expected_delivery_date || ""} /></label>
@@ -1006,7 +1023,8 @@ export default function AdminDashboard() {
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
+                      <option value="packed">Packed</option>
+                      <option value="shipped">Dispatched</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
@@ -1175,7 +1193,7 @@ export default function AdminDashboard() {
         )}
         {(tab === "products" && catalogView === "products" || tab === "add-product") && (
           <div className="admin-product-workspace">
-            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start", gap: 14, maxWidth: 1100, padding: 22 }}>
+            {tab === "add-product" && <div className="editor product-editor" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", alignItems: "start", gap: 12, maxWidth: 920, padding: 18 }}>
               <h2 style={{ gridColumn: "1 / -1" }}>{prod.id ? "Edit Product" : "Add New Product"}</h2>
               <label>
                 Product Name
@@ -1259,42 +1277,43 @@ export default function AdminDashboard() {
                   </select>
                 </label>
               </div>
-              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e5d9cb", borderRadius: 12, padding: 16, background: "#fffdf9", display: "grid", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div>
-                    <b style={{ display: "block", color: "#402126", fontSize: 15 }}>Product collections</b>
-                    <small style={{ color: "#817168" }}>Choose one or more categories, purposes and planets.</small>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "6px 10px" }}>{(prod.category_ids || (prod.category_id ? [prod.category_id] : [])).length} selected</span>
+              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e8ded3", borderRadius: 11, padding: 13, background: "#fffdf9", display: "grid", gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div><b style={{ display: "block", color: "#402126", fontSize: 14 }}>Product placement</b><small style={{ color: "#817168" }}>Choose the categories, purposes and planets where this product should appear.</small></div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#72513d", background: "#f4eadb", borderRadius: 20, padding: "5px 9px" }}>{(Array.isArray(prod.category_ids) ? prod.category_ids : []).filter((id: string) => cats.some((c) => c.id === id)).length} selected</span>
                 </div>
-                <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search categories, purposes or planets…" style={{ width: "100%", maxWidth: 440, border: "1px solid #dfd2c4", borderRadius: 8, padding: "10px 12px", background: "#fff" }} />
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 10 }}>
+                <input aria-label="Search collections" value={collectionSearch} onChange={(e) => setCollectionSearch(e.target.value)} placeholder="Search collections…" style={{ width: "100%", maxWidth: 360, border: "1px solid #dfd2c4", borderRadius: 7, padding: "9px 11px", background: "#fff" }} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(205px,1fr))", gap: 9 }}>
                   {(["category", "purpose", "planet"] as const).map((kind) => {
                     const choices = cats.filter((c) => c.is_active && c.collection_type === kind && !/^(chakra|zodiac)$/i.test(c.name.trim()) && (!collectionSearch || c.name.toLowerCase().includes(collectionSearch.toLowerCase())));
-                    const selectedIds = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
-                    const selectedItems = cats.filter((c) => selectedIds.includes(c.id) && c.collection_type === kind);
+                    const selectedIds = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
                     const heading = kind === "category" ? "Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
-                    return (
-                      <div key={kind} style={{ border: "1px solid #ebe2d8", borderRadius: 9, background: "#fff", padding: 11, minWidth: 0 }}>
-                        <b style={{ display: "block", color: "#72513d", fontSize: 11, letterSpacing: ".04em", marginBottom: 8 }}>{heading}</b>
-                        <details className="collection-select">
-                          <summary>{selectedItems.length ? selectedItems.length + " selected" : "Select " + heading.toLowerCase()} <span aria-hidden="true">⌄</span></summary>
-                          <div className="collection-select-menu">
-                            {choices.length ? choices.map((c) => {
-                              const selected = selectedIds.includes(c.id);
-                              return <button type="button" key={c.id} className={selected ? "selected" : ""} onClick={() => {
-                                const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
-                                const category_ids = selected ? current.filter((id: string) => id !== c.id) : Array.from(new Set([...current, c.id]));
-                                setProd({ ...prod, category_ids, category_id: category_ids[0] || "" });
-                              }}><span>{c.name}</span><i>{selected ? "Selected" : "Add"}</i></button>;
-                            }) : <small className="collection-select-empty">No matching collections</small>}
-                          </div>
-                        </details>
-                        {selectedItems.length > 0 && <div className="collection-selected-tags">{selectedItems.map((item) => <span key={item.id}>{item.name}<button type="button" aria-label={"Remove " + item.name} onClick={() => { const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []); const category_ids = current.filter((id: string) => id !== item.id); setProd({ ...prod, category_ids, category_id: category_ids[0] || "" }); }}>×</button></span>)}</div>}
+                    return <div key={kind} style={{ border: "1px solid #ebe2d8", borderRadius: 8, background: "#fff", padding: 10, minWidth: 0 }}>
+                      <b style={{ display: "block", color: "#72513d", fontSize: 11, letterSpacing: ".04em", marginBottom: 7 }}>{heading}</b>
+                      <div style={{ display: "grid", gap: 5, maxHeight: 150, overflowY: "auto" }}>
+                        {choices.length ? choices.map((c) => {
+                          const selected = selectedIds.includes(c.id);
+                          return <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#49372f", fontWeight: 600, cursor: "pointer", padding: "4px 2px" }}>
+                            <input type="checkbox" checked={selected} onChange={(e) => {
+                              const current = Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])]));
+                              const nextIds = e.target.checked ? Array.from(new Set([...current, c.id])) : current.filter((id: string) => id !== c.id);
+                              const categoryIds = nextIds.filter((id: string) => cats.some((item) => item.id === id && item.collection_type === "category"));
+                              setProd({ ...prod, category_ids: nextIds, category_id: kind === "category" ? (e.target.checked ? (prod.category_id || c.id) : (prod.category_id === c.id ? (categoryIds[0] || "") : prod.category_id)) : (prod.category_id || categoryIds[0] || "") });
+                            }} />
+                            <span>{c.name}</span>
+                          </label>;
+                        }) : <small style={{ color: "#9a8d82" }}>No matching options</small>}
                       </div>
-                    );
+                    </div>;
                   })}
                 </div>
+              </section>
+              <section style={{ gridColumn: "1 / -1", border: "1px solid #e8ded3", borderRadius: 10, padding: 12, background: "#fff" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div><b style={{ color: "#402126", fontSize: 13 }}>Delivery charges</b><small style={{ display: "block", color: "#817168", marginTop: 3 }}>Enable this only when this product should carry a delivery fee.</small></div>
+                  <label className="check" style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}><input type="checkbox" checked={Boolean(prod.custom_shipping_enabled)} onChange={(e) => setProd({ ...prod, custom_shipping_enabled: e.target.checked, custom_shipping_charge_inr: e.target.checked ? (prod.custom_shipping_charge_inr ?? "") : null })} /> Apply delivery charge</label>
+                </div>
+                {prod.custom_shipping_enabled && <label style={{ display: "grid", gap: 5, maxWidth: 260, marginTop: 10 }}>Product delivery charge (₹)<input type="number" min="0" step="1" value={prod.custom_shipping_charge_inr ?? ""} onChange={(e) => setProd({ ...prod, custom_shipping_charge_inr: e.target.value })} placeholder="Leave blank to use standard courier rate" /></label>}
               </section>
               <label>
                 Main Product Photo
