@@ -123,6 +123,7 @@ export default function Storefront() {
     [cart, setCart] = useState<P[]>([]),
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
+    [catalogPage, setCatalogPage] = useState(1),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
@@ -153,7 +154,7 @@ export default function Storefront() {
       supabase
         .from("products")
         .select(
-          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge",
+          "id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
         )
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
@@ -365,6 +366,11 @@ export default function Storefront() {
                 : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
+  const pageSize = 12;
+  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  const visibleProducts = shown.slice((catalogPage - 1) * pageSize, catalogPage * pageSize);
+  useEffect(() => { setCatalogPage(1); }, [q, view, categoryFilter, stockOnly, sort]);
+  useEffect(() => { if (catalogPage > pageCount) setCatalogPage(pageCount); }, [catalogPage, pageCount]);
   const nav = [
     ["home", "Home"],
     ["shop", "Categories"],
@@ -780,7 +786,7 @@ export default function Storefront() {
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="product-grid">
               {shown.length ? (
-                shown.map((p) => (
+                visibleProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -869,6 +875,18 @@ export default function Storefront() {
                 </p>
               )}
             </div>
+            {shown.length > pageSize && (
+              <nav className="catalog-pagination" aria-label="Product pages">
+                <span className="pagination-summary">Showing {(catalogPage - 1) * pageSize + 1}–{Math.min(catalogPage * pageSize, shown.length)} of {shown.length} products</span>
+                <div className="pagination-controls">
+                  <button type="button" disabled={catalogPage === 1} onClick={() => { setCatalogPage((p) => Math.max(1, p - 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Previous</button>
+                  {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
+                    <button type="button" key={page} aria-current={catalogPage === page ? "page" : undefined} className={catalogPage === page ? "active" : ""} onClick={() => { setCatalogPage(page); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{page}</button>
+                  ))}
+                  <button type="button" disabled={catalogPage === pageCount} onClick={() => { setCatalogPage((p) => Math.min(pageCount, p + 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Next</button>
+                </div>
+              </nav>
+            )}
           </div>
         </section>
       )}
