@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "./lib/supabase";
 import {
   Menu,
@@ -205,13 +205,21 @@ export default function Storefront() {
     setMenu(false);
     setItem(null);
   };
-  // Scroll only after React has committed the destination view. Scrolling in
-  // the click handler can run before the new Home DOM is mounted, leaving the
-  // previous catalogue position visible above the hero.
-  useLayoutEffect(() => {
-    if (typeof window !== "undefined") {
+  // Re-mount the storefront surface on view changes and reset both document
+  // scroll roots after the new view has painted. This prevents a category
+  // catalogue from remaining visually above the Home hero after navigation.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const resetScroll = () => {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-    }
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    const frame = window.requestAnimationFrame(() => {
+      resetScroll();
+      window.requestAnimationFrame(resetScroll);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [view]);
   const wa = (t: string) =>
     `https://wa.me/${s.whatsapp}?text=${encodeURIComponent(t)}`;
@@ -403,7 +411,7 @@ export default function Storefront() {
     ["contact", "Contact Us"],
   ];
   return (
-    <main>
+    <main key={view}>
       <div className="topbar">
         <span>{s.announcement}</span>
         <span>
