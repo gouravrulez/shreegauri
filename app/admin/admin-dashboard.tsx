@@ -150,6 +150,7 @@ export default function AdminDashboard() {
     [password, setPassword] = useState(""),
     [loginMode, setLoginMode] = useState<"admin" | "staff">("admin"),
     [error, setError] = useState(""),
+    [isSigningIn, setIsSigningIn] = useState(false),
     [tab, setTab] = useState("dashboard"),
     [catalogView, setCatalogView] = useState<"products" | "inventory">("products"),
     [cats, setCats] = useState<Cat[]>([]),
@@ -335,26 +336,39 @@ export default function AdminDashboard() {
   }
   async function login(e: FormEvent) {
     e.preventDefault();
+    if (isSigningIn) return;
     setError("");
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    if (signInError || !data.session) {
-      setError(signInError?.message || "Unable to start a secure session. Please try again.");
-      return;
-    }
-    const roleResponse = await fetch("/api/admin/manage", {
-      headers: { Authorization: "Bearer " + data.session.access_token },
-    });
-    const roleData = await roleResponse.json().catch(() => ({}));
-    const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
-    const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
-    if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
-      await supabase.auth.signOut();
-      setError(loginMode === "admin"
-        ? "This work email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
-        : "This work email does not have an active staff role. Ask the main administrator to invite or enable your access.");
+    setIsSigningIn(true);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (signInError || !data.session) {
+        setError(signInError?.message || "Unable to start a secure session. Please check your details and try again.");
+        return;
+      }
+      const roleResponse = await fetch("/api/admin/manage", {
+        cache: "no-store",
+        headers: { Authorization: "Bearer " + data.session.access_token },
+      });
+      const roleData = await roleResponse.json().catch(() => ({}));
+      const isMainAdmin = roleResponse.ok && roleData.is_primary_admin === true;
+      const isStaff = roleResponse.ok && roleData.is_primary_admin !== true && ["admin", "manager", "orders", "support", "catalog"].includes(roleData.role);
+      if ((loginMode === "admin" && !isMainAdmin) || (loginMode === "staff" && !isStaff)) {
+        await supabase.auth.signOut({ scope: "local" });
+        setError(!roleResponse.ok
+          ? (roleData.error || "We could not verify your admin access. Please try again or contact the main administrator.")
+          : loginMode === "admin"
+            ? "This email is not assigned to the main administrator account. Choose Staff Login if you have staff access."
+            : "This email does not have an active staff role. Ask the main administrator to enable your access.");
+        return;
+      }
+      setSession(data.session);
+    } catch {
+      setError("We couldn't complete sign-in because the server could not be reached. Please try again.");
+    } finally {
+      setIsSigningIn(false);
     }
   }
   async function runAdminAction(action: string, payload: Record<string, unknown> = {}) {
@@ -795,7 +809,7 @@ export default function AdminDashboard() {
                 <input type="password" name="sg-admin-password" autoComplete="new-password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </label>
               {error && <b className="admin-login-error" role="alert">{error}</b>}
-              <button className="admin-login-submit" type="submit">{loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">→</span></button>
+              <button className="admin-login-submit" type="submit" disabled={isSigningIn}>{isSigningIn ? "VERIFYING SECURE ACCESS…" : loginMode === "admin" ? "SIGN IN AS MAIN ADMIN" : "SIGN IN AS STAFF"} <span aria-hidden="true">{isSigningIn ? "…" : "→"}</span></button>
             </form>
             <div className="admin-login-panel-foot"><span className="admin-login-lock">◇</span><span>{loginMode === "admin" ? "Main administrator access" : "Role-based staff access"}</span><i /> <span>Shree Gauri</span></div>
           </section>
