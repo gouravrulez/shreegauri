@@ -146,6 +146,8 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
+  useEffect(() => { setDescriptionOpen(false); }, [item?.id]);
+
   useEffect(() => {
     let alive = true;
     // Load the catalogue independently so a slow reviews/settings request cannot
@@ -1210,16 +1212,30 @@ export default function Storefront() {
               {(item.short_description || item.description) && (
                 <div className="product-short-description">
                   <b>About this item</b>
-                  <p>{item.short_description || (descriptionOpen ? item.description : `${item.description.slice(0, 150).trim()}...`)}</p>
+                  <p>
+                    {item.short_description ||
+                      (item.description.length > 150
+                        ? `${item.description.slice(0, 150).trimEnd()}…`
+                        : item.description)}
+                  </p>
                 </div>
               )}
-              {item.description && (
+              {item.description && item.description.length > (item.short_description?.length || 0) && (
                 <div className={`product-full-description ${descriptionOpen ? "open" : ""}`}>
                   {descriptionOpen && (
-                    <div className="description-text">{item.description}</div>
+                    <div className="description-expanded">
+                      <b className="description-heading">Product description</b>
+                      <div className="description-text">{item.description}</div>
+                    </div>
                   )}
-                  <button type="button" aria-expanded={descriptionOpen} onClick={() => setDescriptionOpen((v) => !v)}>
-                    {descriptionOpen ? "Read less" : "Read more"}
+                  <button
+                    type="button"
+                    className="description-toggle"
+                    aria-expanded={descriptionOpen}
+                    onClick={() => setDescriptionOpen((v) => !v)}
+                  >
+                    {descriptionOpen ? "Show less" : "Read full description"}
+                    <span aria-hidden="true">{descriptionOpen ? "−" : "+"}</span>
                   </button>
                 </div>
               )}
