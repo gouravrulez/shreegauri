@@ -76,6 +76,7 @@ type Customer = {
   created_at: string;
   updated_at: string;
 };
+type Coupon = { id?: string; code: string; discount_type: "percentage" | "fixed"; discount_value: number; minimum_order_inr: number; maximum_discount_inr: number | null; starts_at: string | null; expires_at: string | null; usage_limit: number | null; per_customer_limit: number | null; usage_count: number; is_active: boolean; is_public: boolean; show_on_dashboard: boolean; applies_to: "all" | "products" | "categories"; product_ids: string[]; category_ids: string[] };
 type AstrologyEnquiry = { id:string; full_name:string; mobile:string; email:string; address:string; service:string; preferred_time:string|null; details:string|null; status:string; email_status:string; created_at:string };
 type AstrologyService = { name:string; description:string; active:boolean };
 type Order = {
@@ -91,6 +92,7 @@ type Order = {
   created_at: string;
   order_items: OrderItem[];
 };
+const blankCoupon: Coupon = { code: "", discount_type: "percentage", discount_value: 10, minimum_order_inr: 0, maximum_discount_inr: null, starts_at: null, expires_at: null, usage_limit: null, per_customer_limit: null, usage_count: 0, is_active: true, is_public: true, show_on_dashboard: true, applies_to: "all", product_ids: [], category_ids: [] };
 const blankCat = {
   name: "",
   slug: "",
@@ -148,6 +150,8 @@ export default function AdminDashboard() {
     [newStaffPassword, setNewStaffPassword] = useState(""),
     [astrologyEnquiries, setAstrologyEnquiries] = useState<AstrologyEnquiry[]>([]),
     [astrologyServices, setAstrologyServices] = useState<AstrologyService[]>([]),
+    [coupons, setCoupons] = useState<Coupon[]>([]),
+    [couponDraft, setCouponDraft] = useState<Coupon>(blankCoupon),
     [quickEdit, setQuickEdit] = useState<{ id: string; field: "price_inr" | "stock_quantity"; value: string } | null>(null),
     [productQuery, setProductQuery] = useState(""),
     [productFilter, setProductFilter] = useState("all"),
@@ -194,7 +198,7 @@ export default function AdminDashboard() {
     setStaffRows(roleData.staff || []);
     setNeedsPasswordSetup(Boolean(roleData.needs_password_setup));
     await loadAstrology(currentSession.access_token);
-    const [a, b, c, d, o, u] = await Promise.all([
+    const [a, b, c, d, o, u, v] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase
         .from("products")
@@ -213,6 +217,7 @@ export default function AdminDashboard() {
         .from("customers")
         .select("*")
         .order("created_at", { ascending: false }),
+      supabase.from("discount_coupons").select("*").order("created_at", { ascending: false }),
     ]);
     if (a.data) setCats(a.data);
     if (b.data)
@@ -226,6 +231,7 @@ export default function AdminDashboard() {
     if (d.data) setReviews(d.data);
     if (o.data) setOrders(o.data as Order[]);
     if (u.data) setCustomers(u.data as Customer[]);
+    if (v.data) setCoupons(v.data as Coupon[]);
   }
   async function loadAstrology(accessToken?: string) {
     const token = accessToken || (await supabase.auth.getSession()).data.session?.access_token;
@@ -475,6 +481,38 @@ export default function AdminDashboard() {
       .eq("id", 1);
     setNotice(error?.message || "Website content updated.");
   }
+  async function saveCourierDetails(e: FormEvent<HTMLFormElement>, order: Order) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const courier_name = String(form.get("courier_name") || "").trim();
+    const tracking_number = String(form.get("tracking_number") || "").trim();
+    const tracking_url = String(form.get("tracking_url") || "").trim();
+    const dispatch_date = String(form.get("dispatch_date") || "") || null;
+    const expected_delivery_date = String(form.get("expected_delivery_date") || "") || null;
+    const { error } = await supabase.from("orders").update({ courier_name: courier_name || null, tracking_number: tracking_number || null, tracking_url: tracking_url || null, dispatch_date, expected_delivery_date, tracking_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", order.id);
+    if (error) { setNotice("Tracking details could not be saved: " + error.message); return; }
+    setOrders((current) => current.map((o) => o.id === order.id ? { ...o, courier_name, tracking_number, tracking_url, dispatch_date, expected_delivery_date } as Order : o));
+    setNotice("Courier and tracking details saved for " + order.order_number + ".");
+  }
+  async function saveCoupon(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const code = couponDraft.code.trim().toUpperCase().replace(/\\s+/g, "");
+    if (!/^[A-Z0-9_-]{3,32}$/.test(code)) { setNotice("Coupon code must be 3–32 letters, numbers, hyphens or underscores."); return; }
+    if (!Number.isFinite(Number(couponDraft.discount_value)) || Number(couponDraft.discount_value) <= 0) { setNotice("Enter a valid discount value."); return; }
+    const payload = { ...couponDraft, code, discount_value: Number(couponDraft.discount_value), minimum_order_inr: Number(couponDraft.minimum_order_inr || 0), maximum_discount_inr: couponDraft.maximum_discount_inr === null || couponDraft.maximum_discount_inr === ("" as any) ? null : Number(couponDraft.maximum_discount_inr), usage_limit: couponDraft.usage_limit ? Number(couponDraft.usage_limit) : null, per_customer_limit: couponDraft.per_customer_limit ? Number(couponDraft.per_customer_limit) : null, starts_at: couponDraft.starts_at || null, expires_at: couponDraft.expires_at || null };
+    const { data, error } = await supabase.from("discount_coupons").upsert(payload).select("*").single();
+    if (error) { setNotice("Coupon could not be saved: " + error.message); return; }
+    setCoupons((current) => [data as Coupon, ...current.filter((c) => c.id !== data.id)]);
+    setCouponDraft(blankCoupon);
+    setNotice("Coupon " + code + " saved.");
+  }
+  async function toggleCoupon(coupon: Coupon) {
+    if (!coupon.id) return;
+    const { error } = await supabase.from("discount_coupons").update({ is_active: !coupon.is_active, updated_at: new Date().toISOString() }).eq("id", coupon.id);
+    if (error) { setNotice("Coupon status could not be changed: " + error.message); return; }
+    setCoupons((current) => current.map((c) => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
+    setNotice(coupon.code + (coupon.is_active ? " paused." : " activated."));
+  }
   async function updateOrder(id: string, order_status: string) {
     setNotice(`Updating order to ${order_status}...`);
     const { data: authData } = await supabase.auth.getSession();
@@ -660,6 +698,7 @@ export default function AdminDashboard() {
         )}
         {["admin", "manager", "support"].includes(staffRole) && <button className={tab === "astrology" ? "on" : ""} onClick={() => setTab("astrology")}><Star /> Astrology Enquiries {astrologyEnquiries.filter(e => e.status === "new").length > 0 && <b className="order-count">{astrologyEnquiries.filter(e => e.status === "new").length}</b>}</button>}
         {isPrimaryAdmin && <button className={tab === "currency" ? "on" : ""} onClick={() => setTab("currency")}><Globe /> Global Currency Rates</button>}
+        {isPrimaryAdmin && <button className={tab === "shipping-coupons" ? "on" : ""} onClick={() => { setTab("shipping-coupons"); setCouponDraft(blankCoupon); }}><Package /> Shipping & Coupons</button>}
         <footer className="admin-utility-actions" aria-label="Account and store actions">
           {isPrimaryAdmin && <button className={tab === "staff" ? "on" : ""} onClick={() => setTab("staff")}><ShieldCheck /> Staff & Permissions</button>}
           <a href="/"><Store /> View Store</a>
@@ -689,7 +728,9 @@ export default function AdminDashboard() {
                       ? "Customer Review Approval"
                       : tab === "currency"
                         ? "Global Currency Rates"
-                        : "Photos, Logo & Homepage"}
+                        : tab === "shipping-coupons"
+                          ? "Shipping & Coupons"
+                          : "Photos, Logo & Homepage"}
             </h1>
           </div>
           {notice && <p>{notice}</p>}
@@ -839,6 +880,15 @@ export default function AdminDashboard() {
                       ₹{Number(o.total_inr).toLocaleString("en-IN")}
                     </strong>
                   </div>
+                  <form className="order-tracking-editor" onSubmit={(e) => saveCourierDetails(e, o)} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, padding: 14, margin: "14px 0", border: "1px solid #eadfd4", borderRadius: 9, background: "#fffdf9" }}>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>COURIER / DELIVERY PARTNER<input name="courier_name" defaultValue={(o as any).courier_name || ""} placeholder="e.g. Delhivery, Blue Dart" /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING NUMBER<input name="tracking_number" defaultValue={(o as any).tracking_number || ""} placeholder="AWB / tracking ID" /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>TRACKING URL<input name="tracking_url" type="url" defaultValue={(o as any).tracking_url || ""} placeholder="https://…" /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>DISPATCH DATE<input name="dispatch_date" type="date" defaultValue={(o as any).dispatch_date || ""} /></label>
+                    <label style={{ display: "grid", gap: 5, fontSize: 11, color: "#705d52", fontWeight: 700 }}>EXPECTED DELIVERY<input name="expected_delivery_date" type="date" defaultValue={(o as any).expected_delivery_date || ""} /></label>
+                    <button type="submit" style={{ alignSelf: "end", minHeight: 42, border: 0, borderRadius: 6, background: "#4a111a", color: "#fff", fontWeight: 800 }}>SAVE TRACKING</button>
+                    {(o as any).tracking_url && <a href={(o as any).tracking_url} target="_blank" rel="noreferrer" style={{ alignSelf: "center", color: "#8b622e", fontWeight: 700 }}>TRACK SHIPMENT ↗</a>}
+                  </form>
                   <div className="order-actions">
                     <a
                       href={`https://wa.me/${o.phone.replace(/\D/g, "").replace(/^0/, "91")}?text=${encodeURIComponent(`Hello ${o.customer_name}, your Shree Gauri order ${o.order_number} is ${o.order_status}.`)}`}
@@ -868,6 +918,38 @@ export default function AdminDashboard() {
                 <p>New website orders will appear here automatically.</p>
               </div>
             )}
+          </div>
+        )}
+        {tab === "shipping-coupons" && isPrimaryAdmin && (
+          <div className="shipping-coupon-workspace" style={{ display: "grid", gap: 22, maxWidth: 1120 }}>
+            <section style={{ padding: 22, border: "1px solid #e7ddd2", borderRadius: 12, background: "#fffdf9" }}>
+              <small style={{ color: "#9a8057", letterSpacing: 2, fontWeight: 800 }}>PROMOTIONS</small>
+              <h2 style={{ margin: "7px 0", font: "27px Georgia,serif", color: "#421015" }}>{couponDraft.id ? "Edit Coupon" : "Create Coupon"}</h2>
+              <p style={{ color: "#81766d", fontSize: 13 }}>Create percentage or fixed-value offers with minimum order, validity and usage limits.</p>
+              <form onSubmit={saveCoupon} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12 }}>
+                <label>Coupon Code<input required maxLength={32} value={couponDraft.code} onChange={(e) => setCouponDraft({ ...couponDraft, code: e.target.value.toUpperCase() })} placeholder="e.g. GAURI10" /></label>
+                <label>Discount Type<select value={couponDraft.discount_type} onChange={(e) => setCouponDraft({ ...couponDraft, discount_type: e.target.value as "percentage" | "fixed" })}><option value="percentage">Percentage (%)</option><option value="fixed">Fixed amount (₹)</option></select></label>
+                <label>Discount Value<input required type="number" min="0.01" step="0.01" value={couponDraft.discount_value} onChange={(e) => setCouponDraft({ ...couponDraft, discount_value: Number(e.target.value) })} /></label>
+                <label>Minimum Order (₹)<input type="number" min="0" value={couponDraft.minimum_order_inr} onChange={(e) => setCouponDraft({ ...couponDraft, minimum_order_inr: Number(e.target.value) })} /></label>
+                <label>Maximum Discount (₹)<input type="number" min="0" value={couponDraft.maximum_discount_inr ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, maximum_discount_inr: e.target.value === "" ? null : Number(e.target.value) })} /></label>
+                <label>Usage Limit<input type="number" min="1" value={couponDraft.usage_limit ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, usage_limit: e.target.value ? Number(e.target.value) : null })} /></label>
+                <label>Per Customer Limit<input type="number" min="1" value={couponDraft.per_customer_limit ?? ""} onChange={(e) => setCouponDraft({ ...couponDraft, per_customer_limit: e.target.value ? Number(e.target.value) : null })} /></label>
+                <label>Starts At<input type="datetime-local" value={couponDraft.starts_at ? new Date(couponDraft.starts_at).toISOString().slice(0,16) : ""} onChange={(e) => setCouponDraft({ ...couponDraft, starts_at: e.target.value ? new Date(e.target.value).toISOString() : null })} /></label>
+                <label>Expires At<input type="datetime-local" value={couponDraft.expires_at ? new Date(couponDraft.expires_at).toISOString().slice(0,16) : ""} onChange={(e) => setCouponDraft({ ...couponDraft, expires_at: e.target.value ? new Date(e.target.value).toISOString() : null })} /></label>
+                <label>Applies To<select value={couponDraft.applies_to} onChange={(e) => setCouponDraft({ ...couponDraft, applies_to: e.target.value as Coupon["applies_to"] })}><option value="all">All products</option><option value="products">Selected products</option><option value="categories">Selected categories</option></select></label>
+                <label className="check"><input type="checkbox" checked={couponDraft.is_active} onChange={(e) => setCouponDraft({ ...couponDraft, is_active: e.target.checked })} /> Active</label>
+                <label className="check"><input type="checkbox" checked={couponDraft.is_public} onChange={(e) => setCouponDraft({ ...couponDraft, is_public: e.target.checked })} /> Public coupon</label>
+                <label className="check"><input type="checkbox" checked={couponDraft.show_on_dashboard} onChange={(e) => setCouponDraft({ ...couponDraft, show_on_dashboard: e.target.checked })} /> Show in customer dashboard</label>
+                <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, flexWrap: "wrap" }}><button type="submit" style={{ border: 0, borderRadius: 7, background: "#4a111a", color: "#fff", padding: "13px 20px", fontWeight: 800 }}>SAVE COUPON</button><button type="button" onClick={() => setCouponDraft(blankCoupon)} style={{ border: "1px solid #ded1c3", borderRadius: 7, background: "#fff", padding: "13px 18px" }}>CLEAR FORM</button></div>
+              </form>
+            </section>
+            <section style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}><h2 style={{ margin: 0, font: "26px Georgia,serif", color: "#421015" }}>Existing Coupons</h2><span style={{ color: "#81766d", fontSize: 12 }}>{coupons.length} coupon(s)</span></div>
+              {coupons.length ? coupons.map((c) => <article key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap", padding: 16, border: "1px solid #e7ddd2", borderRadius: 10, background: "#fff" }}>
+                <div><b style={{ color: "#4a111a", letterSpacing: 1 }}>{c.code}</b><p style={{ margin: "5px 0", color: "#6f6058", fontSize: 12 }}>{c.discount_type === "percentage" ? c.discount_value + "% off" : "₹" + c.discount_value + " off"} · Min. order ₹{Number(c.minimum_order_inr || 0).toLocaleString("en-IN")} · Used {c.usage_count || 0}{c.usage_limit ? " / " + c.usage_limit : ""}</p><small style={{ color: "#8a7a70" }}>{c.is_active ? "ACTIVE" : "PAUSED"} · {c.is_public ? "PUBLIC" : "PRIVATE"}</small></div>
+                <div style={{ display: "flex", gap: 8 }}><button type="button" onClick={() => setCouponDraft(c)} style={{ border: "1px solid #ded1c3", borderRadius: 6, padding: "9px 13px", background: "#fff" }}>EDIT</button><button type="button" onClick={() => toggleCoupon(c)} style={{ border: 0, borderRadius: 6, padding: "9px 13px", background: c.is_active ? "#f4e8e5" : "#e9f2e9", color: "#4a111a", fontWeight: 800 }}>{c.is_active ? "PAUSE" : "ACTIVATE"}</button></div>
+              </article>) : <p style={{ padding: 20, background: "#fff", border: "1px dashed #d9cbbd", borderRadius: 8, color: "#81766d" }}>No coupons created yet.</p>}
+            </section>
           </div>
         )}
         {tab === "categories" && (
