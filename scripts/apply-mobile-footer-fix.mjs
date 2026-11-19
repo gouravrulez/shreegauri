@@ -34,7 +34,9 @@ const newGo = `  const go = (v: string) => {
   };`;
 
 if (!text.includes(newGo)) {
-  if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
+  if (text.includes("Every in-app navigation starts at the top of the destination view.")) {
+    // The storefront already has the top-of-view navigation behavior.
+  } else if (!text.includes(oldGo)) throw new Error("Mobile category navigation patch failed.");
   text = text.replace(oldGo, newGo);
 }
 
