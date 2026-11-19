@@ -81,14 +81,16 @@ if (!admin.includes(ordersQueryReplacement)) {
   admin = admin.replace(ordersQueryEnd, ordersQueryReplacement);
 }
 
-addOnce(
-  `    if (o.data) setOrders(o.data as Order[]);
+if (!admin.includes("if (u.data) setCustomers(u.data as Customer[]);")) {
+  addOnce(
+    `    if (o.data) setOrders(o.data as Order[]);
   }`,
-  `    if (o.data) setOrders(o.data as Order[]);
+    `    if (o.data) setOrders(o.data as Order[]);
     if (u.data) setCustomers(u.data as Customer[]);
   }`,
-  "set customers",
-);
+    "set customers",
+  );
+}
 
 const orderButtonEnd = `        </button>
         <button
