@@ -796,18 +796,12 @@ export default function Storefront() {
                     tabIndex={0}
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
-                      setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                      setItem(p);
-                      setDescriptionOpen(false);
-                      setQty(1);
+                      window.location.href = `/products/${p.slug}`;
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
-                        setDescriptionOpen(false);
-                        setQty(1);
+                        window.location.href = `/products/${p.slug}`;
                       }
                     }}
                   >
@@ -829,10 +823,7 @@ export default function Storefront() {
                       className="photo"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage(p.primary_image_url || p.image_urls?.[0] || "");
-                        setItem(p);
-                        setDescriptionOpen(false);
-                        setQty(1);
+                        window.location.href = `/products/${p.slug}`;
                       }}
                     >
                       <img
