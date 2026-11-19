@@ -115,7 +115,7 @@ export default function ProductPage() {
     <main className="sg-product-page">
       <header className="sg-product-header">
         <a href="/" className="sg-product-brand"><span>SG</span><b>SHREE GAURI</b><small>DIVINE ENERGY. TIMELESS BEAUTY.</small></a>
-        <a href="/?cart=1" className="sg-product-cart">VIEW CART</a>
+        <div className="sg-product-header-links"><a href="/" className="sg-continue-shopping">← CONTINUE SHOPPING</a><a href="/?cart=1" className="sg-product-cart">VIEW CART</a></div>
       </header>
       <nav className="sg-product-breadcrumb"><a href="/">Home</a><span>/</span><a href="/?shop=1">Shop</a><span>/</span><b>{product.name}</b></nav>
       <div className="sg-product-review-summary" aria-live="polite">
