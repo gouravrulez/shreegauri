@@ -1040,22 +1040,37 @@ export default function AdminDashboard() {
                   </select>
                 </label>
               </div>
-              <label>
-                Product Category
-                <select
-                  value={prod.category_id || ""}
-                  onChange={(e) =>
-                    setProd({ ...prod, category_id: e.target.value, category_ids: e.target.value ? [e.target.value] : [] })
-                  }
-                >
-                  <option value="">Select</option>
-                  {cats.filter((c) => c.is_active && c.collection_type === "category" && !c.parent_id).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <section className="product-collection-picker" style={{ gridColumn: "1 / -1", border: "1px solid #e5d9cb", borderRadius: 12, padding: 18, background: "#fffdf9" }}>
+                <div style={{ marginBottom: 14 }}>
+                  <b style={{ display: "block", color: "#402126", fontSize: 15 }}>Collections — choose categories, purposes and planets</b>
+                  <small style={{ color: "#817168", lineHeight: 1.5 }}>A product can belong to more than one collection. For example, select both Sun and Moon, and any relevant purposes.</small>
+                </div>
+                {(["category", "purpose", "planet"] as const).map((kind) => {
+                  const choices = cats.filter((c) => c.is_active && c.collection_type === kind);
+                  if (!choices.length) return null;
+                  const heading = kind === "category" ? "Product Categories" : kind === "purpose" ? "Shop by Purpose" : "Shop by Planet";
+                  return (
+                    <div key={kind} style={{ marginTop: 14 }}>
+                      <b style={{ display: "block", marginBottom: 8, color: "#72513d", fontSize: 12, letterSpacing: ".06em" }}>{heading}</b>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 8 }}>
+                        {choices.map((c) => {
+                          const selected = (prod.category_ids || []).includes(c.id);
+                          return (
+                            <label key={c.id} className="check" style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, border: selected ? "1px solid #b38a4b" : "1px solid #e9e1d8", borderRadius: 7, padding: "10px 11px", background: selected ? "#fbf3e5" : "#fff", color: "#49362f" }}>
+                              <input type="checkbox" checked={selected} onChange={(e) => {
+                                const current = Array.isArray(prod.category_ids) ? prod.category_ids : (prod.category_id ? [prod.category_id] : []);
+                                const category_ids = e.target.checked ? Array.from(new Set([...current, c.id])) : current.filter((id: string) => id !== c.id);
+                                setProd({ ...prod, category_ids, category_id: category_ids[0] || "" });
+                              }} />
+                              <span style={{ overflowWrap: "anywhere" }}>{c.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
               <label>
                 Main Product Photo
                 <input
