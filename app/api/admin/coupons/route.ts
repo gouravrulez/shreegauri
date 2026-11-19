@@ -80,18 +80,13 @@ export async function POST(request: Request) {
       starts_at: input.starts_at || null,
       ends_at: input.ends_at || null,
       max_uses: input.max_uses ? Number(input.max_uses) : null,
-      per_customer_limit: input.per_customer_limit ? Number(input.per_customer_limit) : null,
       is_active: Boolean(input.is_active),
       is_public: Boolean(input.is_public),
       show_on_dashboard: Boolean(input.show_on_dashboard),
-      applies_to: ["all", "products", "categories"].includes(input.applies_to) ? input.applies_to : "all",
-      product_ids: Array.isArray(input.product_ids) ? input.product_ids : [],
-      category_ids: Array.isArray(input.category_ids) ? input.category_ids : [],
       updated_at: new Date().toISOString(),
     };
     if (payload.max_discount_inr !== null && (!Number.isFinite(Number(payload.max_discount_inr)) || Number(payload.max_discount_inr) < 0)) return NextResponse.json({ error: "Maximum discount must be zero or more." }, { status: 400 });
     if (payload.max_uses !== null && (!Number.isInteger(Number(payload.max_uses)) || Number(payload.max_uses) < 1)) return NextResponse.json({ error: "Usage limit must be a positive whole number." }, { status: 400 });
-    if (payload.per_customer_limit !== null && (!Number.isInteger(Number(payload.per_customer_limit)) || Number(payload.per_customer_limit) < 1)) return NextResponse.json({ error: "Per-customer limit must be a positive whole number." }, { status: 400 });
 
     const query = id
       ? auth.admin.from("promo_codes").update(payload).eq("id", id)
