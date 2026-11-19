@@ -102,6 +102,7 @@ const blankCat = {
   collection_type: "category",
 };
 const blankProd = {
+  brand: "Shree Gauri",
   name: "",
   slug: "",
   short_description: "",
@@ -413,6 +414,7 @@ export default function AdminDashboard() {
     }
     const data = {
       ...prod,
+      brand: "Shree Gauri",
       slug:
         prod.slug ||
         prod.name
