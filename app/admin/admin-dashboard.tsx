@@ -550,7 +550,7 @@ export default function AdminDashboard() {
   const lowStock = products.filter((p) => p.is_active && Number(p.stock_quantity) <= 3).length;
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productQuery.trim().toLowerCase()) &&
-    (selectedProductCategory === "all" || p.category_id === selectedProductCategory) &&
+    (selectedProductCategory === "all" || p.category_id === selectedProductCategory || (Array.isArray(p.category_ids) && p.category_ids.includes(selectedProductCategory))) &&
     (productFilter === "all" || (productFilter === "active" && p.is_active) ||
       (productFilter === "hidden" && !p.is_active) ||
       (productFilter === "low-stock" && Number(p.stock_quantity) > 0 && Number(p.stock_quantity) <= 3) ||
