@@ -35,6 +35,7 @@ type C = {
 type P = {
   id: string;
   category_id: string | null;
+  category_ids: string[];
   name: string;
   slug: string;
   short_description: string;
@@ -155,11 +156,20 @@ export default function Storefront() {
       .then(({ data }) => { if (alive && data) setCats(data as C[]); });
 
     supabase.from("products")
-      .select("id,category_id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
+      .select(
+        "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
+      )
       .eq("is_active", true).order("created_at", { ascending: false })
       .then(({ data }) => {
         if (alive && data) setProducts(data.map((p: any) => ({
-          ...p, image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          ...p,
+          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+          category_ids:
+            Array.isArray(p.category_ids) && p.category_ids.length
+              ? p.category_ids
+              : p.category_id
+                ? [p.category_id]
+                : [],
         })) as P[]);
       });
 
@@ -353,9 +363,12 @@ export default function Storefront() {
           view === "shop" ||
           view === "new" ||
           view === "best" ||
-          activeCategory === p.category_id) &&
+          activeCategory === p.category_id ||
+          (!!activeCategory && p.category_ids.includes(activeCategory))) &&
         (view !== "best" || p.is_featured) &&
-        (categoryFilter === "all" || p.category_id === categoryFilter) &&
+        (categoryFilter === "all" ||
+          p.category_id === categoryFilter ||
+          p.category_ids.includes(categoryFilter)) &&
         (!stockOnly || p.stock_quantity > 0)
     );
     return [...list].sort((a, b) =>
@@ -622,11 +635,11 @@ export default function Storefront() {
             <div className="cat-grid">
               {cats
                 .filter((c) => !c.parent_id && c.collection_type === "category")
-                .map((c, categoryIndex) => (
+                .map((c) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} loading={categoryIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={categoryIndex < 4 ? "high" : "low"} />
+                        <img src={c.image_url} alt={c.name} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -792,7 +805,7 @@ export default function Storefront() {
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="product-grid">
               {shown.length ? (
-                visibleProducts.map((p, productIndex) => (
+                visibleProducts.map((p) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -837,9 +850,9 @@ export default function Storefront() {
                           "/shree-gauri-logo.png"
                         }
                         alt={p.name}
-                        loading={productIndex < 4 ? "eager" : "lazy"}
+                        loading="lazy"
                         decoding="async"
-                        fetchPriority={productIndex < 4 ? "high" : "low"}
+                        fetchPriority="low"
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
