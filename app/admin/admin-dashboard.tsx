@@ -17,6 +17,24 @@ import {
   UserX,
   Globe,
 } from "lucide-react";
+// Keep admin catalogue thumbnails lightweight. Supabase Storage image rendering
+// serves small WebP previews; if transformations are unavailable, the image falls back
+// to its original URL. Full-size originals remain available in the product editor.
+function adminThumbnail(url: string, width = 160) {
+  if (!url) return "/placeholder.png";
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, query = ""] = url.split("?");
+  const transformed = base.replace(marker, "/storage/v1/render/image/public/");
+  const params = new URLSearchParams(query);
+  params.set("width", String(width));
+  params.set("height", String(width));
+  params.set("resize", "cover");
+  params.set("quality", "58");
+  params.set("format", "webp");
+  return transformed + "?" + params.toString();
+}
+
 type Cat = {
   id: string;
   name: string;
@@ -1541,7 +1559,7 @@ export default function AdminDashboard() {
                 paginatedProducts.map((p) => (
                   <article key={p.id} className="product-admin-card">
                     <div className="product-admin-card-head">
-                      <img src={p.primary_image_url || "/placeholder.png"} alt="" />
+                      <img src={adminThumbnail(p.primary_image_url, 160)} onError={(e) => { const img = e.currentTarget; if (img.src !== (p.primary_image_url || "/placeholder.png")) img.src = p.primary_image_url || "/placeholder.png"; }} loading="lazy" decoding="async" fetchPriority="low" alt="" />
                       <div className="product-admin-card-title">
                         <b title={p.name}>{p.name}</b>
                         <span className={p.is_active ? "product-status-visible" : "product-status-hidden"}>{p.is_active ? "Visible on store" : "Hidden from store"}</span>
@@ -1596,7 +1614,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {paginatedProducts.map((p) => (
                     <tr key={p.id} style={{ borderTop: "1px solid #eee5dc" }}>
-                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={p.primary_image_url || "/placeholder.png"} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
+                      <td style={{ padding: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 190 }}><img src={adminThumbnail(p.primary_image_url, 112)} onError={(e) => { const img = e.currentTarget; if (img.src !== (p.primary_image_url || "/placeholder.png")) img.src = p.primary_image_url || "/placeholder.png"; }} loading="lazy" decoding="async" fetchPriority="low" alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 6, background: "#f3eee8" }} /><b>{p.name}</b></div></td>
                       <td style={{ padding: 10, whiteSpace: "nowrap" }}>₹{Number(p.price_inr).toLocaleString("en-IN")}</td>
                       <td style={{ padding: 10 }}>{quickEdit?.id === p.id && quickEdit.field === "stock_quantity" ? <input autoFocus aria-label={"Edit stock for " + p.name} type="number" min="0" step="1" value={quickEdit.value} onChange={(e) => setQuickEdit({ ...quickEdit, value: e.target.value })} onBlur={() => saveQuickProductField(p.id, "stock_quantity", quickEdit.value)} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.preventDefault(); e.currentTarget.onblur = null; setQuickEdit(null); } }} style={{ width: 90, padding: 8, border: "1px solid #d8c5ae" }} /> : <button type="button" onClick={() => setQuickEdit({ id: p.id, field: "stock_quantity", value: String(p.stock_quantity) })} style={{ border: "1px solid #d8c5ae", borderRadius: 7, padding: "8px 12px", background: Number(p.stock_quantity) <= 3 ? "#fff4e5" : "#fff", color: "#4b3529", fontWeight: 700 }}>{p.stock_quantity} ✎</button>}</td>
                       <td style={{ padding: 10 }}><span style={{ color: !p.is_active ? "#806f68" : Number(p.stock_quantity) <= 3 ? "#a45b00" : "#267347", fontWeight: 700 }}>{!p.is_active ? "Hidden" : Number(p.stock_quantity) <= 3 ? "Low stock" : "In stock"}</span></td>
