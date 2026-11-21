@@ -26,6 +26,7 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeImage, setActiveImage] = useState("");
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [reviews, setReviews] = useState<Array<{id:string; reviewer_name:string; rating:number; title:string; body:string; created_at:string}>>([]);
@@ -137,6 +138,24 @@ export default function ProductPage() {
           <small className="sg-product-eyebrow">SHREE GAURI · AUTHENTIC COLLECTION</small>
           <h1>{product.name}</h1>
           {product.short_description && <p className="sg-product-short">{product.short_description}</p>}
+          {product.description && product.description !== product.short_description && (
+            <section className="sg-product-description">
+              <button
+                type="button"
+                className="sg-description-toggle"
+                aria-expanded={descriptionExpanded}
+                onClick={() => setDescriptionExpanded((expanded) => !expanded)}
+              >
+                {descriptionExpanded ? "SHOW LESS" : "SHOW MORE"}
+              </button>
+              {descriptionExpanded && (
+                <div className="sg-description-expanded">
+                  <h2>Full Product Description</h2>
+                  <p>{product.description}</p>
+                </div>
+              )}
+            </section>
+          )}
           <div className="sg-product-price">{money(product.price_inr)} {product.compare_at_price_inr && <del>{money(product.compare_at_price_inr)}</del>}</div>
           <small className="sg-product-tax">Inclusive of applicable taxes</small>
           <p className={product.stock_quantity > 0 ? "sg-product-stock" : "sg-product-stock out"}>{product.stock_quantity > 0 ? `In stock · ${product.stock_quantity} available` : "Currently unavailable"}</p>
@@ -147,7 +166,7 @@ export default function ProductPage() {
           </div>
           {added && <p role="status">Added to your cart.</p>}
           <div className="sg-product-benefits"><span>✓ Carefully selected products</span><span>✓ Secure checkout</span><span>✓ Pan-India delivery</span></div>
-          {product.description && <section className="sg-product-description"><h2>Product Details</h2><p>{product.description}</p></section>}
+
         </div>
       </section>
       <section className="sg-product-reviews" aria-labelledby="sg-reviews-heading">
