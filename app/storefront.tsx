@@ -445,9 +445,10 @@ export default function Storefront() {
           onClick={() => go("home")}
           aria-label="Shree Gauri home"
         >
-          <i className="sg-mark" aria-hidden="true">
-            SG
-          </i>
+          <img
+            src={s.brand_logo_url || "/shree-gauri-logo.png"}
+            alt="Shree Gauri"
+          />
           <span>
             <b>SHREE GAURI</b>
             <small>Divine Energy. Timeless Beauty.</small>
@@ -813,7 +814,7 @@ export default function Storefront() {
                     <div className="info">
                       <small>SHREE GAURI</small>
                       <h3>{p.name}</h3>
-                      <p>{p.short_description || p.description}</p>
+                      {p.short_description && <p>{p.short_description}</p>}
                       <b>{money(Number(p.price_inr))}</b>
                       {p.compare_at_price_inr && (
                         <del>{money(Number(p.compare_at_price_inr))}</del>
