@@ -310,11 +310,6 @@ export default function Storefront() {
       setRating(5);
     }
   }
-  function openSecureCheckout() {
-    if (!cart.length) { setCheckoutOpen(false); setView("cart"); return; }
-    setCheckoutMsg("");
-    setCheckoutOpen(true);
-  }
   function confirmAddedToCart(productName: string, quantity = 1) {
     setCartNotice(`${quantity} × ${productName} added to cart successfully.`);
     window.setTimeout(() => setCartNotice(""), 2800);
