@@ -52,17 +52,31 @@ export default function ProductPage() {
   useEffect(() => {
     if (!slug) return;
     let alive = true;
-    supabase.from("products").select("*").eq("slug", slug).eq("is_active", true).maybeSingle()
+    // Use the catalogue row immediately when the visitor has just clicked a
+    // product, then refresh the authoritative detail fields in the background.
+    try {
+      const cached = sessionStorage.getItem("sg_product_prefetch:" + slug);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.product && Date.now() - Number(parsed.savedAt || 0) < 10 * 60 * 1000) {
+          const next = { ...parsed.product, image_urls: Array.isArray(parsed.product.image_urls) ? parsed.product.image_urls : [] } as Product;
+          setProduct(next);
+          setActiveImage(next.primary_image_url || next.image_urls?.[0] || "");
+          setLoading(false);
+        }
+      }
+    } catch {}
+    supabase.from("products").select("id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,badge,category_id").eq("slug", slug).eq("is_active", true).maybeSingle()
       .then(({ data, error: queryError }) => {
         if (!alive) return;
         if (queryError || !data) {
-          setError("This product is not available right now.");
+          if (!product) setError("This product is not available right now.");
           setLoading(false);
           return;
         }
         const next = { ...data, image_urls: Array.isArray(data.image_urls) ? data.image_urls : [] } as Product;
         setProduct(next);
-        setActiveImage(next.primary_image_url || next.image_urls?.[0] || "");
+        setActiveImage((current) => current || next.primary_image_url || next.image_urls?.[0] || "");
         setLoading(false);
       });
     return () => { alive = false; };
