@@ -280,6 +280,9 @@ export default function Storefront() {
       }));
       setCheckoutMsg("");
       setCheckoutOpen(true);
+      // Only consume the Buy Now intent after the authenticated checkout
+      // form has actually been opened. Keep it through login/OTP redirects.
+      localStorage.removeItem("sg_buy_now_cart");
     } catch (error) {
       setCheckoutMsg(error instanceof Error ? error.message : "Unable to open secure checkout. Please try again.");
       setView("cart");
@@ -298,8 +301,9 @@ export default function Storefront() {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) savedCart = parsed as P[];
       if (savedCart.length) {
+        // Keep the dedicated Buy Now payload until checkout confirms that
+        // the customer is authenticated and the delivery form is open.
         localStorage.setItem("sg_cart", JSON.stringify(savedCart));
-        localStorage.removeItem("sg_buy_now_cart");
       }
     } catch {
       savedCart = [];
@@ -951,7 +955,7 @@ export default function Storefront() {
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { setItem(null); void openSecureCheckout([p]); }}
                         >
                           BUY NOW
                         </button>
@@ -1406,7 +1410,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setItem(null); void openSecureCheckout(chosen); }}
                 >
                   BUY NOW
                 </button>
