@@ -76,14 +76,25 @@ const effectReplacement = `  useEffect(() => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (new URLSearchParams(window.location.search).get("checkout") === "1") {
-      openSecureCheckout();
+      let savedCart: P[] = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(parsed)) savedCart = parsed as P[];
+      } catch { savedCart = []; }
+      if (savedCart.length) setCart(savedCart);
+      void openSecureCheckout(savedCart);
     }
   }, []);
 
-  async function openSecureCheckout() {
+  async function openSecureCheckout(cartForCheckout: P[] = cart) {
+    if (!cartForCheckout.length) {
+      setCheckoutMsg("Your cart is empty. Please add a product first.");
+      return;
+    }
+    setCart(cartForCheckout);
+    localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      localStorage.setItem("sg_cart", JSON.stringify(cart));
       window.location.href = "/login?returnTo=checkout";
       return;
     }
@@ -142,7 +153,7 @@ const effectReplacement = `  useEffect(() => {
     }));
   }
 
-  const money = (n: number) =>`;
+  const money = (n: number) =>`
 if (!text.includes("async function openSecureCheckout()")) {
   if (!text.includes(effectNeedle)) throw new Error("Customer checkout patch failed: helper insertion");
   text = text.replace(effectNeedle, effectReplacement);
