@@ -7,12 +7,14 @@ replace(`import { supabase } from "./lib/supabase";`,`import { supabase } from "
 replace(`  pincode: string;\n};\ntype SavedAddress = {`,`  pincode: string;\n  country_code: string;\n  phone_country_code: string;\n};\ntype SavedAddress = {`,`checkout international fields`);
 replace(`      pincode: "",\n    });`,`      pincode: "",\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    });`,`checkout defaults`);
 if (!text.includes("country_code: DEFAULT_COUNTRY.code")) {
-  const chosenAddressPattern = /(pincode: chosen\\?\\.pincode \\|\\| "",\\s*\\}\\);)/;
-  if (chosenAddressPattern.test(text)) {
-    text = text.replace(chosenAddressPattern, 'pincode: chosen?.pincode || "",\\n      country_code: DEFAULT_COUNTRY.code,\\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\\n    });');
-  } else {
+  const chosenAddressLine = '      pincode: chosen?.pincode || "",';
+  if (!text.includes(chosenAddressLine)) {
     throw new Error("International checkout patch failed: saved address defaults");
   }
+  text = text.replace(
+    chosenAddressLine,
+    chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,\\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
+  );
 }
 replace(`      pincode: a.pincode,\n    }));`,`      pincode: a.pincode,\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    }));`,`saved address selection`);
 replace(`    setCheckoutBusy(true);`,`    if (!canUsePhonePe(checkout.country_code)) {\n      setCheckoutMsg(INTERNATIONAL_PAYMENT_MESSAGE);\n      return;\n    }\n    setCheckoutBusy(true);`,`international payment guard`);
