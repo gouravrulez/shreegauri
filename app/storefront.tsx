@@ -230,17 +230,17 @@ export default function Storefront() {
   }, []);
   function chooseCheckoutAddress(id: string) {
     setSelectedAddressId(id);
-    const address = checkoutAddresses.find((entry) => entry.id === id);
-    if (!address) return;
+    const a = checkoutAddresses.find((entry) => entry.id === id);
+    if (!a) return;
     setCheckout((current) => ({
       ...current,
-      name: address.recipient_name || current.name,
-      phone: address.phone || current.phone,
-      line1: address.line1,
-      line2: address.line2 || "",
-      city: address.city,
-      state: address.state,
-      pincode: address.pincode,
+      name: a.recipient_name || current.name,
+      phone: a.phone || current.phone,
+      line1: a.line1,
+      line2: a.line2 || "",
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
     }));
   }
 
