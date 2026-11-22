@@ -1806,3 +1806,35 @@ body {
     letter-spacing: .25px;
   }
 }
+
+/* Desktop catalogue density: keep 4 products per row on standard desktops
+   and use 5 only when there is enough horizontal room. Mobile remains a
+   separately tuned two-column layout. */
+@media (min-width: 901px) {
+  .catalog-layout .catalog-results .product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+@media (min-width: 1500px) {
+  .catalog-layout .catalog-results .product-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+  main > .product-grid,
+  .section > .product-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+/* Preserve the finalized phone layout independently of desktop rules. */
+@media (max-width: 900px) {
+  .catalog-layout { display: block !important; }
+  .catalog-layout .catalog-results { width: 100%; min-width: 0; }
+  .product-grid,
+  .catalog-layout .product-grid,
+  .catalog-layout .catalog-results .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
