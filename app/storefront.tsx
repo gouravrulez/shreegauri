@@ -126,6 +126,7 @@ export default function Storefront() {
     [sort, setSort] = useState("featured"),
     [catalogPage, setCatalogPage] = useState(1),
     [pageSize, setPageSize] = useState(12),
+    [desktopColumns, setDesktopColumns] = useState(5),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
@@ -181,6 +182,7 @@ export default function Storefront() {
         if (!alive || !data) return;
         setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
         setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size)) ? Number((data as any).catalog_page_size) : 12);
+        setDesktopColumns([3, 4, 5, 6].includes(Number((data as any).catalog_columns_desktop)) ? Number((data as any).catalog_columns_desktop) : 5);
         if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
       });
 
@@ -761,7 +763,7 @@ export default function Storefront() {
             </aside>
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="catalog-results">
-              <div className="product-grid">
+              <div className="product-grid" style={{ "--catalog-columns": desktopColumns } as React.CSSProperties}>
               {shown.length ? (
                 visibleProducts.map((p) => (
                   <article
