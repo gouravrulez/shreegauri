@@ -157,7 +157,7 @@ const blankProd = {
   seo_description: "",
   google_product_category: "",
   custom_shipping_enabled: false,
-  custom_shipping_charge_inr: null,
+  custom_shipping_charge_inr: 0,
   badge: "",
   is_active: false,
   is_featured: false,
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
       category_id: prod.category_id || null,
       category_ids: Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])])),
       custom_shipping_enabled: Boolean(prod.custom_shipping_enabled),
-      custom_shipping_charge_inr: prod.custom_shipping_enabled && prod.custom_shipping_charge_inr !== "" && prod.custom_shipping_charge_inr !== null ? Number(prod.custom_shipping_charge_inr) : null,
+      custom_shipping_charge_inr: Number.isFinite(Number(prod.custom_shipping_charge_inr)) ? Math.max(0, Number(prod.custom_shipping_charge_inr)) : 0,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
