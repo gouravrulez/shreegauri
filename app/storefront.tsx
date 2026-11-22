@@ -137,7 +137,13 @@ export default function Storefront() {
     [imageZoomOpen, setImageZoomOpen] = useState(false),
     [descriptionOpen, setDescriptionOpen] = useState(false),
     [qty, setQty] = useState(1),
-    [cart, setCart] = useState<P[]>([]),
+    [cart, setCart] = useState<P[]>(() => {
+      if (typeof window === "undefined") return [];
+      try {
+        const saved = JSON.parse(window.localStorage.getItem("sg_cart") || "[]");
+        return Array.isArray(saved) ? saved as P[] : [];
+      } catch { return []; }
+    }),
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
     [catalogPage, setCatalogPage] = useState(1),
@@ -179,6 +185,36 @@ export default function Storefront() {
     router.prefetch("/products/" + encodeURIComponent(product.slug));
   };
   useEffect(() => { setDescriptionOpen(false); }, [item?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.setItem("sg_cart", JSON.stringify(cart)); } catch {}
+  }, [cart]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "1") {
+      let saved: P[] = [];
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(parsed)) saved = parsed as P[];
+      } catch {}
+      if (saved.length) {
+        setCart(saved);
+        setCheckoutOpen(true);
+      } else {
+        setCheckoutMsg("Your selected product could not be loaded. Please return to the product page and tap BUY NOW again.");
+      }
+      window.history.replaceState({}, "", "/");
+    } else if (params.get("cart") === "1") {
+      setView("cart");
+      window.history.replaceState({}, "", "/");
+    } else if (params.get("home") === "1") {
+      window.history.replaceState({}, "", "/");
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    }
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -239,6 +275,17 @@ export default function Storefront() {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
   }, []);
+  function openSecureCheckout(items: P[] = cart) {
+    if (!items.length) {
+      setCheckoutMsg("Your cart is empty. Please add a product first.");
+      return;
+    }
+    setCart(items);
+    try { window.localStorage.setItem("sg_cart", JSON.stringify(items)); } catch {}
+    setCheckoutMsg("");
+    setCheckoutOpen(true);
+  }
+
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -875,7 +922,7 @@ export default function Storefront() {
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { openSecureCheckout([p]); setItem(null); }}
                         >
                           BUY NOW
                         </button>
@@ -967,7 +1014,7 @@ export default function Storefront() {
               </h3>
               <button
                 className="gold link"
-                onClick={openSecureCheckout}
+                onClick={() => openSecureCheckout()}
               >
                 PLACE ORDER
               </button>
@@ -1330,7 +1377,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                  onClick={() => { const chosen = Array.from({ length: qty }, () => item); openSecureCheckout(chosen); setItem(null); }}
                 >
                   BUY NOW
                 </button>
