@@ -233,7 +233,7 @@ export default function Storefront() {
       window.history.replaceState({}, "", "/");
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
-  }, []););
+  }, []);
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
