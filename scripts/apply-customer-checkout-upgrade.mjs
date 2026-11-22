@@ -70,7 +70,11 @@ replaceOnce(
 
 const effectNeedle = `  const money = (n: number) =>`;
 const effectReplacement = `  useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("sg_cart", JSON.stringify(cart));
+    if (typeof window === "undefined") return;
+    const comingFromProductBuyNow = new URLSearchParams(window.location.search).get("checkout") === "1";
+    // Do not overwrite the product-page cart with the storefront's initial empty state.
+    if (comingFromProductBuyNow && cart.length === 0) return;
+    localStorage.setItem("sg_cart", JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
