@@ -23,6 +23,20 @@ import {
 } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaWhatsapp } from "react-icons/fa6";
 
+function storefrontImage(url: string, width = 720, quality = 72) {
+  if (!url) return "/shree-gauri-logo.png";
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, query = ""] = url.split("?");
+  const transformed = base.replace(marker, "/storage/v1/render/image/public/");
+  const params = new URLSearchParams(query);
+  params.set("width", String(width));
+  params.set("quality", String(quality));
+  params.set("format", "webp");
+  params.set("resize", "contain");
+  return transformed + "?" + params.toString();
+}
+
 type C = {
   id: string;
   name: string;
@@ -804,11 +818,8 @@ export default function Storefront() {
                       }}
                     >
                       <img
-                        src={
-                          p.primary_image_url ||
-                          p.image_urls?.[0] ||
-                          "/shree-gauri-logo.png"
-                        }
+                        src={storefrontImage(p.primary_image_url || p.image_urls?.[0] || "", 640, 70)}
+                        onError={(e) => { const img = e.currentTarget; const original = p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"; if (img.src !== original) img.src = original; }}
                         alt={p.name}
                         loading="lazy"
                         decoding="async"
@@ -1172,7 +1183,7 @@ export default function Storefront() {
                       onClick={() => setSelectedImage(url)}
                       onMouseEnter={() => setSelectedImage(url)}
                     >
-                      <img src={url} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
+                      <img src={storefrontImage(url, 180, 62)} onError={(e) => { e.currentTarget.src = url; }} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
                     </button>
                   ))}
               </div>
@@ -1188,7 +1199,7 @@ export default function Storefront() {
                   return <>
                     <button className="gallery-arrow gallery-prev" aria-label="Previous image" onClick={() => move(-1)}>‹</button>
                     <button className="gallery-zoom-trigger" aria-label="Open full size product image" onClick={() => setImageZoomOpen(true)}>
-                      <img className="gallery-main" src={active} alt={item.name} decoding="async" />
+                      <img className="gallery-main" src={storefrontImage(active, 1200, 78)} onError={(e) => { e.currentTarget.src = active; }} alt={item.name} decoding="async" fetchPriority="high" />
                     </button>
                     <button className="gallery-arrow gallery-next" aria-label="Next image" onClick={() => move(1)}>›</button>
                     <span className="gallery-counter">{images.length ? index + 1 : 1} / {Math.max(images.length, 1)}</span>
