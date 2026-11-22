@@ -233,6 +233,10 @@ replaceOnce(
 
 // Route every cart checkout entry through the authenticated checkout loader.
 text = text.replace(
+  /onClick=\\{openSecureCheckout\\}/g,
+  "onClick={() => openSecureCheckout()}"
+);
+text = text.replace(
   /onClick=\{\(\) => setCheckoutOpen\(true\)\}(\s*>\s*PLACE ORDER)/g,
   "onClick={openSecureCheckout}$1"
 );
