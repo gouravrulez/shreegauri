@@ -264,19 +264,26 @@ export default function Storefront() {
     }
     localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
     setCart(cartForCheckout);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      window.location.href = "/login?returnTo=checkout";
-      return;
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      const session = data.session;
+      if (!session) {
+        window.location.href = "/login?returnTo=checkout";
+        return;
+      }
+      setCheckout((current) => ({
+        ...current,
+        name: current.name || session.user.user_metadata?.full_name || "",
+        email: current.email || session.user.email || "",
+        phone: current.phone || session.user.phone || "",
+      }));
+      setCheckoutMsg("");
+      setCheckoutOpen(true);
+    } catch (error) {
+      setCheckoutMsg(error instanceof Error ? error.message : "Unable to open secure checkout. Please try again.");
+      setView("cart");
     }
-    setCheckout((current) => ({
-      ...current,
-      name: current.name || session.user.user_metadata?.full_name || "",
-      email: current.email || session.user.email || "",
-      phone: current.phone || session.user.phone || "",
-    }));
-    setCheckoutMsg("");
-    setCheckoutOpen(true);
   }
 
   useEffect(() => {
@@ -285,8 +292,15 @@ export default function Storefront() {
     if (params.get("checkout") !== "1") return;
     let savedCart: P[] = [];
     try {
-      const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+      // A product-page Buy Now intent takes priority over the regular cart.
+      const buyNowRaw = localStorage.getItem("sg_buy_now_cart");
+      const raw = buyNowRaw || localStorage.getItem("sg_cart") || "[]";
+      const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) savedCart = parsed as P[];
+      if (savedCart.length) {
+        localStorage.setItem("sg_cart", JSON.stringify(savedCart));
+        localStorage.removeItem("sg_buy_now_cart");
+      }
     } catch {
       savedCart = [];
     }
@@ -459,6 +473,8 @@ export default function Storefront() {
             return;
           }
           setCart([]);
+          localStorage.removeItem("sg_cart");
+          localStorage.removeItem("sg_buy_now_cart");
           setCheckoutBusy(false);
           setCheckoutMsg(
             `Payment successful. Order ${result.order_number} is confirmed.`,
