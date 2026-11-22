@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "./lib/supabase";
 import {
   Menu,
@@ -120,6 +121,7 @@ const fallback: S = {
 };
 
 export default function Storefront() {
+  const router = useRouter();
   const [cats, setCats] = useState<C[]>([]),
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
@@ -162,6 +164,17 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
+  const openProductPage = (product: P) => {
+    // Hand the product data already in the catalogue to the detail route so it
+    // can paint immediately while the authoritative product row refreshes.
+    try {
+      sessionStorage.setItem("sg_product_prefetch:" + product.slug, JSON.stringify({ product, savedAt: Date.now() }));
+    } catch {}
+    router.push("/products/" + encodeURIComponent(product.slug));
+  };
+  const prefetchProductPage = (product: P) => {
+    router.prefetch("/products/" + encodeURIComponent(product.slug));
+  };
   useEffect(() => { setDescriptionOpen(false); }, [item?.id]);
 
   useEffect(() => {
@@ -785,9 +798,11 @@ export default function Storefront() {
                     className="product-card-clickable"
                     role="button"
                     tabIndex={0}
+                    onMouseEnter={() => prefetchProductPage(p)}
+                    onFocus={() => prefetchProductPage(p)}
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
-                      window.location.href = `/products/${p.slug}`;
+                      openProductPage(p);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
