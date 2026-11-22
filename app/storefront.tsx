@@ -202,7 +202,7 @@ export default function Storefront() {
       } catch {}
       if (saved.length) {
         setCart(saved);
-        setCheckoutOpen(true);
+        void openSecureCheckout(saved);
       } else {
         setCheckoutMsg("Your selected product could not be loaded. Please return to the product page and tap BUY NOW again.");
       }
@@ -275,14 +275,50 @@ export default function Storefront() {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
   }, []);
-  function openSecureCheckout(items: P[] = cart) {
-    if (!items.length) {
+  async function openSecureCheckout(cartForCheckout: P[] = cart) {
+    if (!cartForCheckout.length) {
       setCheckoutMsg("Your cart is empty. Please add a product first.");
       return;
     }
-    setCart(items);
-    try { window.localStorage.setItem("sg_cart", JSON.stringify(items)); } catch {}
-    setCheckoutMsg("");
+    setCart(cartForCheckout);
+    localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("auth_user_id", session.user.id)
+      .maybeSingle();
+    const profileName = customer?.full_name || session.user.user_metadata?.full_name || "";
+    const profileEmail = customer?.email || session.user.email || "";
+    const profilePhone = customer?.phone || session.user.phone || "";
+    let addresses: SavedAddress[] = [];
+    if (customer?.id) {
+      const { data } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true });
+      addresses = (data || []) as SavedAddress[];
+    }
+    setCheckoutAddresses(addresses);
+    const chosen = addresses.find((a) => a.is_default) || addresses[0];
+    setSelectedAddressId(chosen?.id || "");
+    setCheckout({
+      name: chosen?.recipient_name || profileName,
+      email: profileEmail,
+      phone: chosen?.phone || profilePhone,
+      line1: chosen?.line1 || "",
+      line2: chosen?.line2 || "",
+      city: chosen?.city || "",
+      state: chosen?.state || "",
+      pincode: chosen?.pincode || "",
+    });
+    setCheckoutMsg(addresses.length ? "" : "Add a delivery address here or save one in My Account.");
     setCheckoutOpen(true);
   }
 
