@@ -6,15 +6,15 @@ const DEFAULT_RATES={INR:1,USD:.012,EUR:.010,GBP:.009,AED:.044,CAD:.016,AUD:.018
 replace(`import { supabase } from "./lib/supabase";`,`import { supabase } from "./lib/supabase";\nimport { COUNTRY_OPTIONS, DEFAULT_COUNTRY, getCountry, canUsePhonePe, INTERNATIONAL_PAYMENT_MESSAGE } from "./lib/global-commerce";`,`global commerce import`);
 replace(`  pincode: string;\n};\ntype SavedAddress = {`,`  pincode: string;\n  country_code: string;\n  phone_country_code: string;\n};\ntype SavedAddress = {`,`checkout international fields`);
 replace(`      pincode: "",\n    });`,`      pincode: "",\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    });`,`checkout defaults`);
-if (!text.includes("country_code: DEFAULT_COUNTRY.code")) {
+{
   const chosenAddressLine = '      pincode: chosen?.pincode || "",';
-  if (!text.includes(chosenAddressLine)) {
-    throw new Error("International checkout patch failed: saved address defaults");
+  const chosenAddressWithCountry = chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,';
+  if (text.includes(chosenAddressLine) && !text.includes(chosenAddressWithCountry)) {
+    text = text.replace(
+      chosenAddressLine,
+      chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,\\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
+    );
   }
-  text = text.replace(
-    chosenAddressLine,
-    chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,\\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
-  );
 }
 replace(`      pincode: a.pincode,\n    }));`,`      pincode: a.pincode,\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    }));`,`saved address selection`);
 replace(`    setCheckoutBusy(true);`,`    if (!canUsePhonePe(checkout.country_code)) {\n      setCheckoutMsg(INTERNATIONAL_PAYMENT_MESSAGE);\n      return;\n    }\n    setCheckoutBusy(true);`,`international payment guard`);
