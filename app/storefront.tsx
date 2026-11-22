@@ -153,8 +153,8 @@ export default function Storefront() {
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
-    [cartToast, setCartToast] = useState(""),
     [couponCode, setCouponCode] = useState(""),
+    [cartToast, setCartToast] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -227,30 +227,14 @@ export default function Storefront() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "1") {
-      try {
-        const saved = JSON.parse(localStorage.getItem("sg_cart") || "[]");
-        if (Array.isArray(saved) && saved.length) {
-          setCart(saved);
-          setCheckoutOpen(true);
-        } else {
-          setView("cart");
-          setCartToast("Your cart is empty. Please add a product first.");
-        }
-      } catch {
-        setView("cart");
-      }
-      window.history.replaceState({}, "", "/");
-    } else if (params.get("cart") === "1") {
+    if (params.get("cart") === "1") {
       setView("cart");
       window.history.replaceState({}, "", "/");
     } else if (params.get("home") === "1") {
-      // A Home navigation uses a fresh document so no previous catalogue
-      // state, category view, or saved scroll position can survive the return.
       window.history.replaceState({}, "", "/");
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
-  }, []);
+  }, []););
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
