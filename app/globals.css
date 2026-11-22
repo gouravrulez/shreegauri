@@ -1834,7 +1834,7 @@ body {
   .product-grid,
   .catalog-layout .product-grid,
   .catalog-layout .catalog-results .product-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(var(--catalog-columns-mobile, 2), minmax(0, 1fr)) !important;
     gap: 10px !important;
   }
 }
