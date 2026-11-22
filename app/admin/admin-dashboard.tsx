@@ -1749,7 +1749,33 @@ export default function AdminDashboard() {
                   <option key={count} value={count}>{count} products</option>
                 ))}
               </select>
-              <small>Choose how many products customers see on each catalogue page. This applies to desktop and mobile.</small>
+              <small>Choose how many products customers see on each desktop catalogue page.</small>
+            </div>
+            <div className="settings-field">
+              <label htmlFor="catalog-columns-mobile">Products per row (mobile)</label>
+              <select
+                id="catalog-columns-mobile"
+                value={Number(settings.catalog_columns_mobile || 2)}
+                onChange={(e) => setSettings({ ...settings, catalog_columns_mobile: Number(e.target.value) })}
+              >
+                {[1, 2, 3].map((count) => (
+                  <option key={count} value={count}>{count} {count === 1 ? "product" : "products"} per row</option>
+                ))}
+              </select>
+              <small>Controls the product grid on phones and smaller screens, independently of desktop.</small>
+            </div>
+            <div className="settings-field">
+              <label htmlFor="catalog-page-size-mobile">Products shown per page (mobile)</label>
+              <select
+                id="catalog-page-size-mobile"
+                value={Number(settings.catalog_page_size_mobile || 8)}
+                onChange={(e) => setSettings({ ...settings, catalog_page_size_mobile: Number(e.target.value) })}
+              >
+                {[4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].map((count) => (
+                  <option key={count} value={count}>{count} products</option>
+                ))}
+              </select>
+              <small>Choose how many products customers see on each mobile catalogue page, independently of desktop.</small>
             </div>
             <label>
               Main Shree Gauri Logo
