@@ -154,7 +154,6 @@ export default function Storefront() {
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
     [couponCode, setCouponCode] = useState(""),
-    [cartToast, setCartToast] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -165,6 +164,7 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
+  const [cartToast, setCartToast] = useState("");
   const openProductPage = (product: P) => {
     // Hand the product data already in the catalogue to the detail route so it
     // can paint immediately while the authoritative product row refreshes.
