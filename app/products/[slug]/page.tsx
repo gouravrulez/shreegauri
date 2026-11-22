@@ -42,6 +42,8 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [buyNowBusy, setBuyNowBusy] = useState(false);
+  const [cartActionMessage, setCartActionMessage] = useState("");
   const [reviews, setReviews] = useState<Array<{id:string; reviewer_name:string; rating:number; title:string; body:string; created_at:string}>>([]);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewTitle, setReviewTitle] = useState("");
@@ -127,15 +129,33 @@ export default function ProductPage() {
 
   function addToCart(buyNow = false) {
     if (!product || typeof window === "undefined") return;
-    let current: Product[] = [];
-    try { current = JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { current = []; }
-    const chosen = Array.from({ length: quantity }, () => product);
-    localStorage.setItem("sg_cart", JSON.stringify(buyNow ? chosen : [...current, ...chosen]));
-    if (buyNow) {
-      // The storefront reads this exact cart and opens its shared checkout.
-      window.location.href = "/?checkout=1";
-    } else {
-      window.location.href = "/?cart=1";
+    if (product.stock_quantity < 1 || quantity < 1 || quantity > product.stock_quantity) {
+      setCartActionMessage("This quantity is not currently available.");
+      return;
+    }
+    try {
+      const chosen = Array.from({ length: quantity }, () => product);
+      if (buyNow) {
+        setBuyNowBusy(true);
+        setCartActionMessage("");
+        // Keep Buy Now separate from the normal cart so storefront hydration
+        // or cart persistence cannot replace the exact product being purchased.
+        const payload = JSON.stringify(chosen);
+        localStorage.setItem("sg_buy_now_cart", payload);
+        localStorage.setItem("sg_cart", payload);
+        window.location.assign("/?checkout=1&source=product");
+        return;
+      }
+      let current: Product[] = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(parsed)) current = parsed as Product[];
+      } catch { current = []; }
+      localStorage.setItem("sg_cart", JSON.stringify([...current, ...chosen]));
+      window.location.assign("/?cart=1");
+    } catch {
+      setBuyNowBusy(false);
+      setCartActionMessage("Unable to start checkout. Please try again.");
     }
   }
 
@@ -174,9 +194,10 @@ export default function ProductPage() {
           <div className="sg-product-quantity"><span>Quantity</span><div><button type="button" onClick={() => setQuantity((n) => Math.max(1, n - 1))}>−</button><b>{quantity}</b><button type="button" disabled={quantity >= Math.min(10, product.stock_quantity)} onClick={() => setQuantity((n) => Math.min(10, product.stock_quantity, n + 1))}>+</button></div></div>
           <div className="sg-product-actions">
             <button type="button" disabled={product.stock_quantity < 1} onClick={() => addToCart(false)}>ADD TO CART</button>
-            <button type="button" disabled={product.stock_quantity < 1} onClick={() => addToCart(true)}>BUY NOW</button>
+            <button type="button" disabled={buyNowBusy || product.stock_quantity < 1} onClick={() => addToCart(true)}>{buyNowBusy ? "OPENING CHECKOUT…" : "BUY NOW"}</button>
           </div>
           {added && <p role="status">Added to your cart.</p>}
+          {cartActionMessage && <p className="sg-product-action-message" role="alert">{cartActionMessage}</p>}
           <div className="sg-product-benefits"><span>✓ Carefully selected products</span><span>✓ Secure checkout</span><span>✓ Pan-India delivery</span></div>
           {product.description && <section className="sg-product-description"><h2>Product Details</h2><p>{product.description}</p></section>}
         </div>
