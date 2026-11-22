@@ -111,6 +111,7 @@ const blankProd = {
   description: "",
   price_inr: 0,
   compare_at_price_inr: null,
+  custom_shipping_charge_inr: 0,
   stock_quantity: 0,
   category_id: "",
   primary_image_url: "",
@@ -474,6 +475,10 @@ export default function AdminDashboard() {
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
         : null,
+      // The database column is NOT NULL. An empty optional field always means no extra product-specific charge.
+      custom_shipping_charge_inr: Number.isFinite(Number(prod.custom_shipping_charge_inr))
+        ? Math.max(0, Number(prod.custom_shipping_charge_inr))
+        : 0,
       stock_quantity: Number(prod.stock_quantity),
     };
     const r = prod.id
@@ -1234,7 +1239,32 @@ export default function AdminDashboard() {
               </div>
               <div className="two">
                 <label>
+                  Custom Shipping Charge (₹)
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={prod.custom_shipping_charge_inr ?? 0}
+                    onChange={(e) =>
+                      setProd({ ...prod, custom_shipping_charge_inr: e.target.value })
+                    }
+                  />
+                  <small>Optional. Leave as 0 to use the store's normal shipping rules.</small>
+                </label>
+                <label>
                   Stock Quantity
+                  <input
+                    type="number"
+                    value={prod.stock_quantity}
+                    onChange={(e) =>
+                      setProd({ ...prod, stock_quantity: e.target.value })
+                    }
+                  />
+                </label>
+              </div>
+              <div className="two">
+                <label>
+                  Badge
                   <input
                     type="number"
                     value={prod.stock_quantity}
