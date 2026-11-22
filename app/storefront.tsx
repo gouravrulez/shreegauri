@@ -228,6 +228,22 @@ export default function Storefront() {
     }, 1200);
     return () => { alive = false; window.clearTimeout(reviewsTimer); };
   }, []);
+  function chooseCheckoutAddress(id: string) {
+    setSelectedAddressId(id);
+    const address = checkoutAddresses.find((entry) => entry.id === id);
+    if (!address) return;
+    setCheckout((current) => ({
+      ...current,
+      name: address.recipient_name || current.name,
+      phone: address.phone || current.phone,
+      line1: address.line1,
+      line2: address.line2 || "",
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+    }));
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
