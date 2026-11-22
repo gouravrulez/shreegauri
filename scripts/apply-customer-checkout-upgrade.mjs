@@ -160,7 +160,7 @@ const effectReplacement = `  useEffect(() => {
   }
 
   const money = (n: number) =>`
-if (!text.includes("function openSecureCheckout(")) {
+if (!text.includes("async function openSecureCheckout(cartForCheckout: P[] = cart)")) {
   if (!text.includes(effectNeedle)) throw new Error("Customer checkout patch failed: helper insertion");
   text = text.replace(effectNeedle, effectReplacement);
 }
