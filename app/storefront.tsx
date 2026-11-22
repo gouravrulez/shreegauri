@@ -142,7 +142,10 @@ export default function Storefront() {
     [sort, setSort] = useState("featured"),
     [catalogPage, setCatalogPage] = useState(1),
     [pageSize, setPageSize] = useState(12),
+    [mobilePageSize, setMobilePageSize] = useState(8),
     [desktopColumns, setDesktopColumns] = useState(5),
+    [mobileColumns, setMobileColumns] = useState(2),
+    [isMobileCatalog, setIsMobileCatalog] = useState(false),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
@@ -204,12 +207,14 @@ export default function Storefront() {
         })) as P[]);
       });
 
-    supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,astrology_services").eq("id", 1).single()
+    supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services").eq("id", 1).single()
       .then(({ data }) => {
         if (!alive || !data) return;
         setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
         setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size)) ? Number((data as any).catalog_page_size) : 12);
         setDesktopColumns([3, 4, 5, 6].includes(Number((data as any).catalog_columns_desktop)) ? Number((data as any).catalog_columns_desktop) : 5);
+        setMobilePageSize([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size_mobile)) ? Number((data as any).catalog_page_size_mobile) : 8);
+        setMobileColumns([1, 2, 3].includes(Number((data as any).catalog_columns_mobile)) ? Number((data as any).catalog_columns_mobile) : 2);
         if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
       });
 
@@ -447,8 +452,16 @@ export default function Storefront() {
                 : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
-  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
-  const visibleProducts = shown.slice((catalogPage - 1) * pageSize, catalogPage * pageSize);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const update = () => setIsMobileCatalog(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const activePageSize = isMobileCatalog ? mobilePageSize : pageSize;
+  const pageCount = Math.max(1, Math.ceil(shown.length / activePageSize));
+  const visibleProducts = shown.slice((catalogPage - 1) * activePageSize, catalogPage * activePageSize);
   useEffect(() => { setCatalogPage(1); }, [q, view, categoryFilter, stockOnly, sort]);
   useEffect(() => { if (catalogPage > pageCount) setCatalogPage(pageCount); }, [catalogPage, pageCount]);
   const nav = [
@@ -796,7 +809,7 @@ export default function Storefront() {
             </aside>
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
             <div className="catalog-results">
-              <div className="product-grid" style={{ "--catalog-columns": desktopColumns } as React.CSSProperties}>
+              <div className="product-grid" style={{ "--catalog-columns": desktopColumns, "--catalog-columns-mobile": mobileColumns } as React.CSSProperties}>
               {shown.length ? (
                 visibleProducts.map((p) => (
                   <article
@@ -877,9 +890,9 @@ export default function Storefront() {
                 </p>
               )}
             </div>
-            {shown.length > pageSize && (
+            {shown.length > activePageSize && (
               <nav className="catalog-pagination" aria-label="Product pages">
-                <span className="pagination-summary">Showing {(catalogPage - 1) * pageSize + 1}–{Math.min(catalogPage * pageSize, shown.length)} of {shown.length} products</span>
+                <span className="pagination-summary">Showing {(catalogPage - 1) * activePageSize + 1}–{Math.min(catalogPage * activePageSize, shown.length)} of {shown.length} products</span>
                 <div className="pagination-controls">
                   <button type="button" disabled={catalogPage === 1} onClick={() => { setCatalogPage((p) => Math.max(1, p - 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Previous</button>
                   {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
