@@ -1480,7 +1480,7 @@ export default function AdminDashboard() {
                 />
               </label>
               {prod.primary_image_url && (
-                <img className="admin-preview" src={prod.primary_image_url} />
+                <img className="admin-preview" src={adminThumbnail(prod.primary_image_url, 640)} onError={(e) => { e.currentTarget.src = prod.primary_image_url; }} loading="lazy" decoding="async" />
               )}
               <label>
                 Additional Product Images (select many)
@@ -1497,7 +1497,7 @@ export default function AdminDashboard() {
                 <div className="admin-gallery admin-gallery-compact">
                   {prod.image_urls.map((url: string, i: number) => (
                     <div key={url}>
-                      <img src={url} />
+                      <img src={adminThumbnail(url, 180)} onError={(e) => { e.currentTarget.src = url; }} loading="lazy" decoding="async" />
                       <button
                         onClick={() =>
                           setProd({
