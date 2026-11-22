@@ -1265,16 +1265,6 @@ export default function AdminDashboard() {
               <div className="two">
                 <label>
                   Badge
-                  <input
-                    type="number"
-                    value={prod.stock_quantity}
-                    onChange={(e) =>
-                      setProd({ ...prod, stock_quantity: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Badge
                   <select
                     value={prod.badge || ""}
                     onChange={(e) =>
