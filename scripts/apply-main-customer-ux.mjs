@@ -18,7 +18,7 @@ replaceOnce(
 "cart notice state"
 );
 
-const helperAnchor = `  async function openSecureCheckout() {`;
+const helperAnchor = `  async function openSecureCheckout(cartForCheckout: P[] = cart) {`;
 const helper = `  function confirmAddedToCart(productName: string, quantity = 1) {
     setCartNotice(\`${'${quantity}'} × ${'${productName}'} added to cart successfully.\`);
     window.setTimeout(() => setCartNotice(""), 2800);

@@ -4,6 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
+function productImage(url: string, width = 720, quality = 72) {
+  if (!url) return "/shree-gauri-logo.png";
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, query = ""] = url.split("?");
+  const transformed = base.replace(marker, "/storage/v1/render/image/public/");
+  const params = new URLSearchParams(query);
+  params.set("width", String(width));
+  params.set("quality", String(quality));
+  params.set("format", "webp");
+  params.set("resize", "contain");
+  return transformed + "?" + params.toString();
+}
+
 type Product = {
   id: string;
   name: string;
@@ -28,6 +42,8 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [buyNowBusy, setBuyNowBusy] = useState(false);
+  const [cartActionMessage, setCartActionMessage] = useState("");
   const [reviews, setReviews] = useState<Array<{id:string; reviewer_name:string; rating:number; title:string; body:string; created_at:string}>>([]);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewTitle, setReviewTitle] = useState("");
@@ -38,17 +54,33 @@ export default function ProductPage() {
   useEffect(() => {
     if (!slug) return;
     let alive = true;
-    supabase.from("products").select("*").eq("slug", slug).eq("is_active", true).maybeSingle()
+    let hasCachedProduct = false;
+    // Use the catalogue row immediately when the visitor has just clicked a
+    // product, then refresh the authoritative detail fields in the background.
+    try {
+      const cached = sessionStorage.getItem("sg_product_prefetch:" + slug);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.product && Date.now() - Number(parsed.savedAt || 0) < 10 * 60 * 1000) {
+          const next = { ...parsed.product, image_urls: Array.isArray(parsed.product.image_urls) ? parsed.product.image_urls : [] } as Product;
+          hasCachedProduct = true;
+          setProduct(next);
+          setActiveImage(next.primary_image_url || next.image_urls?.[0] || "");
+          setLoading(false);
+        }
+      }
+    } catch {}
+    supabase.from("products").select("id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,badge,category_id").eq("slug", slug).eq("is_active", true).maybeSingle()
       .then(({ data, error: queryError }) => {
         if (!alive) return;
         if (queryError || !data) {
-          setError("This product is not available right now.");
+          if (!hasCachedProduct) setError("This product is not available right now.");
           setLoading(false);
           return;
         }
         const next = { ...data, image_urls: Array.isArray(data.image_urls) ? data.image_urls : [] } as Product;
         setProduct(next);
-        setActiveImage(next.primary_image_url || next.image_urls?.[0] || "");
+        setActiveImage((current) => current || next.primary_image_url || next.image_urls?.[0] || "");
         setLoading(false);
       });
     return () => { alive = false; };
@@ -97,14 +129,33 @@ export default function ProductPage() {
 
   function addToCart(buyNow = false) {
     if (!product || typeof window === "undefined") return;
-    let current: Product[] = [];
-    try { current = JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { current = []; }
-    const chosen = Array.from({ length: quantity }, () => product);
-    localStorage.setItem("sg_cart", JSON.stringify(buyNow ? chosen : [...current, ...chosen]));
-    if (buyNow) window.location.href = "/?checkout=1";
-    else {
-      setAdded(true);
-      window.location.href = "/?cart=1";
+    if (product.stock_quantity < 1 || quantity < 1 || quantity > product.stock_quantity) {
+      setCartActionMessage("This quantity is not currently available.");
+      return;
+    }
+    try {
+      const chosen = Array.from({ length: quantity }, () => product);
+      if (buyNow) {
+        setBuyNowBusy(true);
+        setCartActionMessage("");
+        // Keep Buy Now separate from the normal cart so storefront hydration
+        // or cart persistence cannot replace the exact product being purchased.
+        const payload = JSON.stringify(chosen);
+        localStorage.setItem("sg_buy_now_cart", payload);
+        localStorage.setItem("sg_cart", payload);
+        window.location.assign("/?checkout=1&source=product");
+        return;
+      }
+      let current: Product[] = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(parsed)) current = parsed as Product[];
+      } catch { current = []; }
+      localStorage.setItem("sg_cart", JSON.stringify([...current, ...chosen]));
+      window.location.assign("/?cart=1");
+    } catch {
+      setBuyNowBusy(false);
+      setCartActionMessage("Unable to start checkout. Please try again.");
     }
   }
 
@@ -126,11 +177,11 @@ export default function ProductPage() {
       <section className="sg-product-detail-layout">
         <div className="sg-product-gallery">
           <div className="sg-product-thumbnails">
-            {images.map((url, index) => <button key={url} type="button" className={activeImage === url ? "active" : ""} onClick={() => setActiveImage(url)} aria-label={`View image ${index + 1}`}><img src={url} alt="" /></button>)}
+            {images.map((url, index) => <button key={url} type="button" className={activeImage === url ? "active" : ""} onClick={() => setActiveImage(url)} aria-label={`View image ${index + 1}`}><img src={productImage(url, 180, 62)} onError={(e) => { e.currentTarget.src = url; }} alt="" loading="lazy" decoding="async" /></button>)}
           </div>
           <div className="sg-product-image-stage">
             {product.badge && <span className="sg-product-badge">{product.badge}</span>}
-            <img src={activeImage || "/shree-gauri-logo.png"} alt={product.name} />
+            <img src={productImage(activeImage || "", 1400, 80)} onError={(e) => { e.currentTarget.src = activeImage || "/shree-gauri-logo.png"; }} alt={product.name} fetchPriority="high" decoding="async" />
           </div>
         </div>
         <div className="sg-product-details">
@@ -143,9 +194,10 @@ export default function ProductPage() {
           <div className="sg-product-quantity"><span>Quantity</span><div><button type="button" onClick={() => setQuantity((n) => Math.max(1, n - 1))}>−</button><b>{quantity}</b><button type="button" disabled={quantity >= Math.min(10, product.stock_quantity)} onClick={() => setQuantity((n) => Math.min(10, product.stock_quantity, n + 1))}>+</button></div></div>
           <div className="sg-product-actions">
             <button type="button" disabled={product.stock_quantity < 1} onClick={() => addToCart(false)}>ADD TO CART</button>
-            <button type="button" disabled={product.stock_quantity < 1} onClick={() => addToCart(true)}>BUY NOW</button>
+            <button type="button" disabled={buyNowBusy || product.stock_quantity < 1} onClick={() => addToCart(true)}>{buyNowBusy ? "OPENING CHECKOUT…" : "BUY NOW"}</button>
           </div>
           {added && <p role="status">Added to your cart.</p>}
+          {cartActionMessage && <p className="sg-product-action-message" role="alert">{cartActionMessage}</p>}
           <div className="sg-product-benefits"><span>✓ Carefully selected products</span><span>✓ Secure checkout</span><span>✓ Pan-India delivery</span></div>
           {product.description && <section className="sg-product-description"><h2>Product Details</h2><p>{product.description}</p></section>}
         </div>

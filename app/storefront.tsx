@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "./lib/supabase";
 import {
   Menu,
@@ -22,6 +23,20 @@ import {
   Star,
 } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaWhatsapp } from "react-icons/fa6";
+
+function storefrontImage(url: string, width = 720, quality = 72) {
+  if (!url) return "/shree-gauri-logo.png";
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, query = ""] = url.split("?");
+  const transformed = base.replace(marker, "/storage/v1/render/image/public/");
+  const params = new URLSearchParams(query);
+  params.set("width", String(width));
+  params.set("quality", String(quality));
+  params.set("format", "webp");
+  params.set("resize", "contain");
+  return transformed + "?" + params.toString();
+}
 
 type C = {
   id: string;
@@ -106,6 +121,7 @@ const fallback: S = {
 };
 
 export default function Storefront() {
+  const router = useRouter();
   const [cats, setCats] = useState<C[]>([]),
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
@@ -125,6 +141,11 @@ export default function Storefront() {
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
     [catalogPage, setCatalogPage] = useState(1),
+    [pageSize, setPageSize] = useState(12),
+    [mobilePageSize, setMobilePageSize] = useState(8),
+    [desktopColumns, setDesktopColumns] = useState(5),
+    [mobileColumns, setMobileColumns] = useState(2),
+    [isMobileCatalog, setIsMobileCatalog] = useState(false),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
@@ -146,6 +167,19 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
+  const openProductPage = (product: P) => {
+    // Hand the product data already in the catalogue to the detail route so it
+    // can paint immediately while the authoritative product row refreshes.
+    try {
+      sessionStorage.setItem("sg_product_prefetch:" + product.slug, JSON.stringify({ product, savedAt: Date.now() }));
+    } catch {}
+    router.push("/products/" + encodeURIComponent(product.slug));
+  };
+  const prefetchProductPage = (product: P) => {
+    router.prefetch("/products/" + encodeURIComponent(product.slug));
+  };
+  useEffect(() => { setDescriptionOpen(false); }, [item?.id]);
+
   useEffect(() => {
     let alive = true;
     // Load the catalogue independently so a slow reviews/settings request cannot
@@ -173,19 +207,43 @@ export default function Storefront() {
         })) as P[]);
       });
 
-    supabase.from("site_settings").select("*").eq("id", 1).single()
+    supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services").eq("id", 1).single()
       .then(({ data }) => {
         if (!alive || !data) return;
         setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size)) ? Number((data as any).catalog_page_size) : 12);
+        setDesktopColumns([3, 4, 5, 6].includes(Number((data as any).catalog_columns_desktop)) ? Number((data as any).catalog_columns_desktop) : 5);
+        setMobilePageSize([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size_mobile)) ? Number((data as any).catalog_page_size_mobile) : 8);
+        setMobileColumns([1, 2, 3].includes(Number((data as any).catalog_columns_mobile)) ? Number((data as any).catalog_columns_mobile) : 2);
         if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
       });
 
-    supabase.from("product_reviews")
-      .select("id,product_id,reviewer_name,rating,title,body,created_at")
-      .eq("is_approved", true).order("created_at", { ascending: false })
-      .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
-    return () => { alive = false; };
+    // Reviews are secondary content: defer their request so the homepage's
+    // catalogue, navigation and first-screen content get network priority.
+    const reviewsTimer = window.setTimeout(() => {
+      supabase.from("product_reviews")
+        .select("id,product_id,reviewer_name,rating,title,body,created_at")
+        .eq("is_approved", true).order("created_at", { ascending: false })
+        .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
+    }, 1200);
+    return () => { alive = false; window.clearTimeout(reviewsTimer); };
   }, []);
+  function chooseCheckoutAddress(id: string) {
+    setSelectedAddressId(id);
+    const a = checkoutAddresses.find((entry) => entry.id === id);
+    if (!a) return;
+    setCheckout((current) => ({
+      ...current,
+      name: a.recipient_name || current.name,
+      phone: a.phone || current.phone,
+      line1: a.line1,
+      line2: a.line2 || "",
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+    }));
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -193,12 +251,72 @@ export default function Storefront() {
       setView("cart");
       window.history.replaceState({}, "", "/");
     } else if (params.get("home") === "1") {
-      // A Home navigation uses a fresh document so no previous catalogue
-      // state, category view, or saved scroll position can survive the return.
       window.history.replaceState({}, "", "/");
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
   }, []);
+  // Product page Buy Now checkout handoff: the detail page stores the exact
+  // selected items before navigating here. Read them before opening checkout.
+  async function openSecureCheckout(cartForCheckout: P[] = cart) {
+    if (!cartForCheckout.length) {
+      setCheckoutMsg("Your cart is empty. Please add a product first.");
+      return;
+    }
+    localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
+    setCart(cartForCheckout);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      const session = data.session;
+      if (!session) {
+        window.location.href = "/login?returnTo=checkout";
+        return;
+      }
+      setCheckout((current) => ({
+        ...current,
+        name: current.name || session.user.user_metadata?.full_name || "",
+        email: current.email || session.user.email || "",
+        phone: current.phone || session.user.phone || "",
+      }));
+      setCheckoutMsg("");
+      setCheckoutOpen(true);
+      // Only consume the Buy Now intent after the authenticated checkout
+      // form has actually been opened. Keep it through login/OTP redirects.
+      localStorage.removeItem("sg_buy_now_cart");
+    } catch (error) {
+      setCheckoutMsg(error instanceof Error ? error.message : "Unable to open secure checkout. Please try again.");
+      setView("cart");
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "1") return;
+    let savedCart: P[] = [];
+    try {
+      // A product-page Buy Now intent takes priority over the regular cart.
+      const buyNowRaw = localStorage.getItem("sg_buy_now_cart");
+      const raw = buyNowRaw || localStorage.getItem("sg_cart") || "[]";
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) savedCart = parsed as P[];
+      if (savedCart.length) {
+        // Keep the dedicated Buy Now payload until checkout confirms that
+        // the customer is authenticated and the delivery form is open.
+        localStorage.setItem("sg_cart", JSON.stringify(savedCart));
+      }
+    } catch {
+      savedCart = [];
+    }
+    window.history.replaceState({}, "", "/");
+    if (!savedCart.length) {
+      setCheckoutMsg("Your selected product could not be loaded. Please add it to your cart again.");
+      setView("cart");
+      return;
+    }
+    void openSecureCheckout(savedCart);
+  }, []);
+
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -274,6 +392,10 @@ export default function Storefront() {
       setReviewBody("");
       setRating(5);
     }
+  }
+  function confirmAddedToCart(productName: string, quantity = 1) {
+    setCartNotice(`${quantity} × ${productName} added to cart successfully.`);
+    window.setTimeout(() => setCartNotice(""), 2800);
   }
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
@@ -355,6 +477,8 @@ export default function Storefront() {
             return;
           }
           setCart([]);
+          localStorage.removeItem("sg_cart");
+          localStorage.removeItem("sg_buy_now_cart");
           setCheckoutBusy(false);
           setCheckoutMsg(
             `Payment successful. Order ${result.order_number} is confirmed.`,
@@ -408,9 +532,16 @@ export default function Storefront() {
                 : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
-  const pageSize = 12;
-  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
-  const visibleProducts = shown.slice((catalogPage - 1) * pageSize, catalogPage * pageSize);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const update = () => setIsMobileCatalog(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const activePageSize = isMobileCatalog ? mobilePageSize : pageSize;
+  const pageCount = Math.max(1, Math.ceil(shown.length / activePageSize));
+  const visibleProducts = shown.slice((catalogPage - 1) * activePageSize, catalogPage * activePageSize);
   useEffect(() => { setCatalogPage(1); }, [q, view, categoryFilter, stockOnly, sort]);
   useEffect(() => { if (catalogPage > pageCount) setCatalogPage(pageCount); }, [catalogPage, pageCount]);
   const nav = [
@@ -757,7 +888,8 @@ export default function Storefront() {
               <button className="apply-filters" onClick={() => setFiltersOpen(false)}>SHOW {shown.length} PRODUCTS</button>
             </aside>
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
-            <div className="product-grid">
+            <div className="catalog-results">
+              <div className="product-grid" style={{ "--catalog-columns": desktopColumns, "--catalog-columns-mobile": mobileColumns } as React.CSSProperties}>
               {shown.length ? (
                 visibleProducts.map((p) => (
                   <article
@@ -765,14 +897,16 @@ export default function Storefront() {
                     className="product-card-clickable"
                     role="button"
                     tabIndex={0}
+                    onMouseEnter={() => prefetchProductPage(p)}
+                    onFocus={() => prefetchProductPage(p)}
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest(".heart, .product-actions")) return;
-                      window.location.href = `/products/${p.slug}`;
+                      openProductPage(p);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        window.location.href = `/products/${p.slug}`;
+                        openProductPage(p);
                       }
                     }}
                   >
@@ -798,11 +932,8 @@ export default function Storefront() {
                       }}
                     >
                       <img
-                        src={
-                          p.primary_image_url ||
-                          p.image_urls?.[0] ||
-                          "/shree-gauri-logo.png"
-                        }
+                        src={storefrontImage(p.primary_image_url || p.image_urls?.[0] || "", 640, 70)}
+                        onError={(e) => { const img = e.currentTarget; const original = p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"; if (img.src !== original) img.src = original; }}
                         alt={p.name}
                         loading="lazy"
                         decoding="async"
@@ -824,7 +955,7 @@ export default function Storefront() {
                         </button>
                         <button
                           className="buy-now-site"
-                          onClick={() => { setCart([p]); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                          onClick={() => { setItem(null); void openSecureCheckout([p]); }}
                         >
                           BUY NOW
                         </button>
@@ -839,9 +970,9 @@ export default function Storefront() {
                 </p>
               )}
             </div>
-            {shown.length > pageSize && (
+            {shown.length > activePageSize && (
               <nav className="catalog-pagination" aria-label="Product pages">
-                <span className="pagination-summary">Showing {(catalogPage - 1) * pageSize + 1}–{Math.min(catalogPage * pageSize, shown.length)} of {shown.length} products</span>
+                <span className="pagination-summary">Showing {(catalogPage - 1) * activePageSize + 1}–{Math.min(catalogPage * activePageSize, shown.length)} of {shown.length} products</span>
                 <div className="pagination-controls">
                   <button type="button" disabled={catalogPage === 1} onClick={() => { setCatalogPage((p) => Math.max(1, p - 1)); document.querySelector(".catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Previous</button>
                   {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
@@ -851,6 +982,7 @@ export default function Storefront() {
                 </div>
               </nav>
             )}
+            </div>
           </div>
         </section>
       )}
@@ -1165,7 +1297,7 @@ export default function Storefront() {
                       onClick={() => setSelectedImage(url)}
                       onMouseEnter={() => setSelectedImage(url)}
                     >
-                      <img src={url} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
+                      <img src={storefrontImage(url, 180, 62)} onError={(e) => { e.currentTarget.src = url; }} alt={`${item.name} view ${i + 1}`} loading="lazy" decoding="async" />
                     </button>
                   ))}
               </div>
@@ -1181,7 +1313,7 @@ export default function Storefront() {
                   return <>
                     <button className="gallery-arrow gallery-prev" aria-label="Previous image" onClick={() => move(-1)}>‹</button>
                     <button className="gallery-zoom-trigger" aria-label="Open full size product image" onClick={() => setImageZoomOpen(true)}>
-                      <img className="gallery-main" src={active} alt={item.name} decoding="async" />
+                      <img className="gallery-main" src={storefrontImage(active, 1200, 78)} onError={(e) => { e.currentTarget.src = active; }} alt={item.name} decoding="async" fetchPriority="high" />
                     </button>
                     <button className="gallery-arrow gallery-next" aria-label="Next image" onClick={() => move(1)}>›</button>
                     <span className="gallery-counter">{images.length ? index + 1 : 1} / {Math.max(images.length, 1)}</span>
@@ -1207,15 +1339,33 @@ export default function Storefront() {
                 </span>
                 <span>{ratingFor(item.id).count} review(s)</span>
               </div>
-              <div className="product-short-description">
-                <b>About this item</b>
-                <p>{item.short_description || item.description}</p>
-              </div>
-              {item.description && item.description !== item.short_description && (
+              {(item.short_description || item.description) && (
+                <div className="product-short-description">
+                  <b>About this item</b>
+                  <p>
+                    {item.short_description ||
+                      (item.description.length > 150
+                        ? `${item.description.slice(0, 150).trimEnd()}…`
+                        : item.description)}
+                  </p>
+                </div>
+              )}
+              {item.description && item.description.length > (item.short_description?.length || 0) && (
                 <div className={`product-full-description ${descriptionOpen ? "open" : ""}`}>
-                  <div className="description-text">{item.description}</div>
-                  <button type="button" onClick={() => setDescriptionOpen((v) => !v)}>
-                    {descriptionOpen ? "SHOW LESS" : "LOAD MORE"}
+                  {descriptionOpen && (
+                    <div className="description-expanded">
+                      <b className="description-heading">Product description</b>
+                      <div className="description-text">{item.description}</div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="description-toggle"
+                    aria-expanded={descriptionOpen}
+                    onClick={() => setDescriptionOpen((v) => !v)}
+                  >
+                    {descriptionOpen ? "Show less" : "Read full description"}
+                    <span aria-hidden="true">{descriptionOpen ? "−" : "+"}</span>
                   </button>
                 </div>
               )}
@@ -1260,7 +1410,7 @@ export default function Storefront() {
                 </button>
                 <button
                   className="buy-now-site"
-                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setCart(chosen); setItem(null); window.setTimeout(() => openSecureCheckout(), 0); }}
+                  onClick={() => { const chosen=[...Array(qty).fill(item)]; setItem(null); void openSecureCheckout(chosen); }}
                 >
                   BUY NOW
                 </button>

@@ -47,14 +47,16 @@ type SavedAddress = {
 "saved address type"
 );
 
-replaceOnce(
+if (!text.includes("useState<P[]>(() =>")) {
+  replaceOnce(
 `    [cart, setCart] = useState<P[]>([]),`,
 `    [cart, setCart] = useState<P[]>(() => {
       if (typeof window === "undefined") return [];
       try { return JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { return []; }
     }),`,
 "persisted cart"
-);
+  );
+}
 
 replaceOnce(
 `    [checkoutMsg, setCheckoutMsg] = useState(""),
@@ -70,20 +72,35 @@ replaceOnce(
 
 const effectNeedle = `  const money = (n: number) =>`;
 const effectReplacement = `  useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("sg_cart", JSON.stringify(cart));
+    if (typeof window === "undefined") return;
+    const comingFromProductBuyNow = new URLSearchParams(window.location.search).get("checkout") === "1";
+    // Do not overwrite the product-page cart with the storefront's initial empty state.
+    if (comingFromProductBuyNow && cart.length === 0) return;
+    localStorage.setItem("sg_cart", JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (new URLSearchParams(window.location.search).get("checkout") === "1") {
-      openSecureCheckout();
+      let savedCart: P[] = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(parsed)) savedCart = parsed as P[];
+      } catch { savedCart = []; }
+      if (savedCart.length) setCart(savedCart);
+      void openSecureCheckout(savedCart);
     }
   }, []);
 
-  async function openSecureCheckout() {
+  async function openSecureCheckout(cartForCheckout: P[] = cart) {
+    if (!cartForCheckout.length) {
+      setCheckoutMsg("Your cart is empty. Please add a product first.");
+      return;
+    }
+    setCart(cartForCheckout);
+    localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      localStorage.setItem("sg_cart", JSON.stringify(cart));
       window.location.href = "/login?returnTo=checkout";
       return;
     }
@@ -142,8 +159,8 @@ const effectReplacement = `  useEffect(() => {
     }));
   }
 
-  const money = (n: number) =>`;
-if (!text.includes("async function openSecureCheckout()")) {
+  const money = (n: number) =>`
+if (!text.includes("async function openSecureCheckout(cartForCheckout: P[] = cart)")) {
   if (!text.includes(effectNeedle)) throw new Error("Customer checkout patch failed: helper insertion");
   text = text.replace(effectNeedle, effectReplacement);
 }
@@ -175,7 +192,7 @@ replaceOnce(
 "auth header"
 );
 
-if (!text.includes("onClick={openSecureCheckout}")) {
+if (!text.includes("openSecureCheckout")) {
   const checkoutNeedles = [
 `                onClick={() => setCheckoutOpen(true)}
               >
@@ -222,9 +239,15 @@ replaceOnce(
 
 // Route every cart checkout entry through the authenticated checkout loader.
 text = text.replace(
+  /onClick=\\{openSecureCheckout\\}/g,
+  "onClick={() => openSecureCheckout()}"
+);
+text = text.replace(
   /onClick=\{\(\) => setCheckoutOpen\(true\)\}(\s*>\s*PLACE ORDER)/g,
   "onClick={openSecureCheckout}$1"
 );
+
+text = text.replaceAll("onClick={openSecureCheckout}", "onClick={() => openSecureCheckout()}");
 
 fs.writeFileSync(storefrontPath, text);
 

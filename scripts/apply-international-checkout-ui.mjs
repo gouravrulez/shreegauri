@@ -6,7 +6,16 @@ const DEFAULT_RATES={INR:1,USD:.012,EUR:.010,GBP:.009,AED:.044,CAD:.016,AUD:.018
 replace(`import { supabase } from "./lib/supabase";`,`import { supabase } from "./lib/supabase";\nimport { COUNTRY_OPTIONS, DEFAULT_COUNTRY, getCountry, canUsePhonePe, INTERNATIONAL_PAYMENT_MESSAGE } from "./lib/global-commerce";`,`global commerce import`);
 replace(`  pincode: string;\n};\ntype SavedAddress = {`,`  pincode: string;\n  country_code: string;\n  phone_country_code: string;\n};\ntype SavedAddress = {`,`checkout international fields`);
 replace(`      pincode: "",\n    });`,`      pincode: "",\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    });`,`checkout defaults`);
-replace(`      pincode: chosen?.pincode || "",\n    });`,`      pincode: chosen?.pincode || "",\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    });`,`saved address defaults`);
+{
+  const chosenAddressLine = '      pincode: chosen?.pincode || "",';
+  const chosenAddressWithCountry = chosenAddressLine + '\n      country_code: DEFAULT_COUNTRY.code,';
+  if (text.includes(chosenAddressLine) && !text.includes(chosenAddressWithCountry)) {
+    text = text.replace(
+      chosenAddressLine,
+      chosenAddressLine + '\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
+    );
+  }
+}
 replace(`      pincode: a.pincode,\n    }));`,`      pincode: a.pincode,\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    }));`,`saved address selection`);
 replace(`    setCheckoutBusy(true);`,`    if (!canUsePhonePe(checkout.country_code)) {\n      setCheckoutMsg(INTERNATIONAL_PAYMENT_MESSAGE);\n      return;\n    }\n    setCheckoutBusy(true);`,`international payment guard`);
 replace(`            <div className="checkout-grid">`,`            <div className="checkout-grid">\n              <label>Country<select value={checkout.country_code} onChange={(e) => { const country=getCountry(e.target.value); setCheckout((c)=>({...c,country_code:country.code,phone_country_code:country.dialCode})); }}>{COUNTRY_OPTIONS.map((country)=><option key={country.code} value={country.code}>{country.name}</option>)}</select></label>\n              <label>Phone code<select value={checkout.phone_country_code} onChange={(e)=>setCheckout((c)=>({...c,phone_country_code:e.target.value}))}>{COUNTRY_OPTIONS.map((country)=><option key={country.code} value={country.dialCode}>{country.name} ({country.dialCode})</option>)}</select></label>`,`country selectors`);

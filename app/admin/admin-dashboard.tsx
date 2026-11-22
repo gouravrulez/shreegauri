@@ -157,7 +157,7 @@ const blankProd = {
   seo_description: "",
   google_product_category: "",
   custom_shipping_enabled: false,
-  custom_shipping_charge_inr: null,
+  custom_shipping_charge_inr: 0,
   badge: "",
   is_active: false,
   is_featured: false,
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
       category_id: prod.category_id || null,
       category_ids: Array.from(new Set([...(Array.isArray(prod.category_ids) ? prod.category_ids : []), ...(prod.category_id ? [prod.category_id] : [])])),
       custom_shipping_enabled: Boolean(prod.custom_shipping_enabled),
-      custom_shipping_charge_inr: prod.custom_shipping_enabled && prod.custom_shipping_charge_inr !== "" && prod.custom_shipping_charge_inr !== null ? Number(prod.custom_shipping_charge_inr) : null,
+      custom_shipping_charge_inr: Number.isFinite(Number(prod.custom_shipping_charge_inr)) ? Math.max(0, Number(prod.custom_shipping_charge_inr)) : 0,
       price_inr: Number(prod.price_inr),
       compare_at_price_inr: prod.compare_at_price_inr
         ? Number(prod.compare_at_price_inr)
@@ -1480,7 +1480,7 @@ export default function AdminDashboard() {
                 />
               </label>
               {prod.primary_image_url && (
-                <img className="admin-preview" src={prod.primary_image_url} />
+                <img className="admin-preview" src={adminThumbnail(prod.primary_image_url, 640)} onError={(e) => { e.currentTarget.src = prod.primary_image_url; }} loading="lazy" decoding="async" />
               )}
               <label>
                 Additional Product Images (select many)
@@ -1497,7 +1497,7 @@ export default function AdminDashboard() {
                 <div className="admin-gallery admin-gallery-compact">
                   {prod.image_urls.map((url: string, i: number) => (
                     <div key={url}>
-                      <img src={url} />
+                      <img src={adminThumbnail(url, 180)} onError={(e) => { e.currentTarget.src = url; }} loading="lazy" decoding="async" />
                       <button
                         onClick={() =>
                           setProd({
@@ -1725,6 +1725,58 @@ export default function AdminDashboard() {
         {tab === "settings" && staffRole === "admin" && settings && (
           <div className="editor settings">
             <h2>Edit Website Content & Brand Images</h2>
+            <div className="settings-field">
+              <label htmlFor="catalog-columns-desktop">Products per row (desktop)</label>
+              <select
+                id="catalog-columns-desktop"
+                value={Number(settings.catalog_columns_desktop || 5)}
+                onChange={(e) => setSettings({ ...settings, catalog_columns_desktop: Number(e.target.value) })}
+              >
+                {[3, 4, 5, 6].map((count) => (
+                  <option key={count} value={count}>{count} products per row</option>
+                ))}
+              </select>
+              <small>Choose the number of product cards shown across each desktop catalogue row. Mobile remains at 2 products per row.</small>
+            </div>
+            <div className="settings-field">
+              <label htmlFor="catalog-page-size">Products shown per page</label>
+              <select
+                id="catalog-page-size"
+                value={Number(settings.catalog_page_size || 12)}
+                onChange={(e) => setSettings({ ...settings, catalog_page_size: Number(e.target.value) })}
+              >
+                {[8, 12, 16, 20, 24, 32, 40, 48].map((count) => (
+                  <option key={count} value={count}>{count} products</option>
+                ))}
+              </select>
+              <small>Choose how many products customers see on each desktop catalogue page.</small>
+            </div>
+            <div className="settings-field">
+              <label htmlFor="catalog-columns-mobile">Products per row (mobile)</label>
+              <select
+                id="catalog-columns-mobile"
+                value={Number(settings.catalog_columns_mobile || 2)}
+                onChange={(e) => setSettings({ ...settings, catalog_columns_mobile: Number(e.target.value) })}
+              >
+                {[1, 2, 3].map((count) => (
+                  <option key={count} value={count}>{count} {count === 1 ? "product" : "products"} per row</option>
+                ))}
+              </select>
+              <small>Controls the product grid on phones and smaller screens, independently of desktop.</small>
+            </div>
+            <div className="settings-field">
+              <label htmlFor="catalog-page-size-mobile">Products shown per page (mobile)</label>
+              <select
+                id="catalog-page-size-mobile"
+                value={Number(settings.catalog_page_size_mobile || 8)}
+                onChange={(e) => setSettings({ ...settings, catalog_page_size_mobile: Number(e.target.value) })}
+              >
+                {[4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].map((count) => (
+                  <option key={count} value={count}>{count} products</option>
+                ))}
+              </select>
+              <small>Choose how many products customers see on each mobile catalogue page, independently of desktop.</small>
+            </div>
             <label>
               Main Shree Gauri Logo
               <input
