@@ -8,11 +8,11 @@ replace(`  pincode: string;\n};\ntype SavedAddress = {`,`  pincode: string;\n  c
 replace(`      pincode: "",\n    });`,`      pincode: "",\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,\n    });`,`checkout defaults`);
 {
   const chosenAddressLine = '      pincode: chosen?.pincode || "",';
-  const chosenAddressWithCountry = chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,';
+  const chosenAddressWithCountry = chosenAddressLine + '\n      country_code: DEFAULT_COUNTRY.code,';
   if (text.includes(chosenAddressLine) && !text.includes(chosenAddressWithCountry)) {
     text = text.replace(
       chosenAddressLine,
-      chosenAddressLine + '\\n      country_code: DEFAULT_COUNTRY.code,\\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
+      chosenAddressLine + '\n      country_code: DEFAULT_COUNTRY.code,\n      phone_country_code: DEFAULT_COUNTRY.dialCode,'
     );
   }
 }
