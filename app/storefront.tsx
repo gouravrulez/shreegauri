@@ -153,6 +153,7 @@ export default function Storefront() {
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
+    [cartToast, setCartToast] = useState(""),
     [couponCode, setCouponCode] = useState(""),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
@@ -226,7 +227,21 @@ export default function Storefront() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("cart") === "1") {
+    if (params.get("checkout") === "1") {
+      try {
+        const saved = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+        if (Array.isArray(saved) && saved.length) {
+          setCart(saved);
+          setCheckoutOpen(true);
+        } else {
+          setView("cart");
+          setCartToast("Your cart is empty. Please add a product first.");
+        }
+      } catch {
+        setView("cart");
+      }
+      window.history.replaceState({}, "", "/");
+    } else if (params.get("cart") === "1") {
       setView("cart");
       window.history.replaceState({}, "", "/");
     } else if (params.get("home") === "1") {
@@ -311,6 +326,15 @@ export default function Storefront() {
       setReviewBody("");
       setRating(5);
     }
+  }
+  function openSecureCheckout() {
+    if (!cart.length) { setCheckoutOpen(false); setView("cart"); return; }
+    setCheckoutMsg("");
+    setCheckoutOpen(true);
+  }
+  function showCartToast(message: string) {
+    setCartToast(message);
+    window.setTimeout(() => setCartToast(""), 2600);
   }
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
@@ -855,7 +879,7 @@ export default function Storefront() {
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setCart((c) => [...c, p])}>
+                        <button onClick={() => { setCart((c) => [...c, p]); showCartToast(`${p.name} added to your cart`); }}>
                           ADD TO CART
                         </button>
                         <button
@@ -1034,6 +1058,12 @@ export default function Storefront() {
         </i>
         <span>Chat with us</span>
       </a>
+      {cartToast && (
+        <div className="sg-cart-toast" role="status" aria-live="polite">
+          <span aria-hidden="true">✓</span><span>{cartToast}</span>
+          <button type="button" aria-label="Dismiss notification" onClick={() => setCartToast("")}>×</button>
+        </div>
+      )}
       {checkoutOpen && (
         <div
           className="backdrop"
@@ -1308,6 +1338,7 @@ export default function Storefront() {
                 <button
                   onClick={() => {
                     setCart((c) => [...c, ...Array(qty).fill(item)]);
+                    showCartToast(`${item.name} added to your cart`);
                     setItem(null);
                   }}
                 >
