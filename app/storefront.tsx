@@ -164,7 +164,6 @@ export default function Storefront() {
       state: "",
       pincode: "",
     });
-  const [cartToast, setCartToast] = useState("");
   const openProductPage = (product: P) => {
     // Hand the product data already in the catalogue to the detail route so it
     // can paint immediately while the authoritative product row refreshes.
@@ -315,10 +314,6 @@ export default function Storefront() {
     if (!cart.length) { setCheckoutOpen(false); setView("cart"); return; }
     setCheckoutMsg("");
     setCheckoutOpen(true);
-  }
-  function showCartToast(message: string) {
-    setCartToast(message);
-    window.setTimeout(() => setCartToast(""), 2600);
   }
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
@@ -863,7 +858,7 @@ export default function Storefront() {
                         <del>{money(Number(p.compare_at_price_inr))}</del>
                       )}
                       <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => { setCart((c) => [...c, p]); showCartToast(`${p.name} added to your cart`); }}>
+                        <button onClick={() => setCart((c) => [...c, p])}>
                           ADD TO CART
                         </button>
                         <button
@@ -1042,12 +1037,6 @@ export default function Storefront() {
         </i>
         <span>Chat with us</span>
       </a>
-      {cartToast && (
-        <div className="sg-cart-toast" role="status" aria-live="polite">
-          <span aria-hidden="true">✓</span><span>{cartToast}</span>
-          <button type="button" aria-label="Dismiss notification" onClick={() => setCartToast("")}>×</button>
-        </div>
-      )}
       {checkoutOpen && (
         <div
           className="backdrop"
@@ -1322,7 +1311,6 @@ export default function Storefront() {
                 <button
                   onClick={() => {
                     setCart((c) => [...c, ...Array(qty).fill(item)]);
-                    showCartToast(`${item.name} added to your cart`);
                     setItem(null);
                   }}
                 >
