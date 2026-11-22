@@ -241,6 +241,8 @@ text = text.replace(
   "onClick={openSecureCheckout}$1"
 );
 
+text = text.replaceAll("onClick={openSecureCheckout}", "onClick={() => openSecureCheckout()}");
+
 fs.writeFileSync(storefrontPath, text);
 
 const styles = `
