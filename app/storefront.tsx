@@ -239,6 +239,50 @@ export default function Storefront() {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     }
   }, []);
+  // Product page Buy Now checkout handoff: the detail page stores the exact
+  // selected items before navigating here. Read them before opening checkout.
+  async function openSecureCheckout(cartForCheckout: P[] = cart) {
+    if (!cartForCheckout.length) {
+      setCheckoutMsg("Your cart is empty. Please add a product first.");
+      return;
+    }
+    localStorage.setItem("sg_cart", JSON.stringify(cartForCheckout));
+    setCart(cartForCheckout);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = "/login?returnTo=checkout";
+      return;
+    }
+    setCheckout((current) => ({
+      ...current,
+      name: current.name || session.user.user_metadata?.full_name || "",
+      email: current.email || session.user.email || "",
+      phone: current.phone || session.user.phone || "",
+    }));
+    setCheckoutMsg("");
+    setCheckoutOpen(true);
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "1") return;
+    let savedCart: P[] = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem("sg_cart") || "[]");
+      if (Array.isArray(parsed)) savedCart = parsed as P[];
+    } catch {
+      savedCart = [];
+    }
+    window.history.replaceState({}, "", "/");
+    if (!savedCart.length) {
+      setCheckoutMsg("Your selected product could not be loaded. Please add it to your cart again.");
+      setView("cart");
+      return;
+    }
+    void openSecureCheckout(savedCart);
+  }, []);
+
   const money = (n: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
