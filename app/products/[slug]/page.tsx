@@ -131,9 +131,10 @@ export default function ProductPage() {
     try { current = JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { current = []; }
     const chosen = Array.from({ length: quantity }, () => product);
     localStorage.setItem("sg_cart", JSON.stringify(buyNow ? chosen : [...current, ...chosen]));
-    if (buyNow) window.location.href = "/?checkout=1";
-    else {
-      setAdded(true);
+    if (buyNow) {
+      // The storefront reads this exact cart and opens its shared checkout.
+      window.location.href = "/?checkout=1";
+    } else {
       window.location.href = "/?cart=1";
     }
   }
