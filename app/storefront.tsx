@@ -759,7 +759,8 @@ export default function Storefront() {
               <button className="apply-filters" onClick={() => setFiltersOpen(false)}>SHOW {shown.length} PRODUCTS</button>
             </aside>
             {filtersOpen && <button aria-label="Close filters" className="filter-backdrop" onClick={() => setFiltersOpen(false)} />}
-            <div className="product-grid">
+            <div className="catalog-results">
+              <div className="product-grid">
               {shown.length ? (
                 visibleProducts.map((p) => (
                   <article
@@ -853,6 +854,7 @@ export default function Storefront() {
                 </div>
               </nav>
             )}
+            </div>
           </div>
         </section>
       )}
