@@ -1725,6 +1725,19 @@ export default function AdminDashboard() {
         {tab === "settings" && staffRole === "admin" && settings && (
           <div className="editor settings">
             <h2>Edit Website Content & Brand Images</h2>
+            <div className="settings-field">
+              <label htmlFor="catalog-page-size">Products shown per page</label>
+              <select
+                id="catalog-page-size"
+                value={Number(settings.catalog_page_size || 12)}
+                onChange={(e) => setSettings({ ...settings, catalog_page_size: Number(e.target.value) })}
+              >
+                {[8, 12, 16, 20, 24, 32, 40, 48].map((count) => (
+                  <option key={count} value={count}>{count} products</option>
+                ))}
+              </select>
+              <small>Choose how many products customers see on each catalogue page. This applies to desktop and mobile.</small>
+            </div>
             <label>
               Main Shree Gauri Logo
               <input
