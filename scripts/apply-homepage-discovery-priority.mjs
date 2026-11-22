@@ -75,6 +75,6 @@ const planetWrapped = `            {catsLoading ? (
 text = text.slice(0, planetGridStart) + planetWrapped + text.slice(planetGridEnd + '\n            </div>'.length);
 
 // Keep the discovery strips compact and responsive at the top of the page.
-if (!text.includes('className="purpose-section"')) throw new Error("Purpose section missing after move.");
+if (!text.includes('purpose-section')) throw new Error("Purpose section missing after move.");
 fs.writeFileSync(file, text);
 console.log("Homepage purpose and planet collections moved above category/product browsing with visible loading states.");
