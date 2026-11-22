@@ -1838,3 +1838,14 @@ body {
     gap: 10px !important;
   }
 }
+
+
+/* Cart confirmation: one compact, fixed toast that stays clear of page copy,
+   checkout overlays, the WhatsApp launcher and other inline status messages. */
+.sg-cart-toast{position:fixed;top:88px;right:20px;z-index:9998;display:flex;align-items:center;gap:10px;width:min(360px,calc(100vw - 32px));padding:13px 14px;border:1px solid #d8c18f;border-radius:10px;background:#fffdf7;color:#4d171b;box-shadow:0 12px 34px rgba(48,15,12,.2);font-size:13px;font-weight:700;line-height:1.4;animation:sg-toast-in .18s ease-out}
+.sg-cart-toast>span:first-child{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:50%;background:#e8f4e8;color:#26733b;font-size:14px}
+.sg-cart-toast>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
+.sg-cart-toast>button{width:26px;height:26px;flex:0 0 26px;border:0;border-radius:50%;background:#f4eadb;color:#68413a;font-size:20px;line-height:1;cursor:pointer}
+@keyframes sg-toast-in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.sg-cart-toast{top:calc(72px + env(safe-area-inset-top));right:12px;width:calc(100vw - 24px);padding:11px 12px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){.sg-cart-toast{animation:none}}
