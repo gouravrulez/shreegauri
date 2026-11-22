@@ -39,7 +39,7 @@ if (!text.includes(queryMarker)) {
 }
 text = text.replace(
   queryMarker,
-  '.then(({ data }) => { if (!alive) return; if (data) setCats(data as C[]); setCatsLoading(false); })\n      .catch(() => { if (alive) setCatsLoading(false); });'
+  '.then(({ data }) => { if (!alive) return; if (data) setCats(data as C[]); setCatsLoading(false); })\n      '
 );
 
 // Replace the purpose and planet grids with explicit loading placeholders while
