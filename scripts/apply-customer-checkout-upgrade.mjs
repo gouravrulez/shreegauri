@@ -47,14 +47,16 @@ type SavedAddress = {
 "saved address type"
 );
 
-replaceOnce(
+if (!text.includes("useState<P[]>(() =>")) {
+  replaceOnce(
 `    [cart, setCart] = useState<P[]>([]),`,
 `    [cart, setCart] = useState<P[]>(() => {
       if (typeof window === "undefined") return [];
       try { return JSON.parse(localStorage.getItem("sg_cart") || "[]"); } catch { return []; }
     }),`,
 "persisted cart"
-);
+  );
+}
 
 replaceOnce(
 `    [checkoutMsg, setCheckoutMsg] = useState(""),
@@ -158,7 +160,7 @@ const effectReplacement = `  useEffect(() => {
   }
 
   const money = (n: number) =>`
-if (!text.includes("async function openSecureCheckout()")) {
+if (!text.includes("function openSecureCheckout(")) {
   if (!text.includes(effectNeedle)) throw new Error("Customer checkout patch failed: helper insertion");
   text = text.replace(effectNeedle, effectReplacement);
 }
@@ -190,7 +192,7 @@ replaceOnce(
 "auth header"
 );
 
-if (!text.includes("onClick={openSecureCheckout}")) {
+if (!text.includes("openSecureCheckout")) {
   const checkoutNeedles = [
 `                onClick={() => setCheckoutOpen(true)}
               >
