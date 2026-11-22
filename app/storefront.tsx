@@ -125,6 +125,7 @@ export default function Storefront() {
     [wish, setWish] = useState<string[]>([]),
     [sort, setSort] = useState("featured"),
     [catalogPage, setCatalogPage] = useState(1),
+    [pageSize, setPageSize] = useState(12),
     [categoryFilter, setCategoryFilter] = useState("all"),
     [stockOnly, setStockOnly] = useState(false),
     [filtersOpen, setFiltersOpen] = useState(false),
@@ -179,6 +180,7 @@ export default function Storefront() {
       .then(({ data }) => {
         if (!alive || !data) return;
         setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size)) ? Number((data as any).catalog_page_size) : 12);
         if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
       });
 
@@ -410,7 +412,6 @@ export default function Storefront() {
                 : 0,
     );
   }, [products, q, view, cats, categoryFilter, stockOnly, sort]);
-  const pageSize = 12;
   const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
   const visibleProducts = shown.slice((catalogPage - 1) * pageSize, catalogPage * pageSize);
   useEffect(() => { setCatalogPage(1); }, [q, view, categoryFilter, stockOnly, sort]);
