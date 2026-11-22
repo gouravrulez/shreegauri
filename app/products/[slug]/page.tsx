@@ -4,6 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
+function productImage(url: string, width = 720, quality = 72) {
+  if (!url) return "/shree-gauri-logo.png";
+  const marker = "/storage/v1/object/public/";
+  if (!url.includes(marker)) return url;
+  const [base, query = ""] = url.split("?");
+  const transformed = base.replace(marker, "/storage/v1/render/image/public/");
+  const params = new URLSearchParams(query);
+  params.set("width", String(width));
+  params.set("quality", String(quality));
+  params.set("format", "webp");
+  params.set("resize", "contain");
+  return transformed + "?" + params.toString();
+}
+
 type Product = {
   id: string;
   name: string;
@@ -126,11 +140,11 @@ export default function ProductPage() {
       <section className="sg-product-detail-layout">
         <div className="sg-product-gallery">
           <div className="sg-product-thumbnails">
-            {images.map((url, index) => <button key={url} type="button" className={activeImage === url ? "active" : ""} onClick={() => setActiveImage(url)} aria-label={`View image ${index + 1}`}><img src={url} alt="" /></button>)}
+            {images.map((url, index) => <button key={url} type="button" className={activeImage === url ? "active" : ""} onClick={() => setActiveImage(url)} aria-label={`View image ${index + 1}`}><img src={productImage(url, 180, 62)} onError={(e) => { e.currentTarget.src = url; }} alt="" loading="lazy" decoding="async" /></button>)}
           </div>
           <div className="sg-product-image-stage">
             {product.badge && <span className="sg-product-badge">{product.badge}</span>}
-            <img src={activeImage || "/shree-gauri-logo.png"} alt={product.name} />
+            <img src={productImage(activeImage || "", 1400, 80)} onError={(e) => { e.currentTarget.src = activeImage || "/shree-gauri-logo.png"; }} alt={product.name} fetchPriority="high" decoding="async" />
           </div>
         </div>
         <div className="sg-product-details">
