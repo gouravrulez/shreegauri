@@ -204,7 +204,7 @@ export default function Storefront() {
         })) as P[]);
       });
 
-    supabase.from("site_settings").select("*").eq("id", 1).single()
+    supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,astrology_services").eq("id", 1).single()
       .then(({ data }) => {
         if (!alive || !data) return;
         setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
@@ -213,11 +213,15 @@ export default function Storefront() {
         if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
       });
 
-    supabase.from("product_reviews")
-      .select("id,product_id,reviewer_name,rating,title,body,created_at")
-      .eq("is_approved", true).order("created_at", { ascending: false })
-      .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
-    return () => { alive = false; };
+    // Reviews are secondary content: defer their request so the homepage's
+    // catalogue, navigation and first-screen content get network priority.
+    const reviewsTimer = window.setTimeout(() => {
+      supabase.from("product_reviews")
+        .select("id,product_id,reviewer_name,rating,title,body,created_at")
+        .eq("is_approved", true).order("created_at", { ascending: false })
+        .then(({ data }) => { if (alive && data) setReviews(data as R[]); });
+    }, 1200);
+    return () => { alive = false; window.clearTimeout(reviewsTimer); };
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -807,7 +811,7 @@ export default function Storefront() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        window.location.href = `/products/${p.slug}`;
+                        openProductPage(p);
                       }
                     }}
                   >
