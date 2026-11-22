@@ -1812,13 +1812,13 @@ body {
    separately tuned two-column layout. */
 @media (min-width: 901px) {
   .catalog-layout .catalog-results .product-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(var(--catalog-columns, 5), minmax(0, 1fr)) !important;
     gap: 18px !important;
   }
 }
 @media (min-width: 1500px) {
   .catalog-layout .catalog-results .product-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(var(--catalog-columns, 5), minmax(0, 1fr)) !important;
     gap: 16px !important;
   }
   main > .product-grid,
