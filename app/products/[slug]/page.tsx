@@ -52,6 +52,7 @@ export default function ProductPage() {
   useEffect(() => {
     if (!slug) return;
     let alive = true;
+    let hasCachedProduct = false;
     // Use the catalogue row immediately when the visitor has just clicked a
     // product, then refresh the authoritative detail fields in the background.
     try {
@@ -60,6 +61,7 @@ export default function ProductPage() {
         const parsed = JSON.parse(cached);
         if (parsed?.product && Date.now() - Number(parsed.savedAt || 0) < 10 * 60 * 1000) {
           const next = { ...parsed.product, image_urls: Array.isArray(parsed.product.image_urls) ? parsed.product.image_urls : [] } as Product;
+          hasCachedProduct = true;
           setProduct(next);
           setActiveImage(next.primary_image_url || next.image_urls?.[0] || "");
           setLoading(false);
@@ -70,7 +72,7 @@ export default function ProductPage() {
       .then(({ data, error: queryError }) => {
         if (!alive) return;
         if (queryError || !data) {
-          if (!product) setError("This product is not available right now.");
+          if (!hasCachedProduct) setError("This product is not available right now.");
           setLoading(false);
           return;
         }
