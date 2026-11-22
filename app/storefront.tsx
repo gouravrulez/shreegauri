@@ -315,6 +315,10 @@ export default function Storefront() {
     setCheckoutMsg("");
     setCheckoutOpen(true);
   }
+  function confirmAddedToCart(productName: string, quantity = 1) {
+    setCartNotice(`${quantity} × ${productName} added to cart successfully.`);
+    window.setTimeout(() => setCartNotice(""), 2800);
+  }
   async function placeOrder(e: FormEvent) {
     e.preventDefault();
     if (!cart.length) return;
