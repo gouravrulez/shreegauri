@@ -1726,6 +1726,19 @@ export default function AdminDashboard() {
           <div className="editor settings">
             <h2>Edit Website Content & Brand Images</h2>
             <div className="settings-field">
+              <label htmlFor="catalog-columns-desktop">Products per row (desktop)</label>
+              <select
+                id="catalog-columns-desktop"
+                value={Number(settings.catalog_columns_desktop || 5)}
+                onChange={(e) => setSettings({ ...settings, catalog_columns_desktop: Number(e.target.value) })}
+              >
+                {[3, 4, 5, 6].map((count) => (
+                  <option key={count} value={count}>{count} products per row</option>
+                ))}
+              </select>
+              <small>Choose the number of product cards shown across each desktop catalogue row. Mobile remains at 2 products per row.</small>
+            </div>
+            <div className="settings-field">
               <label htmlFor="catalog-page-size">Products shown per page</label>
               <select
                 id="catalog-page-size"
