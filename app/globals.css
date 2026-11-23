@@ -2109,3 +2109,24 @@ body {
   .hero-copy-v2 h1 { font-size: clamp(32px, 9vw, 40px) !important; }
   .hero-buttons button { font-size: 9px !important; padding: 8px 10px !important; }
 }
+
+
+/* Branded opening animation and crisp logo lockup. */
+.sg-brand-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;background:radial-gradient(ellipse at center,#fff9e8 0%,#ffedc2 58%,#f5d28b 100%);animation:sg-splash-out .45s ease 1.48s forwards;pointer-events:none}
+.sg-brand-splash img{display:block;width:min(620px,90vw);height:auto;filter:drop-shadow(0 8px 18px #5b101c22);animation:sg-logo-arrive .75s cubic-bezier(.2,.8,.2,1) both,sg-logo-glow 1.05s ease-in-out .65s infinite alternate}
+.sg-splash-line{width:min(180px,38vw);height:3px;border-radius:10px;background:#ead9b7;overflow:hidden;position:relative}
+.sg-splash-line:after{content:"";position:absolute;inset:0;width:42%;background:linear-gradient(90deg,#75131e,#d6a044);animation:sg-splash-progress .9s ease-in-out infinite}
+@keyframes sg-logo-arrive{from{opacity:0;transform:scale(.84) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes sg-logo-glow{from{filter:drop-shadow(0 5px 10px #5b101c18)}to{filter:drop-shadow(0 8px 24px #a46c283d)}}
+@keyframes sg-splash-progress{from{transform:translateX(-110%)}to{transform:translateX(250%)}}
+@keyframes sg-splash-out{to{opacity:0;visibility:hidden}}
+.brand>img{display:block;width:270px!important;height:auto!important;max-height:76px;object-fit:contain!important}
+@media(max-width:900px){
+  .brand>img{width:190px!important;height:auto!important;max-height:56px}
+  main>header,header{height:124px!important;min-height:124px!important;grid-template-rows:60px 48px 16px!important}
+  main>header>.search{top:60px!important;height:46px!important}
+  main>header [class*="currency" i],main>header [id*="currency" i],main>header [data-currency],main>header [data-currency-switcher]{top:108px!important;right:10px!important}
+  .sg-brand-splash img{width:min(520px,88vw)}
+}
+@media(max-width:430px){.brand>img{width:172px!important;max-height:52px}.sg-brand-splash img{width:92vw}}
+@media(prefers-reduced-motion:reduce){.sg-brand-splash,.sg-brand-splash img,.sg-splash-line:after{animation:none}.sg-brand-splash{opacity:0;visibility:hidden}}
