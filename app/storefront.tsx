@@ -1080,8 +1080,18 @@ export default function Storefront() {
       {(view === "home" || view === "about" || view === "contact") && (
       <section className="founder">
         <img
+          className="founder-photo"
           src={s.founder_image_url || "/gourav-sharma-founder.jpeg"}
           alt="Gourav Sharma, Founder of Shree Gauri"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          onError={(event) => {
+            const image = event.currentTarget;
+            const fallbackPhoto = "/gourav-sharma-founder.jpeg";
+            if (!image.src.endsWith(fallbackPhoto)) image.src = fallbackPhoto;
+            else image.src = "/shree-gauri-logo.png";
+          }}
         />
         <div>
           <small className="kicker">A PERSONAL NOTE</small>
