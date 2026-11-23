@@ -2111,9 +2111,10 @@ body {
 }
 
 
-/* Branded opening animation and crisp logo lockup. */
-.sg-brand-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;background:radial-gradient(ellipse at center,#fff9e8 0%,#ffedc2 58%,#f5d28b 100%);animation:sg-splash-out .45s ease 1.48s forwards;pointer-events:none}
-.sg-brand-splash img{display:block;width:min(620px,90vw);height:auto;filter:drop-shadow(0 8px 18px #5b101c22);animation:sg-logo-arrive .75s cubic-bezier(.2,.8,.2,1) both,sg-logo-glow 1.05s ease-in-out .65s infinite alternate}
+
+/* Shree Gauri brand reveal */
+.sg-brand-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;background:radial-gradient(ellipse at center,#fff9e8 0%,#ffedc2 58%,#f5d28b 100%);animation:sg-splash-out .45s ease 1.48s forwards;pointer-events:none}
+.sg-brand-splash img{display:block;width:min(560px,88vw);height:auto;filter:drop-shadow(0 8px 18px #5b101c22);animation:sg-logo-arrive .75s cubic-bezier(.2,.8,.2,1) both,sg-logo-glow 1.05s ease-in-out .65s infinite alternate}
 .sg-splash-line{width:min(180px,38vw);height:3px;border-radius:10px;background:#ead9b7;overflow:hidden;position:relative}
 .sg-splash-line:after{content:"";position:absolute;inset:0;width:42%;background:linear-gradient(90deg,#75131e,#d6a044);animation:sg-splash-progress .9s ease-in-out infinite}
 @keyframes sg-logo-arrive{from{opacity:0;transform:scale(.84) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -2122,134 +2123,53 @@ body {
 @keyframes sg-splash-out{to{opacity:0;visibility:hidden}}
 .brand>img{display:block;width:270px!important;height:auto!important;max-height:76px;object-fit:contain!important}
 @media(max-width:900px){
-  .brand>img{width:190px!important;height:auto!important;max-height:56px}
-  main>header,header{height:124px!important;min-height:124px!important;grid-template-rows:60px 48px 16px!important}
-  main>header>.search{top:60px!important;height:46px!important}
-  main>header [class*="currency" i],main>header [id*="currency" i],main>header [data-currency],main>header [data-currency-switcher]{top:108px!important;right:10px!important}
-  .sg-brand-splash img{width:min(520px,88vw)}
+  .topbar{min-height:28px!important;height:28px!important;padding:0 12px!important;font-size:9px!important}
+  main>header{
+    display:grid!important;grid-template-columns:36px minmax(0,1fr) auto!important;
+    grid-template-rows:56px 44px!important;column-gap:7px!important;row-gap:0!important;
+    height:100px!important;min-height:100px!important;padding:0 12px 0!important;
+    margin:0!important;align-items:center!important;overflow:visible!important;
+    background:#fff!important;border-bottom:1px solid #eadfd5!important;
+    box-shadow:0 2px 8px #4e231b0a!important;
+  }
+  main>header>.hamb{grid-column:1;grid-row:1;width:34px!important;height:36px!important;display:grid!important;place-items:center!important;border-radius:8px!important;background:#fbf5eb!important;color:#711722!important}
+  main>header>.brand{grid-column:2;grid-row:1;justify-self:center!important;min-width:0!important;width:auto!important;max-width:100%!important;padding:0!important}
+  main>header>.brand>img{width:clamp(145px,43vw,180px)!important;max-height:48px!important;height:auto!important;object-fit:contain!important}
+  main>header>.head-actions{grid-column:3;grid-row:1;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:1px!important;min-width:0!important}
+  main>header>.head-actions a,main>header>.head-actions button{width:30px!important;min-width:30px!important;max-width:30px!important;height:36px!important;padding:3px!important}
+  main>header>.head-actions span{display:none!important}
+  main>header>.search{
+    position:relative!important;inset:auto!important;grid-column:1/-1!important;grid-row:2!important;
+    display:flex!important;align-items:center!important;width:100%!important;height:38px!important;min-height:38px!important;
+    margin:0!important;padding:0 12px!important;gap:9px!important;border:1px solid #e5d8ca!important;
+    border-radius:9px!important;background:#fffdfb!important;box-shadow:0 1px 4px #4e231b0a!important;
+    z-index:2!important;color:#761a25!important
+  }
+  main>header>.search svg{width:17px!important;height:17px!important;flex:0 0 17px!important}
+  main>header>.search input{height:36px!important;width:100%!important;min-width:0!important;padding:0!important;border:0!important;outline:0!important;background:transparent!important;font-size:14px!important;color:#382b27!important}
+  main>header>.search input::placeholder{color:#998a80!important;opacity:1!important}
+  /* Currency controls, when rendered by the storefront, sit compactly in the top row. */
+  main>header [class*="currency" i],main>header [id*="currency" i],main>header [data-currency],main>header [data-currency-switcher]{
+    position:static!important;inset:auto!important;grid-row:1!important;align-self:center!important;
+    display:inline-flex!important;align-items:center!important;width:auto!important;min-width:0!important;
+    max-width:90px!important;min-height:28px!important;margin:0!important;padding:2px 6px!important;
+    transform:none!important;border:1px solid #e7dacb!important;border-radius:7px!important;
+    background:#fffaf2!important;color:#711722!important;box-shadow:none!important;font-size:11px!important
+  }
+  main>header [class*="currency" i] select,main>header [id*="currency" i] select{max-width:75px!important;min-width:0!important;border:0!important;background:transparent!important;color:inherit!important;font-size:11px!important}
+  main>nav{display:none!important}
+  main>.hero-v2{margin-top:0!important;min-height:0!important;height:auto!important}
+  main>.hero-v2>.hero-art{height:clamp(260px,78vw,340px)!important;min-height:0!important;background-position:center 18%!important}
+  main>.hero-v2>.hero-copy-v2{margin:-12px 0 0!important;padding:28px 16px 25px!important}
+  .sg-brand-splash img{width:min(500px,88vw)}
+  .wa{bottom:calc(88px + env(safe-area-inset-bottom))!important}
 }
-@media(max-width:430px){.brand>img{width:172px!important;max-height:52px}.sg-brand-splash img{width:92vw}}
+@media(max-width:430px){
+  main>header{grid-template-columns:32px minmax(0,1fr) auto!important;column-gap:5px!important;padding-left:9px!important;padding-right:9px!important}
+  main>header>.hamb{width:32px!important}
+  main>header>.brand>img{width:clamp(138px,41vw,166px)!important;max-height:44px!important}
+  main>header>.head-actions a,main>header>.head-actions button{width:28px!important;min-width:28px!important;max-width:28px!important}
+  main>.hero-v2>.hero-art{height:clamp(250px,76vw,315px)!important}
+  main>.hero-v2>.hero-copy-v2{padding:25px 14px 22px!important}
+}
 @media(prefers-reduced-motion:reduce){.sg-brand-splash,.sg-brand-splash img,.sg-splash-line:after{animation:none}.sg-brand-splash{opacity:0;visibility:hidden}}
-
-
-/* Final branded mobile header: compact logo row, integrated search field,
-   and a small currency pill directly beneath—no floating controls or gaps. */
-@media (max-width: 900px) {
-  main > header,
-  header {
-    display: grid !important;
-    grid-template-columns: 38px minmax(0, 1fr) auto !important;
-    grid-template-rows: 58px 46px 34px !important;
-    align-items: center !important;
-    column-gap: 7px !important;
-    row-gap: 5px !important;
-    width: 100% !important;
-    height: 153px !important;
-    min-height: 153px !important;
-    padding: 5px 12px 7px !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    background: linear-gradient(180deg,#fff 0%,#fffdf9 100%) !important;
-    border-bottom: 1px solid #eadfd5 !important;
-    box-shadow: 0 3px 12px rgba(78,35,27,.055) !important;
-  }
-  header > .hamb {
-    grid-column: 1 !important; grid-row: 1 !important;
-    width: 36px !important; height: 40px !important;
-    display: grid !important; place-items: center !important;
-    border-radius: 9px !important;
-    color: #711722 !important;
-    background: #fbf5eb !important;
-  }
-  header > .brand {
-    grid-column: 2 !important; grid-row: 1 !important;
-    justify-self: center !important;
-    width: auto !important; max-width: 100% !important;
-    min-width: 0 !important; padding: 0 !important;
-  }
-  header > .brand > img {
-    display: block !important;
-    width: clamp(150px, 43vw, 190px) !important;
-    max-height: 49px !important;
-    height: auto !important; object-fit: contain !important;
-  }
-  header > .head-actions {
-    grid-column: 3 !important; grid-row: 1 !important;
-    display: flex !important; align-items: center !important;
-    gap: 1px !important; justify-self: end !important;
-    min-width: 0 !important;
-  }
-  header > .head-actions a,
-  header > .head-actions button {
-    width: 31px !important; min-width: 31px !important;
-    max-width: 31px !important; height: 38px !important;
-    padding: 3px !important; border-radius: 8px !important;
-  }
-  header > .head-actions span { display: none !important; }
-  header > .search {
-    position: relative !important;
-    inset: auto !important;
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    display: flex !important; align-items: center !important;
-    width: 100% !important; height: 46px !important;
-    min-height: 46px !important; max-width: none !important;
-    margin: 0 !important; padding: 0 13px !important;
-    gap: 10px !important;
-    border: 1px solid #e6d7c8 !important;
-    border-radius: 11px !important;
-    background: #fff !important;
-    box-shadow: inset 0 1px 2px rgba(70,34,20,.025),0 2px 7px rgba(70,34,20,.045) !important;
-    color: #7a1b27 !important;
-    z-index: 2 !important;
-  }
-  header > .search svg { width: 18px !important; height: 18px !important; flex: 0 0 18px !important; }
-  header > .search input {
-    width: 100% !important; min-width: 0 !important;
-    height: 42px !important; padding: 0 !important;
-    border: 0 !important; outline: 0 !important;
-    background: transparent !important;
-    color: #382b27 !important; font-size: 15px !important;
-  }
-  header > .search input::placeholder { color: #9b8c80 !important; opacity: 1 !important; }
-  header .currency-switcher,
-  header .currency-selector,
-  header .currency-dropdown,
-  header [class*="currency" i],
-  header [id*="currency" i],
-  header [data-currency],
-  header [data-currency-switcher] {
-    position: relative !important; inset: auto !important;
-    grid-column: 1 / -1 !important; grid-row: 3 !important;
-    justify-self: end !important; align-self: center !important;
-    display: inline-flex !important; align-items: center !important;
-    width: auto !important; min-width: 0 !important;
-    max-width: 100% !important; min-height: 30px !important;
-    margin: 0 !important; padding: 3px 10px !important;
-    transform: none !important; float: none !important;
-    border: 1px solid #eadbc8 !important;
-    border-radius: 8px !important;
-    background: #fbf6ed !important;
-    color: #6d1721 !important;
-    box-shadow: none !important;
-    font-size: 12px !important;
-    z-index: 3 !important;
-  }
-  header .currency-switcher select,
-  header .currency-selector select,
-  header .currency-dropdown select,
-  header [data-currency] select {
-    max-width: 125px !important; min-width: 0 !important;
-    border: 0 !important; background: transparent !important;
-    color: inherit !important; font-size: 12px !important;
-  }
-  main > nav, main > header + nav, header + nav {
-    margin-top: 0 !important;
-  }
-}
-@media (max-width: 430px) {
-  header { grid-template-columns: 34px minmax(0,1fr) auto !important; column-gap: 5px !important; padding-left: 9px !important; padding-right: 9px !important; }
-  header > .brand > img { width: clamp(142px, 42vw, 174px) !important; max-height: 46px !important; }
-  header > .hamb { width: 34px !important; }
-  header > .head-actions a, header > .head-actions button { width: 29px !important; min-width: 29px !important; max-width: 29px !important; }
-}
