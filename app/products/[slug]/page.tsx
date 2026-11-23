@@ -127,7 +127,7 @@ export default function ProductPage() {
   const images = useMemo(() => product ? Array.from(new Set([product.primary_image_url, ...(product.image_urls || [])].filter(Boolean))) as string[] : [], [product]);
   const money = (value: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
 
-  function addToCart(buyNow = false) {
+  async function addToCart(buyNow = false) {
     if (!product || typeof window === "undefined") return;
     if (product.stock_quantity < 1 || quantity < 1 || quantity > product.stock_quantity) {
       setCartActionMessage("This quantity is not currently available.");
@@ -138,12 +138,17 @@ export default function ProductPage() {
       if (buyNow) {
         setBuyNowBusy(true);
         setCartActionMessage("");
-        // Keep Buy Now separate from the normal cart so storefront hydration
-        // or cart persistence cannot replace the exact product being purchased.
+        // Persist the exact product before any navigation, then decide the
+        // next step here instead of relying on the homepage to detect auth.
+        // The dedicated key survives the OTP/Google login round-trip.
         const payload = JSON.stringify(chosen);
         localStorage.setItem("sg_buy_now_cart", payload);
         localStorage.setItem("sg_cart", payload);
-        window.location.assign("/?checkout=1&source=product");
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        window.location.assign(
+          data.session ? "/?checkout=1&source=product" : "/login?returnTo=checkout"
+        );
         return;
       }
       let current: Product[] = [];
@@ -153,9 +158,9 @@ export default function ProductPage() {
       } catch { current = []; }
       localStorage.setItem("sg_cart", JSON.stringify([...current, ...chosen]));
       window.location.assign("/?cart=1");
-    } catch {
+    } catch (error) {
       setBuyNowBusy(false);
-      setCartActionMessage("Unable to start checkout. Please try again.");
+      setCartActionMessage(error instanceof Error ? error.message : "Unable to start checkout. Please try again.");
     }
   }
 
