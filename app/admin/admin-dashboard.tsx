@@ -606,11 +606,32 @@ export default function AdminDashboard() {
   }
   async function saveSettings() {
     if (previewOnly) { setNotice("Read-only preview: changes are disabled to protect live store data."); return; }
-    const { error } = await supabase
+    const payload = {
+      ...settings,
+      catalog_page_size: Number(settings.catalog_page_size || 12),
+      catalog_page_size_mobile: Number(settings.catalog_page_size_mobile || 8),
+      catalog_columns_desktop: Number(settings.catalog_columns_desktop || 5),
+      catalog_columns_mobile: Number(settings.catalog_columns_mobile || 2),
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase
       .from("site_settings")
-      .update({ ...settings, updated_at: new Date().toISOString() })
-      .eq("id", 1);
-    setNotice(error?.message || "Website content updated.");
+      .update(payload)
+      .eq("id", 1)
+      .select("*")
+      .single();
+    if (error) {
+      setNotice("Website settings were not saved: " + error.message);
+      return;
+    }
+    if (!data) {
+      setNotice("Website settings were not confirmed as saved. Please refresh and try again.");
+      return;
+    }
+    // Keep the editor synced to the exact values read back from the database;
+    // never show a success message for an update that matched no settings row.
+    setSettings(data);
+    setNotice("Website settings saved and verified.");
   }
   async function saveCourierDetails(e: FormEvent<HTMLFormElement>, order: Order) {
     if (previewOnly) { e.preventDefault(); setNotice("Read-only preview: tracking edits are disabled to protect live orders."); return; }
