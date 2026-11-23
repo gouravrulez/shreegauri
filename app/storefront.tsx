@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "./lib/supabase";
 import {
   Menu,
@@ -660,12 +661,17 @@ export default function Storefront() {
       {view === "home" && (
         <>
           <section className="hero-v2 hero-loaded">
-            <div
-              className="hero-art"
-              style={{
-                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-hero-fast.webp)`,
-              }}
-            />
+            <div className="hero-art" aria-hidden="true">
+              <Image
+                src="/maa-lakshmi-hero-fast.webp"
+                alt=""
+                fill
+                priority
+                fetchPriority="high"
+                sizes="(max-width: 900px) 100vw, 62vw"
+                className="hero-art-image"
+              />
+            </div>
             <div className="hero-copy-v2">
               <small>WELCOME TO</small>
               <h1>SHREE GAURI</h1>
