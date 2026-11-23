@@ -592,7 +592,7 @@ export default function Storefront() {
           aria-label="Shree Gauri home"
         >
           {s.brand_logo_url ? (
-            <img src={s.brand_logo_url} alt="Shree Gauri" decoding="async" />
+            <img src={storefrontImage(s.brand_logo_url, 240, 78)} alt="Shree Gauri" decoding="async" fetchPriority="high" />
           ) : (
             <i className="sg-mark" aria-hidden="true">SG</i>
           )}
@@ -737,11 +737,11 @@ export default function Storefront() {
             <div className="cat-grid">
               {cats
                 .filter((c) => !c.parent_id && c.collection_type === "category")
-                .map((c) => (
+                .map((c, imageIndex) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -760,11 +760,11 @@ export default function Storefront() {
             <div className="purpose-grid">
               {cats
                 .filter((c) => c.collection_type === "purpose")
-                .map((c) => (
+                .map((c, imageIndex) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span>✦</span>
                       )}
@@ -783,11 +783,11 @@ export default function Storefront() {
             <div className="planet-grid">
               {cats
                 .filter((c) => c.collection_type === "planet")
-                .map((c) => (
+                .map((c, imageIndex) => (
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span>
                           {(
@@ -908,7 +908,7 @@ export default function Storefront() {
             <div className="catalog-results">
               <div className="product-grid" style={{ "--catalog-columns": desktopColumns, "--catalog-columns-mobile": mobileColumns } as React.CSSProperties}>
               {shown.length ? (
-                visibleProducts.map((p) => (
+                visibleProducts.map((p, productIndex) => (
                   <article
                     key={p.id}
                     className="product-card-clickable"
@@ -952,9 +952,9 @@ export default function Storefront() {
                         src={storefrontImage(p.primary_image_url || p.image_urls?.[0] || "", 640, 70)}
                         onError={(e) => { const img = e.currentTarget; const original = p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"; if (img.src !== original) img.src = original; }}
                         alt={p.name}
-                        loading="lazy"
+                        loading={productIndex < 4 ? "eager" : "lazy"}
                         decoding="async"
-                        fetchPriority="low"
+                        fetchPriority={productIndex < 2 ? "high" : "low"}
                       />
                       {p.badge && <span>{p.badge}</span>}
                     </button>
