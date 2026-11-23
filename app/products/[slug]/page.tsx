@@ -144,11 +144,10 @@ export default function ProductPage() {
         const payload = JSON.stringify(chosen);
         localStorage.setItem("sg_buy_now_cart", payload);
         localStorage.setItem("sg_cart", payload);
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        window.location.assign(
-          data.session ? "/?checkout=1&source=product" : "/login?returnTo=checkout"
-        );
+        // Do not wait for a Supabase session request on this button.
+        // The storefront checkout handler owns authentication and will send
+        // signed-out visitors to login while preserving this saved cart.
+        window.location.href = "/?checkout=1&source=product";
         return;
       }
       let current: Product[] = [];
