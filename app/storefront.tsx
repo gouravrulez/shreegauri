@@ -668,6 +668,7 @@ export default function Storefront() {
                 fill
                 priority
                 fetchPriority="high"
+                unoptimized
                 sizes="(max-width: 900px) 100vw, 62vw"
                 className="hero-art-image"
               />
