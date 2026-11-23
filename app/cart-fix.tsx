@@ -121,6 +121,13 @@ export default function CartFix() {
         window.setTimeout(scheduleArrange, 40);
       }
 
+      // The dedicated product detail page has its own real Buy Now
+      // handler. Do not intercept that click here: this legacy cart helper
+      // only applies to the storefront's in-page product cards/modal.
+      if (label === "BUY NOW" && action.closest(".sg-product-page")) {
+        return;
+      }
+
       if (label === "BUY NOW") {
         event.preventDefault();
         event.stopPropagation();
