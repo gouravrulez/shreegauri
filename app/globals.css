@@ -2173,3 +2173,41 @@ body {
   main>.hero-v2>.hero-copy-v2{padding:25px 14px 22px!important}
 }
 @media(prefers-reduced-motion:reduce){.sg-brand-splash,.sg-brand-splash img,.sg-splash-line:after{animation:none}.sg-brand-splash{opacity:0;visibility:hidden}}
+
+
+/* Final mobile tightening: remove dead vertical gaps and keep product cards compact. */
+@media(max-width:900px){
+  .topbar{height:25px!important;min-height:25px!important;padding-top:0!important;padding-bottom:0!important}
+  main>header{
+    grid-template-rows:49px 38px!important;
+    height:87px!important;min-height:87px!important;
+    padding-top:0!important;padding-bottom:0!important;
+  }
+  main>header>.brand>img{max-height:43px!important}
+  main>header>.search{height:36px!important;min-height:36px!important}
+  main>.hero-v2{margin-top:0!important;padding-top:0!important}
+  main>.hero-v2>.hero-art{margin-top:0!important}
+  main>.hero-v2>.hero-copy-v2{margin-top:-8px!important}
+  /* Product cards: title, price and actions only on mobile—no long short-description block. */
+  .product-grid>.product-card-clickable .info>p,
+  .catalog-layout .product-grid>.product-card-clickable .info>p{
+    display:none!important;
+  }
+  .product-grid>.product-card-clickable .info,
+  .catalog-layout .product-grid>.product-card-clickable .info{
+    padding:9px 8px!important;
+  }
+  .product-grid>.product-card-clickable .info h3,
+  .catalog-layout .product-grid>.product-card-clickable .info h3{
+    margin:4px 0 7px!important;
+    line-height:1.3!important;
+  }
+  .product-grid>.product-card-clickable .info>small{font-size:9px!important;letter-spacing:1px!important}
+  .product-grid>.product-card-clickable .info>b{display:inline-block;margin-top:2px!important}
+  .product-grid>.product-card-clickable .product-actions{margin-top:9px!important}
+}
+@media(max-width:430px){
+  main>header{grid-template-rows:46px 36px!important;height:82px!important;min-height:82px!important}
+  main>header>.brand>img{max-height:41px!important}
+  main>header>.search{height:34px!important;min-height:34px!important}
+}
