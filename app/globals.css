@@ -1873,3 +1873,19 @@ body {
     padding: 8px;
   }
 }
+
+
+/* Admin product grid: selected desktop columns, with compact responsive fallbacks. */
+@media (max-width: 900px) {
+  .admin-product-workspace .product-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 520px) {
+  .admin-product-workspace .product-card-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+.admin-product-workspace .product-card-grid > .catalog-pagination {
+  grid-column: 1 / -1;
+}
