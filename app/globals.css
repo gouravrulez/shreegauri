@@ -2357,3 +2357,28 @@ body {
     padding: 8px !important;
   }
 }
+
+
+/* Small mobile-only spacing refinement between the brand row, search, and hero. */
+@media (max-width: 600px) {
+  main > header {
+    grid-template-rows: 44px 36px !important;
+    height: 80px !important;
+    min-height: 80px !important;
+    row-gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  main > header > .hamb,
+  main > header > .brand,
+  main > header > .head-actions {
+    align-self: center !important;
+  }
+  main > header > .search {
+    align-self: center !important;
+    margin: 0 !important;
+  }
+  main > .hero-v2 {
+    margin-top: -28px !important;
+  }
+}
