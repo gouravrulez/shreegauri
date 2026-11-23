@@ -2303,3 +2303,22 @@ body {
     background-size: cover !important;
   }
 }
+
+
+/* Correct the mobile homepage hero against the actual header/search stack. */
+@media (max-width: 600px) {
+  main > .hero-v2 {
+    position: relative !important;
+    top: -76px !important;
+    margin-top: 0 !important;
+    margin-bottom: -76px !important;
+    padding-top: 0 !important;
+  }
+  main > .hero-v2 > .hero-art {
+    height: clamp(300px, 82vw, 390px) !important;
+    min-height: 0 !important;
+    background-size: cover !important;
+    background-position: 28% top !important;
+    background-repeat: no-repeat !important;
+  }
+}
