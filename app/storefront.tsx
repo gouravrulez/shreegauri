@@ -182,12 +182,27 @@ export default function Storefront() {
 
   useEffect(() => {
     let alive = true;
-    // Load the catalogue independently so a slow reviews/settings request cannot
-    // hold back products and category navigation.
+    // Paint recently used collection navigation immediately, then refresh it
+    // from Supabase in the background so Home does not wait on the network.
+    const categoryCacheKey = "sg_storefront_categories_v1";
+    try {
+      const cached = sessionStorage.getItem(categoryCacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data) && Date.now() - Number(parsed.savedAt || 0) < 30 * 60 * 1000) {
+          setCats(parsed.data as C[]);
+        }
+      }
+    } catch {}
     supabase.from("categories")
       .select("id,name,slug,description,image_url,parent_id,collection_type")
       .eq("is_active", true).order("sort_order")
-      .then(({ data }) => { if (alive && data) setCats(data as C[]); });
+      .then(({ data }) => {
+        if (!alive || !data) return;
+        const next = data as C[];
+        setCats(next);
+        try { sessionStorage.setItem(categoryCacheKey, JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
+      });
 
     supabase.from("products")
       .select(
@@ -726,7 +741,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -749,7 +764,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
                       ) : (
                         <span>✦</span>
                       )}
@@ -772,7 +787,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading="lazy" decoding="async" fetchPriority="low" />
                       ) : (
                         <span>
                           {(
