@@ -801,12 +801,7 @@ export default function AdminDashboard() {
     .filter((page) => productPageCount <= 7 || page === 1 || page === productPageCount || Math.abs(page - currentProductPage) <= 1);
   const paginationControls = (total: number) => (
     <div className="catalog-pagination">
-      <label>Show
-        <select value={productPageSize} onChange={(e) => { setProductPageSize(Number(e.target.value)); setProductPage(1); }}>
-          <option value={12}>12</option><option value={20}>20</option><option value={24}>24</option><option value={36}>36</option><option value={48}>48</option><option value={60}>60</option><option value={96}>96</option><option value={200}>200</option>
-        </select>
-        per page
-      </label>
+      <span className="catalog-page-size-label">Showing ${productPageSize} per page</span>
       <span className="catalog-page-count">{total ? ((currentProductPage - 1) * productPageSize + 1) + "–" + Math.min(currentProductPage * productPageSize, total) + " of " + total : "0 products"}</span>
       <div className="catalog-page-buttons">
         <button type="button" disabled={currentProductPage === 1} onClick={() => setProductPage(currentProductPage - 1)}>Previous</button>
