@@ -122,6 +122,11 @@ const fallback: S = {
 
 export default function Storefront() {
   const router = useRouter();
+  const [showBrandSplash, setShowBrandSplash] = useState(true);
+  useEffect(() => {
+    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 1900);
+    return () => window.clearTimeout(splashTimer);
+  }, []);
   const [cats, setCats] = useState<C[]>([]),
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
@@ -570,6 +575,12 @@ export default function Storefront() {
   ];
   return (
     <main key={view}>
+      {showBrandSplash && (
+        <div className="sg-brand-splash" role="status" aria-label="Welcome to Shree Gauri">
+          <img src="/shree-gauri-brand.svg" alt="Shree Gauri — Divine Energy. Timeless Beauty." />
+          <div className="sg-splash-line" aria-hidden="true" />
+        </div>
+      )}
       <div className="topbar">
         <span>{s.announcement}</span>
         <span>
@@ -591,15 +602,7 @@ export default function Storefront() {
           onClick={() => go("home")}
           aria-label="Shree Gauri home"
         >
-          {s.brand_logo_url ? (
-            <img src={storefrontImage(s.brand_logo_url, 240, 78)} alt="Shree Gauri" decoding="async" fetchPriority="high" />
-          ) : (
-            <i className="sg-mark" aria-hidden="true">SG</i>
-          )}
-          <span>
-            <b>SHREE GAURI</b>
-            <small>Divine Energy. Timeless Beauty.</small>
-          </span>
+          <img src="/shree-gauri-brand.svg" alt="Shree Gauri — Divine Energy. Timeless Beauty." decoding="async" fetchPriority="high" />
         </button>
         <label className="search">
           <Search />
