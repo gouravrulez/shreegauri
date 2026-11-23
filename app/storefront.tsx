@@ -576,9 +576,11 @@ export default function Storefront() {
           onClick={() => go("home")}
           aria-label="Shree Gauri home"
         >
-          <i className="sg-mark" aria-hidden="true">
-            SG
-          </i>
+          {s.brand_logo_url ? (
+            <img src={s.brand_logo_url} alt="Shree Gauri" decoding="async" />
+          ) : (
+            <i className="sg-mark" aria-hidden="true">SG</i>
+          )}
           <span>
             <b>SHREE GAURI</b>
             <small>Divine Energy. Timeless Beauty.</small>
@@ -724,7 +726,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -747,7 +749,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span>✦</span>
                       )}
@@ -770,7 +772,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={c.image_url} alt={c.name} />
+                        <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" />
                       ) : (
                         <span>
                           {(
