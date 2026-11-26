@@ -2113,7 +2113,7 @@ body {
 
 
 /* Shree Gauri brand reveal */
-.sg-brand-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;background:radial-gradient(ellipse at center,#fff9e8 0%,#ffedc2 58%,#f5d28b 100%);animation:sg-splash-out .45s ease 1.48s forwards;pointer-events:none}
+.sg-brand-splash{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px;background:radial-gradient(ellipse at center,#fff9e8 0%,#ffedc2 58%,#f5d28b 100%);animation:sg-splash-out .25s ease .48s forwards;pointer-events:none}
 .sg-brand-splash img{display:block;width:min(560px,88vw);height:auto;filter:drop-shadow(0 8px 18px #5b101c22);animation:sg-logo-arrive .75s cubic-bezier(.2,.8,.2,1) both,sg-logo-glow 1.05s ease-in-out .65s infinite alternate}
 .sg-splash-line{width:min(180px,38vw);height:3px;border-radius:10px;background:#ead9b7;overflow:hidden;position:relative}
 .sg-splash-line:after{content:"";position:absolute;inset:0;width:42%;background:linear-gradient(90deg,#75131e,#d6a044);animation:sg-splash-progress .9s ease-in-out infinite}
