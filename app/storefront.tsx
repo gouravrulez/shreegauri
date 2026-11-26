@@ -153,6 +153,7 @@ export default function Storefront() {
     [reviewTitle, setReviewTitle] = useState(""),
     [reviewBody, setReviewBody] = useState(""),
     [reviewMsg, setReviewMsg] = useState(""),
+    [couponOpen, setCouponOpen] = useState(false),
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
@@ -166,8 +167,7 @@ export default function Storefront() {
       city: "",
       state: "",
       pincode: "",
-    }),
-    [couponOpen, setCouponOpen] = useState(false);
+    });
   const openProductPage = (product: P) => {
     // Hand the product data already in the catalogue to the detail route so it
     // can paint immediately while the authoritative product row refreshes.
