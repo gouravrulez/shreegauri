@@ -1163,7 +1163,7 @@ export default function Storefront() {
           <a href="/login">Customer Login</a>
         </div>
         <div className="footer-connect">
-          <b>Connect</b>
+          <b>Follow Us &amp; Connect</b>
           <a href={wa("Hello Shree Gauri")}>
             <FaWhatsapp />
             WhatsApp
