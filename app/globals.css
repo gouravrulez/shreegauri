@@ -2581,3 +2581,16 @@ body {
     padding: 0 !important;
   }
 }
+
+
+/* Compact coupon disclosure and branded loading screen. */
+.checkout-promo-entry{margin:12px 0 4px;padding:0;border-top:1px solid #eee3d9}
+.checkout-promo-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border:0;background:transparent;color:#4a2927;text-align:left;font-size:13px;font-weight:700}
+.checkout-promo-toggle strong{color:#8b5510;font-size:12px;white-space:nowrap}
+.checkout-promo-fields{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;padding:0 0 10px}
+.checkout-promo-fields label{display:grid;gap:6px;color:#4a2927;font-size:11px;font-weight:800}
+.checkout-promo-fields input{width:100%;min-width:0;padding:10px 12px;border:1px solid #d7cbbb;border-radius:7px;background:#fff;color:#30221f}
+.checkout-promo-fields small{padding:0 0 11px;color:#7b6a61;font-size:10px;white-space:nowrap}
+.shree-gauri-loading img{display:block;width:min(190px,58vw);height:auto;max-height:90px;object-fit:contain;margin:0 auto 2px}
+.shree-gauri-loading strong{margin-top:16px}
+@media(max-width:600px){.checkout-promo-fields{grid-template-columns:minmax(0,1fr);gap:7px}.checkout-promo-fields small{padding:0;white-space:normal}.checkout-modal{padding:24px 18px}.checkout-modal h2{font-size:28px}.checkout-grid{gap:10px}.checkout-grid input{padding:10px}}
