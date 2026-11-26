@@ -2591,6 +2591,6 @@ body {
 .checkout-promo-fields label{display:grid;gap:6px;color:#4a2927;font-size:11px;font-weight:800}
 .checkout-promo-fields input{width:100%;min-width:0;padding:10px 12px;border:1px solid #d7cbbb;border-radius:7px;background:#fff;color:#30221f}
 .checkout-promo-fields small{padding:0 0 11px;color:#7b6a61;font-size:10px;white-space:nowrap}
-.shree-gauri-loading img{display:block;width:min(190px,58vw);height:auto;max-height:90px;object-fit:contain;margin:0 auto 2px}
+.shree-gauri-loading img{display:block;width:min(340px,82vw);height:auto;max-height:none;object-fit:contain;margin:0 auto 2px;flex:0 0 auto}@media(max-width:600px){.shree-gauri-loading img{width:min(280px,82vw)}}
 .shree-gauri-loading strong{margin-top:16px}
 @media(max-width:600px){.checkout-promo-fields{grid-template-columns:minmax(0,1fr);gap:7px}.checkout-promo-fields small{padding:0;white-space:normal}.checkout-modal{padding:24px 18px}.checkout-modal h2{font-size:28px}.checkout-grid{gap:10px}.checkout-grid input{padding:10px}}
