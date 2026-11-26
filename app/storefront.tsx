@@ -728,10 +728,10 @@ export default function Storefront() {
             <div
               className="hero-art"
               style={{
-                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url('/_next/image?url=%2Fmaa-lakshmi-bright-hero.png&w=1080&q=70')`,
+                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url('/maa-lakshmi-hero-fast.webp')`,
               }}
             >
-              <img className="hero-art-mobile-image" src="/_next/image?url=%2Fmaa-lakshmi-bright-hero.png&w=1080&q=70" alt="Goddess Lakshmi seated on a lotus" fetchPriority="high" decoding="async" />
+              <img className="hero-art-mobile-image" src="/maa-lakshmi-hero-fast.webp" alt="Goddess Lakshmi seated on a lotus" fetchPriority="high" decoding="async" />
             </div>
             <div className="hero-copy-v2">
               <small>WELCOME TO</small>
