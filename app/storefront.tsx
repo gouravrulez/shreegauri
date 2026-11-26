@@ -122,11 +122,6 @@ const fallback: S = {
 
 export default function Storefront() {
   const router = useRouter();
-  const [showBrandSplash, setShowBrandSplash] = useState(true);
-  useEffect(() => {
-    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 320);
-    return () => window.clearTimeout(splashTimer);
-  }, []);
   const [cats, setCats] = useState<C[]>([]),
     [products, setProducts] = useState<P[]>([]),
     [reviews, setReviews] = useState<R[]>([]),
@@ -645,12 +640,6 @@ export default function Storefront() {
   ];
   return (
     <main>
-      {showBrandSplash && (
-        <div className="sg-brand-splash" role="status" aria-label="Welcome to Shree Gauri">
-          <img src="/shree-gauri-brand.svg" alt="Shree Gauri — Divine Energy. Timeless Beauty." />
-          <div className="sg-splash-line" aria-hidden="true" />
-        </div>
-      )}
       <div className="topbar">
         <span>{s.announcement}</span>
         <span>
@@ -740,7 +729,9 @@ export default function Storefront() {
               style={{
                 backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-bright-hero.png)`,
               }}
-            />
+            >
+              <img className="hero-art-mobile-image" src="/maa-lakshmi-bright-hero.png" alt="Goddess Lakshmi seated on a lotus" />
+            </div>
             <div className="hero-copy-v2">
               <small>WELCOME TO</small>
               <h1>SHREE GAURI</h1>
