@@ -124,7 +124,7 @@ export default function Storefront() {
   const router = useRouter();
   const [showBrandSplash, setShowBrandSplash] = useState(true);
   useEffect(() => {
-    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 1900);
+    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 750);
     return () => window.clearTimeout(splashTimer);
   }, []);
   const [cats, setCats] = useState<C[]>([]),
