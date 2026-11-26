@@ -220,7 +220,7 @@ export default function Storefront() {
           .select("id,name,slug,description,image_url,parent_id,collection_type")
           .eq("is_active", true).order("sort_order"),
         supabase.from("products")
-          .select("id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
+          .select("id,category_id,category_ids,name,slug,short_description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
           .eq("is_active", true).order("created_at", { ascending: false }),
         supabase.from("site_settings")
           .select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services")
@@ -246,7 +246,7 @@ export default function Storefront() {
                 ? [p.category_id]
                 : [],
         })) as P[];
-        setProducts((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        setProducts(next);
         try { localStorage.setItem("sg_storefront_products_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
       }
 
