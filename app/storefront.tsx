@@ -157,6 +157,7 @@ export default function Storefront() {
     [checkoutBusy, setCheckoutBusy] = useState(false),
     [checkoutMsg, setCheckoutMsg] = useState(""),
     [couponCode, setCouponCode] = useState(""),
+    [couponOpen, setCouponOpen] = useState(false),
     [checkout, setCheckout] = useState<Checkout>({
       name: "",
       email: "",
@@ -727,10 +728,10 @@ export default function Storefront() {
             <div
               className="hero-art"
               style={{
-                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-bright-hero.png)`,
+                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url('/_next/image?url=%2Fmaa-lakshmi-bright-hero.png&w=1080&q=70')`,
               }}
             >
-              <img className="hero-art-mobile-image" src="/maa-lakshmi-bright-hero.png" alt="Goddess Lakshmi seated on a lotus" />
+              <img className="hero-art-mobile-image" src="/_next/image?url=%2Fmaa-lakshmi-bright-hero.png&w=1080&q=70" alt="Goddess Lakshmi seated on a lotus" fetchPriority="high" decoding="async" />
             </div>
             <div className="hero-copy-v2">
               <small>WELCOME TO</small>
@@ -1329,11 +1330,20 @@ export default function Storefront() {
                 />
               </label>
             </div>
-            <div className="checkout-promo-entry" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 9, alignItems: "end", padding: "14px 0", borderTop: "1px solid #eee3d9" }}>
-              <label style={{ display: "grid", gap: 6, color: "#4a2927", fontSize: 12, fontWeight: 800 }}>PROMO / COUPON CODE
-                <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase().replace(/\\s/g, ""))} maxLength={32} placeholder="Enter coupon code" style={{ width: "100%", minWidth: 0, padding: "12px 13px", border: "1px solid #d7cbbb", borderRadius: 7, background: "#fff", color: "#30221f" }} />
-              </label>
-              <span style={{ color: "#7b6a61", fontSize: 11, paddingBottom: 12 }}>Applied securely at checkout</span>
+            <div className="checkout-promo-entry">
+              <button type="button" className="checkout-promo-toggle" aria-expanded={couponOpen} onClick={() => setCouponOpen((open) => !open)}>
+                <span>Have a coupon code?</span>
+                <strong>{couponOpen ? "Hide" : "Enter code"}</strong>
+              </button>
+              {couponOpen && (
+                <div className="checkout-promo-fields">
+                  <label>
+                    PROMO / COUPON CODE
+                    <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase().replace(/\s/g, ""))} maxLength={32} placeholder="Enter coupon code" />
+                  </label>
+                  <small>Applied securely at checkout</small>
+                </div>
+              )}
             </div>
             <div className="checkout-nav-actions">
               <button type="button" onClick={() => { setCheckoutOpen(false); go("cart"); }}>GO TO CART</button>
