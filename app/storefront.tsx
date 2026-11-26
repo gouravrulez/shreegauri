@@ -523,22 +523,53 @@ export default function Storefront() {
   }
   const shown = useMemo(() => {
     const activeCategory = cats.find((c) => c.slug === view)?.id;
-    const searchTerm = q.trim().toLocaleLowerCase("en-IN");
-    const list = products.filter(
-      (p) =>
-        p.name.toLocaleLowerCase("en-IN").includes(searchTerm) &&
+    const searchTerm = q.trim().toLocaleLowerCase("en-IN").replace(/\\s+/g, " ");
+    // A category search should include every product assigned to that
+    // category, including nested subcategories and purpose/planet collections.
+    const matchingCategoryIds = new Set<string>();
+    if (searchTerm) {
+      const matched = cats.filter((category) =>
+        category.name.toLocaleLowerCase("en-IN").includes(searchTerm) ||
+        searchTerm.split(" ").every((word) =>
+          category.name.toLocaleLowerCase("en-IN").includes(word)
+        )
+      );
+      for (const category of matched) {
+        matchingCategoryIds.add(category.id);
+        let parents = [category.id];
+        while (parents.length) {
+          const parentIds = new Set(parents);
+          const children = cats.filter((candidate) =>
+            candidate.parent_id && parentIds.has(candidate.parent_id) &&
+            !matchingCategoryIds.has(candidate.id)
+          );
+          parents = children.map((child) => child.id);
+          for (const child of children) matchingCategoryIds.add(child.id);
+        }
+      }
+    }
+    const list = products.filter((p) => {
+      const assignedCategoryIds = new Set([
+        ...(p.category_ids || []),
+        ...(p.category_id ? [p.category_id] : []),
+      ]);
+      const productName = p.name.toLocaleLowerCase("en-IN");
+      const matchesProductName = !searchTerm || productName.includes(searchTerm) ||
+        searchTerm.split(" ").every((word) => productName.includes(word));
+      const matchesCategory = !searchTerm || [...matchingCategoryIds].some((id) => assignedCategoryIds.has(id));
+      return (matchesProductName || matchesCategory) &&
         (view === "home" ||
           view === "shop" ||
           view === "new" ||
           view === "best" ||
           activeCategory === p.category_id ||
-          (!!activeCategory && p.category_ids.includes(activeCategory))) &&
+          (!!activeCategory && assignedCategoryIds.has(activeCategory))) &&
         (view !== "best" || p.is_featured) &&
         (categoryFilter === "all" ||
           p.category_id === categoryFilter ||
-          p.category_ids.includes(categoryFilter)) &&
-        (!stockOnly || p.stock_quantity > 0)
-    );
+          assignedCategoryIds.has(categoryFilter)) &&
+        (!stockOnly || p.stock_quantity > 0);
+    });
     return [...list].sort((a, b) =>
       sort === "price-low"
         ? Number(a.price_inr) - Number(b.price_inr)
