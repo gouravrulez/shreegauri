@@ -211,62 +211,57 @@ export default function Storefront() {
   useEffect(() => {
     let alive = true;
 
-    // Fetch the homepage's primary data together. Updating the three sections
-    // from one completion prevents categories/products/settings from popping
-    // into view in separate waves after the page has already painted.
+    // Load each homepage data source independently. The previous Promise.all
+    // held every fresh section update until the slowest Supabase query finished,
+    // making the whole page appear late on a cold visit.
+    const loadCategories = async () => {
+      const { data } = await supabase.from("categories")
+        .select("id,name,slug,description,image_url,parent_id,collection_type")
+        .eq("is_active", true).order("sort_order");
+      if (!alive || !data) return;
+      const next = data as C[];
+      setCats(next);
+      try { localStorage.setItem("sg_storefront_categories_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
+    };
+
+    const loadProducts = async () => {
+      const { data } = await supabase.from("products")
+        .select("id,category_id,category_ids,name,slug,short_description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
+        .eq("is_active", true).order("created_at", { ascending: false });
+      if (!alive || !data) return;
+      const next = data.map((p: any) => ({
+        ...p,
+        image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
+        category_ids: Array.isArray(p.category_ids) && p.category_ids.length
+          ? p.category_ids : p.category_id ? [p.category_id] : [],
+      })) as P[];
+      setProducts(next);
+      try { localStorage.setItem("sg_storefront_products_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
+    };
+
+    const loadSettings = async () => {
+      const { data } = await supabase.from("site_settings")
+        .select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services")
+        .eq("id", 1).single();
+      if (!alive || !data) return;
+      const settings = data as any;
+      setS({ ...fallback, ...settings, hero_image_url: "/maa-lakshmi-bright-hero.png" } as S);
+      const nextPageSize = [8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12;
+      const nextDesktopColumns = [3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5;
+      const nextMobilePageSize = [4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8;
+      const nextMobileColumns = [1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2;
+      setPageSize(nextPageSize);
+      setDesktopColumns(nextDesktopColumns);
+      setMobilePageSize(nextMobilePageSize);
+      setMobileColumns(nextMobileColumns);
+      if (Array.isArray(settings.astrology_services)) setAstrologyServices(settings.astrology_services);
+      try { localStorage.setItem("sg_storefront_settings_v1", JSON.stringify({ data: settings, savedAt: Date.now() })); } catch {}
+    };
+
     const loadStorefront = async () => {
-      const [categoriesResult, productsResult, settingsResult] = await Promise.all([
-        supabase.from("categories")
-          .select("id,name,slug,description,image_url,parent_id,collection_type")
-          .eq("is_active", true).order("sort_order"),
-        supabase.from("products")
-          .select("id,category_id,category_ids,name,slug,short_description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
-          .eq("is_active", true).order("created_at", { ascending: false }),
-        supabase.from("site_settings")
-          .select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services")
-          .eq("id", 1).single(),
-      ]);
-
-      if (!alive) return;
-
-      if (categoriesResult.data) {
-        const next = categoriesResult.data as C[];
-        setCats((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
-        try { localStorage.setItem("sg_storefront_categories_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
-      }
-
-      if (productsResult.data) {
-        const next = productsResult.data.map((p: any) => ({
-          ...p,
-          image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
-          category_ids:
-            Array.isArray(p.category_ids) && p.category_ids.length
-              ? p.category_ids
-              : p.category_id
-                ? [p.category_id]
-                : [],
-        })) as P[];
-        setProducts(next);
-        try { localStorage.setItem("sg_storefront_products_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
-      }
-
-      if (settingsResult.data) {
-        const settings = settingsResult.data as any;
-        const nextSettings = { ...settings, hero_image_url: "/maa-lakshmi-bright-hero.png" } as S;
-        setS((current) => JSON.stringify(current) === JSON.stringify(nextSettings) ? current : nextSettings);
-        const nextPageSize = [8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12;
-        const nextDesktopColumns = [3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5;
-        const nextMobilePageSize = [4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8;
-        const nextMobileColumns = [1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2;
-        setPageSize((current) => current === nextPageSize ? current : nextPageSize);
-        setDesktopColumns((current) => current === nextDesktopColumns ? current : nextDesktopColumns);
-        setMobilePageSize((current) => current === nextMobilePageSize ? current : nextMobilePageSize);
-        setMobileColumns((current) => current === nextMobileColumns ? current : nextMobileColumns);
-        if (Array.isArray(settings.astrology_services)) {
-          setAstrologyServices((current) => JSON.stringify(current) === JSON.stringify(settings.astrology_services) ? current : settings.astrology_services);
-        }
-        try { localStorage.setItem("sg_storefront_settings_v1", JSON.stringify({ data: settings, savedAt: Date.now() })); } catch {}
-      }
+      // Start requests together, but let each section render as soon as its
+      // own data arrives instead of waiting for the slowest request.
+      await Promise.allSettled([loadCategories(), loadProducts(), loadSettings()]);
     };
 
     void loadStorefront();
