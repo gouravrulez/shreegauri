@@ -31,6 +31,13 @@ export default function RootLayout({
           type="image/webp"
           fetchPriority="high"
         />
+        <link
+          rel="preload"
+          href="/maa-lakshmi-bright-hero.png"
+          as="image"
+          media="(max-width: 900px)"
+          fetchPriority="high"
+        />
       </head>
       <body className="antialiased">
         <Script
