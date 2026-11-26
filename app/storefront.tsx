@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "./lib/supabase";
 import {
@@ -185,40 +185,48 @@ export default function Storefront() {
   };
   useEffect(() => { setDescriptionOpen(false); }, [item?.id]);
 
+  useLayoutEffect(() => {
+    // Restore the last known storefront data before the browser paints the
+    // hydrated page, preventing empty sections from flashing and popping in.
+    const readCache = (key: string, maxAge: number) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const cached = JSON.parse(raw);
+        if (!cached || Date.now() - Number(cached.savedAt || 0) > maxAge) return null;
+        return cached.data ?? null;
+      } catch { return null; }
+    };
+    const cachedCats = readCache("sg_storefront_categories_v1", 24 * 60 * 60 * 1000);
+    const cachedProducts = readCache("sg_storefront_products_v1", 60 * 60 * 1000);
+    const cachedSettings = readCache("sg_storefront_settings_v1", 24 * 60 * 60 * 1000);
+    if (Array.isArray(cachedCats)) setCats(cachedCats as C[]);
+    if (Array.isArray(cachedProducts)) setProducts(cachedProducts as P[]);
+    if (cachedSettings && typeof cachedSettings === "object") {
+      const data = cachedSettings as any;
+      setS({ ...fallback, ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+      setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(data.catalog_page_size)) ? Number(data.catalog_page_size) : 12);
+      setDesktopColumns([3, 4, 5, 6].includes(Number(data.catalog_columns_desktop)) ? Number(data.catalog_columns_desktop) : 5);
+      setMobilePageSize([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(data.catalog_page_size_mobile)) ? Number(data.catalog_page_size_mobile) : 8);
+      setMobileColumns([1, 2, 3].includes(Number(data.catalog_columns_mobile)) ? Number(data.catalog_columns_mobile) : 2);
+      if (Array.isArray(data.astrology_services)) setAstrologyServices(data.astrology_services);
+    }
+  }, []);
+
   useEffect(() => {
     let alive = true;
     // Paint recently used collection navigation immediately, then refresh it
     // from Supabase in the background so Home does not wait on the network.
-    const categoryCacheKey = "sg_storefront_categories_v1";
-    try {
-      const cached = sessionStorage.getItem(categoryCacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed?.data) && Date.now() - Number(parsed.savedAt || 0) < 30 * 60 * 1000) {
-          setCats(parsed.data as C[]);
-        }
-      }
-    } catch {}
     supabase.from("categories")
       .select("id,name,slug,description,image_url,parent_id,collection_type")
       .eq("is_active", true).order("sort_order")
       .then(({ data }) => {
         if (!alive || !data) return;
         const next = data as C[];
-        setCats(next);
-        try { sessionStorage.setItem(categoryCacheKey, JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
+        setCats((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        try { localStorage.setItem("sg_storefront_categories_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
       });
 
-    const productCacheKey = "sg_storefront_products_v1";
-    try {
-      const cached = sessionStorage.getItem(productCacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed?.data) && Date.now() - Number(parsed.savedAt || 0) < 5 * 60 * 1000) {
-          setProducts(parsed.data as P[]);
-        }
-      }
-    } catch {}
     supabase.from("products")
       .select(
         "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
@@ -236,19 +244,21 @@ export default function Storefront() {
                 ? [p.category_id]
                 : [],
         })) as P[];
-        setProducts(next);
-        try { sessionStorage.setItem(productCacheKey, JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
+        setProducts((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        try { localStorage.setItem("sg_storefront_products_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
       });
 
     supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services").eq("id", 1).single()
       .then(({ data }) => {
         if (!alive || !data) return;
-        setS({ ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
-        setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size)) ? Number((data as any).catalog_page_size) : 12);
-        setDesktopColumns([3, 4, 5, 6].includes(Number((data as any).catalog_columns_desktop)) ? Number((data as any).catalog_columns_desktop) : 5);
-        setMobilePageSize([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number((data as any).catalog_page_size_mobile)) ? Number((data as any).catalog_page_size_mobile) : 8);
-        setMobileColumns([1, 2, 3].includes(Number((data as any).catalog_columns_mobile)) ? Number((data as any).catalog_columns_mobile) : 2);
-        if (Array.isArray((data as any).astrology_services)) setAstrologyServices((data as any).astrology_services);
+        const settings = data as any;
+        setS((current) => JSON.stringify(current) === JSON.stringify({ ...settings, hero_image_url: "/maa-lakshmi-hero-fast.webp" }) ? current : { ...settings, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+        setPageSize((current) => current === ([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12) ? current : ([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12));
+        setDesktopColumns((current) => current === ([3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5) ? current : ([3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5));
+        setMobilePageSize((current) => current === ([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8) ? current : ([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8));
+        setMobileColumns((current) => current === ([1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2) ? current : ([1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2));
+        if (Array.isArray(settings.astrology_services)) setAstrologyServices((current) => JSON.stringify(current) === JSON.stringify(settings.astrology_services) ? current : settings.astrology_services);
+        try { localStorage.setItem("sg_storefront_settings_v1", JSON.stringify({ data: settings, savedAt: Date.now() })); } catch {}
       });
 
     // Reviews are secondary content: defer their request so the homepage's
