@@ -5,6 +5,8 @@ function patch(path, needle, replacement, label) {
   if (text.includes(replacement)) return;
   if (!text.includes(needle)) {
     if (label === "store normalize categories" && text.includes("category_ids:") && text.includes("p.category_ids")) return;
+    if (label === "store category page filter" && text.includes("assignedCategoryIds.has(activeCategory)")) return;
+    if (label === "store sidebar category filter" && text.includes("assignedCategoryIds.has(categoryFilter)")) return;
     if (label === "admin blank product" && text.includes("category_ids: [] as string[]")) return;
     if (label === "admin save categories" && text.includes("category_ids: Array.from(new Set") && text.includes("custom_shipping_enabled: Boolean(prod.custom_shipping_enabled)")) return;
     if (label === "admin category picker" && (text.includes("Collections — choose categories, purposes and planets") || text.includes("className=\"product-collection-picker\""))) return;
