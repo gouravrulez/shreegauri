@@ -2513,3 +2513,29 @@ body {
     background-repeat: no-repeat !important;
   }
 }
+
+
+/* Mobile hero uses the same desktop source as a natural-size image, never a cropped background. */
+.hero-art-mobile-image { display: none; }
+@media (max-width: 900px) {
+  main > .hero-v2 > .hero-art {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: none !important;
+    opacity: 1 !important;
+  }
+  main > .hero-v2 > .hero-art .hero-art-mobile-image {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    object-position: center top !important;
+  }
+}
