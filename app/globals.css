@@ -2429,3 +2429,58 @@ body {
   .topbar span:last-child { gap: 4px !important; font-size: 9px !important; }
   .topbar a { width: 21px !important; height: 21px !important; flex-basis: 21px !important; }
 }
+
+/* Focused mobile finish: keep the main Follow Us links visible and show all of Maa Lakshmi. */
+@media (max-width: 900px) {
+  .topbar {
+    display: flex !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 10px !important;
+    overflow: visible !important;
+    background: #3a0409 !important;
+  }
+  .topbar > span:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  .topbar > span:last-child {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    gap: 6px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #fff0c4 !important;
+    font-size: 10px !important;
+  }
+  .topbar > span:last-child a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    color: #fff0c4 !important;
+  }
+  .topbar > span:last-child a svg {
+    display: block !important;
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  /* Use the complete source artwork instead of cropping it with cover. */
+  main > .hero-v2 > .hero-art {
+    height: clamp(300px, 92vw, 430px) !important;
+    min-height: 0 !important;
+    background-image: url("/maa-lakshmi-hero-fast.webp") !important;
+    background-color: #ffedc5 !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    background-position: center center !important;
+  }
+}
+@media (max-width: 430px) {
+  .topbar { padding-left: 8px !important; padding-right: 8px !important; }
+  .topbar > span:last-child { gap: 4px !important; font-size: 9px !important; }
+  .topbar > span:last-child a { width: 22px !important; height: 22px !important; }
+}
