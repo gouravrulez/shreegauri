@@ -791,7 +791,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 2 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span className="category-symbol">✦</span>
                       )}
@@ -814,7 +814,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 2 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span>✦</span>
                       )}
@@ -837,7 +837,7 @@ export default function Storefront() {
                   <button key={c.id} onClick={() => go(c.slug)}>
                     <div>
                       {c.image_url ? (
-                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 4 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
+                        <img src={storefrontImage(c.image_url, 420, 66)} onError={(e) => { if (e.currentTarget.src !== c.image_url) e.currentTarget.src = c.image_url; }} alt={c.name} loading={imageIndex < 2 ? "eager" : "lazy"} decoding="async" fetchPriority={imageIndex < 2 ? "high" : "low"} />
                       ) : (
                         <span>
                           {(
@@ -1002,7 +1002,7 @@ export default function Storefront() {
                         src={storefrontImage(p.primary_image_url || p.image_urls?.[0] || "", 640, 70)}
                         onError={(e) => { const img = e.currentTarget; const original = p.primary_image_url || p.image_urls?.[0] || "/shree-gauri-logo.png"; if (img.src !== original) img.src = original; }}
                         alt={p.name}
-                        loading={productIndex < 4 ? "eager" : "lazy"}
+                        loading={productIndex < 2 ? "eager" : "lazy"}
                         decoding="async"
                         fetchPriority={productIndex < 2 ? "high" : "low"}
                       />
