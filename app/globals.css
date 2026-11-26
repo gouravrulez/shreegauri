@@ -2539,3 +2539,45 @@ body {
     object-position: center top !important;
   }
 }
+
+
+/* Definitive mobile hero correction: never pull the image under the header or crop its top. */
+@media (max-width: 900px) {
+  main > .hero-v2 {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  main > .hero-v2 > .hero-art {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: none !important;
+    line-height: 0 !important;
+    opacity: 1 !important;
+  }
+  main > .hero-v2 > .hero-art > .hero-art-mobile-image {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    object-position: center top !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
