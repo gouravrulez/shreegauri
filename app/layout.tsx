@@ -26,7 +26,7 @@ export default function RootLayout({
       <head>
         <link
           rel="preload"
-          href="/_next/image?url=%2Fmaa-lakshmi-bright-hero.png&w=1080&q=70"
+          href="/maa-lakshmi-hero-fast.webp"
           as="image"
           media="(max-width: 900px)"
           fetchPriority="high"
