@@ -2468,14 +2468,19 @@ body {
     height: 15px !important;
   }
 
-  /* Use the complete source artwork instead of cropping it with cover. */
+  /* Full-width landscape hero: retain the complete artwork without blank bands. */
   main > .hero-v2 > .hero-art {
-    height: clamp(300px, 92vw, 430px) !important;
+    display: block !important;
+    width: 100% !important;
+    height: 56.25vw !important;
+    max-height: 360px !important;
     min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background-image: url("/maa-lakshmi-hero-fast.webp") !important;
     background-color: #ffedc5 !important;
     background-repeat: no-repeat !important;
-    background-size: contain !important;
+    background-size: 100% 100% !important;
     background-position: center center !important;
   }
 }
