@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -51,7 +51,7 @@ export default function ProductPage() {
   const [reviewMessage, setReviewMessage] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!slug) return;
     let alive = true;
     let hasCachedProduct = false;
@@ -70,7 +70,7 @@ export default function ProductPage() {
         }
       }
     } catch {}
-    supabase.from("products").select("id,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,badge,category_id").eq("slug", slug).eq("is_active", true).maybeSingle()
+    supabase.from("products").select("id,name,slug,short_description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,badge,category_id").eq("slug", slug).eq("is_active", true).maybeSingle()
       .then(({ data, error: queryError }) => {
         if (!alive) return;
         if (queryError || !data) {
@@ -78,10 +78,17 @@ export default function ProductPage() {
           setLoading(false);
           return;
         }
-        const next = { ...data, image_urls: Array.isArray(data.image_urls) ? data.image_urls : [] } as Product;
+        const next = { ...data, description: null, image_urls: Array.isArray(data.image_urls) ? data.image_urls : [] } as Product;
         setProduct(next);
         setActiveImage((current) => current || next.primary_image_url || next.image_urls?.[0] || "");
         setLoading(false);
+        // Fetch the long description after the product and its image are visible.
+        void supabase.from("products").select("description").eq("id", data.id).maybeSingle()
+          .then(({ data: details }) => {
+            if (alive && details) {
+              setProduct((current) => current?.id === data.id ? { ...current, description: details.description } : current);
+            }
+          });
       });
     return () => { alive = false; };
   }, [slug]);
@@ -185,7 +192,7 @@ export default function ProductPage() {
           </div>
           <div className="sg-product-image-stage">
             {product.badge && <span className="sg-product-badge">{product.badge}</span>}
-            <img src={productImage(activeImage || "", 1400, 80)} onError={(e) => { e.currentTarget.src = activeImage || "/shree-gauri-logo.png"; }} alt={product.name} fetchPriority="high" decoding="async" />
+            <img src={productImage(activeImage || "", 900, 70)} onError={(e) => { e.currentTarget.src = activeImage || "/shree-gauri-logo.png"; }} alt={product.name} fetchPriority="high" decoding="async" />
           </div>
         </div>
         <div className="sg-product-details">
