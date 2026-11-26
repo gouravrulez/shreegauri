@@ -86,7 +86,11 @@ export default function ProductPage() {
         void supabase.from("products").select("description").eq("id", data.id).maybeSingle()
           .then(({ data: details }) => {
             if (alive && details) {
-              setProduct((current) => current?.id === data.id ? { ...current, description: details.description } : current);
+              const description = details.description ?? null;
+              setProduct((current) => {
+                if (!current || current.id !== data.id) return current;
+                return { ...current, description } as Product;
+              });
             }
           });
       });
