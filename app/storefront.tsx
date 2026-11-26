@@ -108,7 +108,7 @@ const fallback: S = {
   hero_title: "Divine Energy. Timeless Beauty.",
   hero_text:
     "Authentic gemstones, sacred jewellery, Rudraksha and spiritual products for prosperity, protection and peace.",
-  hero_image_url: "/maa-lakshmi-hero-fast.webp",
+  hero_image_url: "/maa-lakshmi-bright-hero.png",
   brand_logo_url: "",
   founder_image_url: "",
   founder_message:
@@ -204,7 +204,7 @@ export default function Storefront() {
     if (Array.isArray(cachedProducts)) setProducts(cachedProducts as P[]);
     if (cachedSettings && typeof cachedSettings === "object") {
       const data = cachedSettings as any;
-      setS({ ...fallback, ...data, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
+      setS({ ...fallback, ...data, hero_image_url: "/maa-lakshmi-bright-hero.png" } as S);
       setPageSize([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(data.catalog_page_size)) ? Number(data.catalog_page_size) : 12);
       setDesktopColumns([3, 4, 5, 6].includes(Number(data.catalog_columns_desktop)) ? Number(data.catalog_columns_desktop) : 5);
       setMobilePageSize([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(data.catalog_page_size_mobile)) ? Number(data.catalog_page_size_mobile) : 8);
@@ -215,26 +215,33 @@ export default function Storefront() {
 
   useEffect(() => {
     let alive = true;
-    // Paint recently used collection navigation immediately, then refresh it
-    // from Supabase in the background so Home does not wait on the network.
-    supabase.from("categories")
-      .select("id,name,slug,description,image_url,parent_id,collection_type")
-      .eq("is_active", true).order("sort_order")
-      .then(({ data }) => {
-        if (!alive || !data) return;
-        const next = data as C[];
+
+    // Fetch the homepage's primary data together. Updating the three sections
+    // from one completion prevents categories/products/settings from popping
+    // into view in separate waves after the page has already painted.
+    const loadStorefront = async () => {
+      const [categoriesResult, productsResult, settingsResult] = await Promise.all([
+        supabase.from("categories")
+          .select("id,name,slug,description,image_url,parent_id,collection_type")
+          .eq("is_active", true).order("sort_order"),
+        supabase.from("products")
+          .select("id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at")
+          .eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("site_settings")
+          .select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services")
+          .eq("id", 1).single(),
+      ]);
+
+      if (!alive) return;
+
+      if (categoriesResult.data) {
+        const next = categoriesResult.data as C[];
         setCats((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
         try { localStorage.setItem("sg_storefront_categories_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
-      });
+      }
 
-    supabase.from("products")
-      .select(
-        "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
-      )
-      .eq("is_active", true).order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (!alive || !data) return;
-        const next = data.map((p: any) => ({
+      if (productsResult.data) {
+        const next = productsResult.data.map((p: any) => ({
           ...p,
           image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
           category_ids:
@@ -246,20 +253,28 @@ export default function Storefront() {
         })) as P[];
         setProducts((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
         try { localStorage.setItem("sg_storefront_products_v1", JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
-      });
+      }
 
-    supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services").eq("id", 1).single()
-      .then(({ data }) => {
-        if (!alive || !data) return;
-        const settings = data as any;
-        setS((current) => JSON.stringify(current) === JSON.stringify({ ...settings, hero_image_url: "/maa-lakshmi-hero-fast.webp" }) ? current : { ...settings, hero_image_url: "/maa-lakshmi-hero-fast.webp" } as S);
-        setPageSize((current) => current === ([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12) ? current : ([8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12));
-        setDesktopColumns((current) => current === ([3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5) ? current : ([3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5));
-        setMobilePageSize((current) => current === ([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8) ? current : ([4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8));
-        setMobileColumns((current) => current === ([1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2) ? current : ([1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2));
-        if (Array.isArray(settings.astrology_services)) setAstrologyServices((current) => JSON.stringify(current) === JSON.stringify(settings.astrology_services) ? current : settings.astrology_services);
+      if (settingsResult.data) {
+        const settings = settingsResult.data as any;
+        const nextSettings = { ...settings, hero_image_url: "/maa-lakshmi-bright-hero.png" } as S;
+        setS((current) => JSON.stringify(current) === JSON.stringify(nextSettings) ? current : nextSettings);
+        const nextPageSize = [8, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size)) ? Number(settings.catalog_page_size) : 12;
+        const nextDesktopColumns = [3, 4, 5, 6].includes(Number(settings.catalog_columns_desktop)) ? Number(settings.catalog_columns_desktop) : 5;
+        const nextMobilePageSize = [4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48].includes(Number(settings.catalog_page_size_mobile)) ? Number(settings.catalog_page_size_mobile) : 8;
+        const nextMobileColumns = [1, 2, 3].includes(Number(settings.catalog_columns_mobile)) ? Number(settings.catalog_columns_mobile) : 2;
+        setPageSize((current) => current === nextPageSize ? current : nextPageSize);
+        setDesktopColumns((current) => current === nextDesktopColumns ? current : nextDesktopColumns);
+        setMobilePageSize((current) => current === nextMobilePageSize ? current : nextMobilePageSize);
+        setMobileColumns((current) => current === nextMobileColumns ? current : nextMobileColumns);
+        if (Array.isArray(settings.astrology_services)) {
+          setAstrologyServices((current) => JSON.stringify(current) === JSON.stringify(settings.astrology_services) ? current : settings.astrology_services);
+        }
         try { localStorage.setItem("sg_storefront_settings_v1", JSON.stringify({ data: settings, savedAt: Date.now() })); } catch {}
-      });
+      }
+    };
+
+    void loadStorefront();
 
     // Reviews are secondary content: defer their request so the homepage's
     // catalogue, navigation and first-screen content get network priority.
@@ -723,7 +738,7 @@ export default function Storefront() {
             <div
               className="hero-art"
               style={{
-                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-hero-fast.webp)`,
+                backgroundImage: `linear-gradient(90deg,transparent 56%,rgba(255,238,185,.12) 72%,rgba(255,228,155,.72) 100%),url(/maa-lakshmi-bright-hero.png)`,
               }}
             />
             <div className="hero-copy-v2">
