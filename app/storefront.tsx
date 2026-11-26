@@ -124,7 +124,7 @@ export default function Storefront() {
   const router = useRouter();
   const [showBrandSplash, setShowBrandSplash] = useState(true);
   useEffect(() => {
-    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 750);
+    const splashTimer = window.setTimeout(() => setShowBrandSplash(false), 320);
     return () => window.clearTimeout(splashTimer);
   }, []);
   const [cats, setCats] = useState<C[]>([]),
@@ -209,13 +209,24 @@ export default function Storefront() {
         try { sessionStorage.setItem(categoryCacheKey, JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
       });
 
+    const productCacheKey = "sg_storefront_products_v1";
+    try {
+      const cached = sessionStorage.getItem(productCacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data) && Date.now() - Number(parsed.savedAt || 0) < 5 * 60 * 1000) {
+          setProducts(parsed.data as P[]);
+        }
+      }
+    } catch {}
     supabase.from("products")
       .select(
         "id,category_id,category_ids,name,slug,short_description,description,price_inr,compare_at_price_inr,primary_image_url,image_urls,stock_quantity,is_featured,badge,created_at",
       )
       .eq("is_active", true).order("created_at", { ascending: false })
       .then(({ data }) => {
-        if (alive && data) setProducts(data.map((p: any) => ({
+        if (!alive || !data) return;
+        const next = data.map((p: any) => ({
           ...p,
           image_urls: Array.isArray(p.image_urls) ? p.image_urls : [],
           category_ids:
@@ -224,7 +235,9 @@ export default function Storefront() {
               : p.category_id
                 ? [p.category_id]
                 : [],
-        })) as P[]);
+        })) as P[];
+        setProducts(next);
+        try { sessionStorage.setItem(productCacheKey, JSON.stringify({ data: next, savedAt: Date.now() })); } catch {}
       });
 
     supabase.from("site_settings").select("id,announcement,hero_title,hero_text,brand_logo_url,founder_image_url,founder_message,founder_name,whatsapp,email,instagram,facebook,catalog_page_size,catalog_columns_desktop,catalog_page_size_mobile,catalog_columns_mobile,astrology_services").eq("id", 1).single()
