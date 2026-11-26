@@ -5,6 +5,7 @@ function patch(path, needle, replacement, label) {
   if (text.includes(replacement)) return;
   if (!text.includes(needle)) {
     if (label === "store normalize categories" && text.includes("category_ids:") && text.includes("p.category_ids")) return;
+    if (label === "store select" && text.includes('"id,category_id,category_ids,name,slug,short_description')) return;
     if (label === "store category page filter" && text.includes("assignedCategoryIds.has(activeCategory)")) return;
     if (label === "store sidebar category filter" && text.includes("assignedCategoryIds.has(categoryFilter)")) return;
     if (label === "admin blank product" && text.includes("category_ids: [] as string[]")) return;
