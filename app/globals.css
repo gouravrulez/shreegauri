@@ -2473,16 +2473,20 @@ body {
     display: block !important;
     width: 100% !important;
     height: 56.25vw !important;
-    max-height: 360px !important;
+    max-height: 390px !important;
     min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    background-image: url("/maa-lakshmi-hero-fast.webp") !important;
+    background-image: url("/maa-lakshmi-hero.png") !important;
     background-color: #ffedc5 !important;
     background-repeat: no-repeat !important;
     background-size: 100% 100% !important;
     background-position: center center !important;
   }
+}
+@media (max-width: 900px) {
+  /* Close the unnecessary blank strip below search without overlapping the header. */
+  main > .hero-v2 { margin-top: -40px !important; }
 }
 @media (max-width: 430px) {
   .topbar { padding-left: 8px !important; padding-right: 8px !important; }
