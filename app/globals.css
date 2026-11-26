@@ -2382,3 +2382,50 @@ body {
     margin-top: -28px !important;
   }
 }
+
+
+/* Mobile: keep social links visible and show the full upper part of the Lakshmi hero. */
+@media (max-width: 900px) {
+  .topbar {
+    min-height: 32px !important;
+    height: auto !important;
+    padding: 3px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .topbar span:first-child {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex: 1 1 auto !important;
+  }
+  .topbar span:last-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 5px !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+  }
+  .topbar a {
+    width: 23px !important;
+    height: 23px !important;
+    flex: 0 0 23px !important;
+  }
+  .topbar a svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  main > .hero-v2 > .hero-art {
+    background-position: center top !important;
+  }
+}
+@media (max-width: 430px) {
+  .topbar { padding-left: 8px !important; padding-right: 8px !important; gap: 5px !important; }
+  .topbar span:last-child { gap: 4px !important; font-size: 9px !important; }
+  .topbar a { width: 21px !important; height: 21px !important; flex-basis: 21px !important; }
+}
