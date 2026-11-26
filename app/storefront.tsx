@@ -523,9 +523,10 @@ export default function Storefront() {
   }
   const shown = useMemo(() => {
     const activeCategory = cats.find((c) => c.slug === view)?.id;
+    const searchTerm = q.trim().toLocaleLowerCase("en-IN");
     const list = products.filter(
       (p) =>
-        p.name.toLowerCase().includes(q.toLowerCase()) &&
+        p.name.toLocaleLowerCase("en-IN").includes(searchTerm) &&
         (view === "home" ||
           view === "shop" ||
           view === "new" ||
@@ -574,7 +575,7 @@ export default function Storefront() {
     ["contact", "Contact Us"],
   ];
   return (
-    <main key={view}>
+    <main>
       {showBrandSplash && (
         <div className="sg-brand-splash" role="status" aria-label="Welcome to Shree Gauri">
           <img src="/shree-gauri-brand.svg" alt="Shree Gauri — Divine Energy. Timeless Beauty." />
@@ -611,7 +612,9 @@ export default function Storefront() {
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
-              setView("shop");
+              // Switch to the catalogue only when necessary. Keeping the
+              // storefront mounted prevents a full UI teardown on first keystroke.
+              if (view !== "shop") setView("shop");
             }}
           />
         </label>
